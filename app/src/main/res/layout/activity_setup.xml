@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/setup_title"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Identity Goals Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/habits_section"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/goalsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/addGoalButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:text="+ Add Identity Goal"
+            android:textAllCaps="false"
+            android:background="#FFEEEEEE"
+            android:textColor="#FF1A1A1A"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+
+        <!-- Habits Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Habits"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/habitsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/addHabitButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:text="+ Add Habit"
+            android:textAllCaps="false"
+            android:background="#FFEEEEEE"
+            android:textColor="#FF1A1A1A"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#FFDDDDDD"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- To-Do Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/todos_section"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/todosContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/addTodoButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/add_todo"
+            android:textAllCaps="false"
+            android:background="#FFEEEEEE"
+            android:textColor="#FF1A1A1A"
+            style="@style/Widget.AppCompat.Button.Borderless" />
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/save"
+            android:background="#FF1A1A1A"
+            android:textColor="@android:color/white"
+            android:textAllCaps="false"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+</ScrollView>
