@@ -19,4 +19,7 @@ interface HabitCompletionDao {
 
     @Query("SELECT date FROM habit_completions WHERE habitId = :habitId AND date >= :sinceDate ORDER BY date DESC")
     suspend fun getStreakWindow(habitId: Long, sinceDate: String): List<String>
+
+    @Query("SELECT date FROM habit_completions WHERE habitId = :habitId AND date >= :startDate AND date <= :endDate ORDER BY date ASC")
+    suspend fun getCompletionsInRange(habitId: Long, startDate: String, endDate: String): List<String>
 }

@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="4dp">
 
         <TextView
             android:layout_width="0dp"
@@ -21,6 +21,59 @@
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="#FF1A1A1A" />
+
+        <TextView
+            android:id="@+id/settingsIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:text="⚙"
+            android:textSize="20sp"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+    <!-- Date navigation bar -->
+    <LinearLayout
+        android:id="@+id/dateNavRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:id="@+id/prevDayBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="◀"
+            android:textSize="18sp"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/currentDateText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A"
+            android:text="Tue, May 26" />
+
+        <TextView
+            android:id="@+id/nextDayBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="▶"
+            android:textSize="18sp"
+            android:clickable="true"
+            android:focusable="true" />
 
     </LinearLayout>
 

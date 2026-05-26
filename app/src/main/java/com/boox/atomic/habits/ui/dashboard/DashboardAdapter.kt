@@ -20,6 +20,16 @@ class DashboardAdapter(
     private val onRefreshNeeded: () -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    private var currentDateStr: String = ""
+    private var dbRef: com.boox.atomic.habits.data.AppDatabase? = null
+    private var coroutineScope: kotlinx.coroutines.CoroutineScope? = null
+
+    fun setDataSource(dateStr: String, db: com.boox.atomic.habits.data.AppDatabase, scope: kotlinx.coroutines.CoroutineScope) {
+        currentDateStr = dateStr
+        dbRef = db
+        coroutineScope = scope
+    }
+
     companion object {
         private const val TYPE_GOAL = 0
         private const val TYPE_HABIT = 1
@@ -83,7 +93,10 @@ class DashboardAdapter(
                     frequencyType = item.frequencyType,
                     intervalDays = item.intervalDays,
                     daysOfWeek = item.daysOfWeek,
-                    streak = item.streak
+                    streak = item.streak,
+                    dateStr = currentDateStr,
+                    db = dbRef,
+                    scope = coroutineScope
                 )
             }
         }
