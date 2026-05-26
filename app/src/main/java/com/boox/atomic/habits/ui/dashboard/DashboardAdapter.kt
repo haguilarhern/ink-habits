@@ -35,6 +35,7 @@ class DashboardAdapter(
         val goalStatement: String = "",
         val habitId: Long = 0L,
         val habitName: String = "",
+        val habitStrokeData: String? = null,
         val frequencyType: String = "daily",
         val intervalDays: Int = 1,
         val daysOfWeek: String = "",
@@ -77,6 +78,7 @@ class DashboardAdapter(
                 holder.bind(
                     habitId = item.habitId,
                     name = item.habitName,
+                    strokeData = item.habitStrokeData,
                     isCompleted = item.isCompletedToday,
                     frequencyType = item.frequencyType,
                     intervalDays = item.intervalDays,
@@ -132,6 +134,7 @@ class DashboardAdapter(
                                 goalId = goalId,
                                 habitId = di.habitId,
                                 habitName = di.habitName ?: "",
+                                habitStrokeData = di.habitStrokeData,
                                 frequencyType = di.frequencyType ?: "daily",
                                 intervalDays = di.intervalDays ?: 1,
                                 daysOfWeek = di.daysOfWeek ?: "",

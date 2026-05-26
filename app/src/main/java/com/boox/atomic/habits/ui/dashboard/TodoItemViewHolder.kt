@@ -1,52 +1,55 @@
 package com.boox.atomic.habits.ui.dashboard
 
-import android.text.SpannableString
-import android.text.style.StrikethroughSpan
 import android.view.View
-import android.widget.CheckBox
-import android.widget.TextView
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.boox.atomic.habits.R
+import com.boox.atomic.habits.ui.widget.HandwritingTodoWidget
 
 /**
  * ViewHolder for a single to-do item row.
  *
- * Displays a checkbox and the to-do title. Clicking toggles completion,
- * which applies a strikethrough effect to the title text.
+ * Uses [HandwritingTodoWidget] to display handwritten to-do strokes
+ * with a checkbox and strikethrough on completion.
  */
 class TodoItemViewHolder(
     itemView: View,
     private val onToggle: (todoId: Long, isCompleted: Boolean) -> Unit
 ) : RecyclerView.ViewHolder(itemView) {
 
-    private val todoCheckbox: CheckBox = itemView.findViewById(R.id.todoCheckbox)
-    private val todoTitle: TextView = itemView.findViewById(R.id.todoTitle)
+    private val handwritingTodoWidget: HandwritingTodoWidget
 
     private var currentTodoId: Long = 0L
 
+    init {
+        // The itemView is a FrameLayout or LinearLayout container.
+        // Build the HandwritingTodoWidget programmatically as the sole child.
+        if (itemView is ViewGroup) {
+            itemView.removeAllViews()
+        }
+
+        handwritingTodoWidget = HandwritingTodoWidget(itemView.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        if (itemView is ViewGroup) {
+            itemView.addView(handwritingTodoWidget)
+        }
+    }
+
     fun bind(
         todoId: Long,
-        title: String,
+        strokeData: String,
         isCompleted: Boolean
     ) {
         currentTodoId = todoId
-        todoTitle.text = if (isCompleted) {
-            val spannable = SpannableString(title)
-            spannable.setSpan(
-                StrikethroughSpan(),
-                0,
-                title.length,
-                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            spannable
-        } else {
-            title
-        }
-        todoCheckbox.isChecked = isCompleted
 
-        todoCheckbox.setOnCheckedChangeListener(null)
-        todoCheckbox.isChecked = isCompleted
-        todoCheckbox.setOnCheckedChangeListener { _, isChecked ->
+        handwritingTodoWidget.setStrokeData(strokeData)
+        handwritingTodoWidget.setChecked(isCompleted)
+
+        handwritingTodoWidget.setOnCheckedChangeListener { isChecked ->
             onToggle(todoId, isChecked)
         }
     }

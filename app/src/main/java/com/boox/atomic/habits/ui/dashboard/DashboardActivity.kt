@@ -2,6 +2,7 @@ package com.boox.atomic.habits.ui.dashboard
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -99,15 +100,22 @@ class DashboardActivity : EInkActivity() {
             override fun getItemCount(): Int = todoList.size
 
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-                val view = layoutInflater.inflate(R.layout.item_todo, parent, false)
-                return TodoItemViewHolder(view) { todoId, completed ->
+                // Create a minimal container view — the ViewHolder builds the
+                // HandwritingTodoWidget programmatically inside it
+                val container = FrameLayout(parent.context).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                }
+                return TodoItemViewHolder(container) { todoId, completed ->
                     toggleTodo(todoId, completed)
                 }
             }
 
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
                 val todo = todoList[position]
-                (holder as TodoItemViewHolder).bind(todo.id, todo.title, todo.isCompleted)
+                (holder as TodoItemViewHolder).bind(todo.id, todo.strokeData, todo.isCompleted)
             }
         }
 

@@ -9,5 +9,6 @@ data class IdentityGoal(
     val identityStatement: String,
     val icon: String = "📖",
     val sortOrder: Int = 0,
+    val strokeData: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )

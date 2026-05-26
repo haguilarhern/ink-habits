@@ -20,7 +20,7 @@ import com.boox.atomic.habits.data.entity.ToDo
         ToDo::class,
         HabitCompletion::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

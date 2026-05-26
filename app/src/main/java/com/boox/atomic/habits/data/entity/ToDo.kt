@@ -6,6 +6,7 @@ import androidx.room.*
 data class ToDo(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
+    val strokeData: String = "",
     val isCompleted: Boolean = false,
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),

@@ -12,6 +12,7 @@ data class DashboardItem(
     val goalSortOrder: Int,
     val habitId: Long?,
     val habitName: String?,
+    val habitStrokeData: String?,
     val frequencyType: String?,
     val intervalDays: Int?,
     val daysOfWeek: String?,
@@ -26,6 +27,7 @@ interface HabitDao {
 
     @Query("""
         SELECT g.*, h.id as habitId, h.name as habitName,
+               h.strokeData as habitStrokeData,
                h.frequencyType, h.intervalDays, h.daysOfWeek,
                h.sortOrder as habitSortOrder,
                CASE WHEN hc.id IS NOT NULL THEN 1 ELSE 0 END as isCompletedToday

@@ -19,6 +19,7 @@ data class Habit(
     val frequencyType: String = "daily",
     val intervalDays: Int = 1,
     val daysOfWeek: String = "",
+    val strokeData: String = "",
     val isActive: Boolean = true,
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
