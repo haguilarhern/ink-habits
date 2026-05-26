@@ -39,10 +39,22 @@ class DashboardActivity : EInkActivity() {
 
         db = AppDatabase.getInstance(this)
 
-        // Gear icon (add to dashboard header via toolbar or XML — using image in content here)
-        // We'll add settings access via the overflow menu or a small gear in the header
-        // For simplicity, add a gear icon to the window
-        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        // Gear icon — top right header
+        val headerRow = findViewById<LinearLayout?>(R.id.headerRow)
+        if (headerRow != null) {
+            val gearBtn = ImageView(this).apply {
+                setImageResource(android.R.drawable.ic_menu_edit)
+                setPadding(12, 12, 12, 12)
+                layoutParams = LinearLayout.LayoutParams(48, 48)
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                setOnClickListener {
+                    val intent = Intent(this@DashboardActivity, SetupActivity::class.java)
+                    intent.putExtra("edit_mode", true)
+                    startActivity(intent)
+                }
+            }
+            headerRow.addView(gearBtn)
+        }
 
         setupRecyclerViews()
         observeData()

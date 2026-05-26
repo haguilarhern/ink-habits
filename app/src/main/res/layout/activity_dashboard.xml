@@ -6,6 +6,24 @@
     android:background="@android:color/white"
     android:padding="16dp">
 
+    <LinearLayout
+        android:id="@+id/headerRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Atomic Habits"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#FF1A1A1A" />
+
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
