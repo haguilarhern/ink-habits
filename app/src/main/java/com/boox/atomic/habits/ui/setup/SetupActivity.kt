@@ -253,7 +253,7 @@ class SetupActivity : EInkActivity() {
     // ─── Step 4: Done ───────────────────
 
     private fun renderStep4() {
-        setHeader("Step 5/5", "You're all set!", "Your Atomic Habits are ready.")
+        setHeader("Step 5/5", "You're all set!", "Your Ink Habits are ready.")
         val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 16, 0, 0) }
         for (g in createdGoals) {
             ll.addView(TextView(this).apply {

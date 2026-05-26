@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Atomic Habits</string>
+    <string name="app_name">Ink Habits</string>
     <string name="habits_section">My Identity Goals</string>
     <string name="todos_section">To-Do\'s</string>
     <string name="add_todo">+ Add todo</string>

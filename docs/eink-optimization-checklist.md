@@ -1,4 +1,4 @@
-# E-Ink Optimization Checklist for Boox 3 Air C
+# Ink Habits
 
 Before release, verify each point on the physical device:
 

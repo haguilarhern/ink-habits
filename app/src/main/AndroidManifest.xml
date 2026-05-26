@@ -4,7 +4,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Atomic Habits"
+        android:label="Ink Habits"
         android:theme="@style/Theme.BooxEInk"
         android:supportsRtl="true">
 

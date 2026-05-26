@@ -11,7 +11,7 @@ import java.util.Calendar
  * Schedules daily reminders for habit check-ins using AlarmManager.
  *
  * Handles setting, cancelling, and rescheduling alarms for the
- * Boox Atomic Habits app. The reminder fires a broadcast that
+ * Boox Ink Habits app. The reminder fires a broadcast that
  * the app's notification system handles to display a status bar
  * notification.
  */
@@ -132,7 +132,7 @@ object ReminderScheduler {
 
                 val notification = android.app.Notification.Builder(context, channelId)
                     .setContentTitle("Time to check in!")
-                    .setContentText("How are your atomic habits going today?")
+                    .setContentText("How are your Ink Habits going today?")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setAutoCancel(true)
                     .setContentIntent(openPendingIntent)

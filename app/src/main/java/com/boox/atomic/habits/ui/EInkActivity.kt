@@ -8,7 +8,7 @@ import com.boox.atomic.habits.boox.EInkUtils
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 
 /**
- * Base activity for the Boox Atomic Habits app.
+ * Base activity for the Boox Ink Habits app.
  *
  * Configures Onyx Boox E-Ink display update modes for optimal
  * visual quality and performance across all screens.
