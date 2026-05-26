@@ -59,9 +59,6 @@ class HandwritingTodoWidget @JvmOverloads constructor(
             ).apply {
                 marginEnd = dpToPx(8)
             }
-            setOnCheckedChangeListener { checked ->
-                invalidate()
-            }
         }
 
         // ── Create read-only handwriting field ─────────────────────────
@@ -72,6 +69,10 @@ class HandwritingTodoWidget @JvmOverloads constructor(
                 1f // weight = 1, fills remaining space
             )
             setConfirmed(true)
+            // Strikethrough gesture on handwriting → toggle checkbox
+            setOnStrikethroughListener {
+                checkbox.isChecked = !checkbox.isChecked
+            }
         }
 
         addView(checkbox)

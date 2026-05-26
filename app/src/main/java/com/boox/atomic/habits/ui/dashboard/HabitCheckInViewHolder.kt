@@ -2,6 +2,7 @@ package com.boox.atomic.habits.ui.dashboard
 
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -10,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.boox.atomic.habits.R
 import com.boox.atomic.habits.boox.EInkUtils
+import com.boox.atomic.habits.boox.GestureStrokeDetector
 import com.boox.atomic.habits.boox.StrokeRenderer
 import com.boox.atomic.habits.data.AppDatabase
 import com.boox.atomic.habits.ui.widget.HabitCalendarView
@@ -43,9 +45,32 @@ class HabitCheckInViewHolder(
     private var scope: CoroutineScope? = null
     private var calendarView: HabitCalendarView? = null
     private val df = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val gestureDetector = GestureStrokeDetector()
 
     init {
         try { EInkUtils.setGeneralMode(itemView) } catch (_: Exception) {}
+
+        // Stylusk strikethrough gesture on habit row → toggle checkbox
+        itemView.setOnTouchListener { _, event ->
+            gestureDetector.handleMotionEvent(event)
+            if (event.actionMasked == MotionEvent.ACTION_UP && gestureDetector.isStrikethrough()) {
+                gestureDetector.clear()
+                if (currentHabitId != 0L) {
+                    val newState = !habitCheckbox.isChecked
+                    habitCheckbox.isChecked = newState
+                    currentIsCompleted = newState
+                    onCheckIn(currentHabitId, newState)
+                    if (!currentStrokeData.isNullOrBlank()) {
+                        habitName.post { drawStrokesOnTextView(habitName, currentStrokeData!!, newState) }
+                    }
+                }
+                return@setOnTouchListener true
+            }
+            if (event.actionMasked == MotionEvent.ACTION_UP) {
+                gestureDetector.clear()
+            }
+            false
+        }
     }
 
     fun bind(

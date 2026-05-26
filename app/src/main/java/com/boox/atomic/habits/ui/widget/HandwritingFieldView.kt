@@ -15,6 +15,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
+import com.boox.atomic.habits.boox.GestureStrokeDetector
 import com.boox.atomic.habits.boox.StrokeSerializer
 import com.boox.atomic.habits.boox.StrokeRenderer
 
@@ -82,6 +83,8 @@ class HandwritingFieldView @JvmOverloads constructor(
     // ── Callbacks ──────────────────────────────────────────────────────────
 
     private var onConfirmListener: (() -> Unit)? = null
+    private var onStrikethroughListener: (() -> Unit)? = null
+    private val gestureDetector = GestureStrokeDetector()
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -161,6 +164,10 @@ class HandwritingFieldView @JvmOverloads constructor(
     /** Register a callback invoked when the field is confirmed (locked). */
     fun setOnConfirmListener(l: () -> Unit) {
         onConfirmListener = l
+    }
+
+    fun setOnStrikethroughListener(l: () -> Unit) {
+        onStrikethroughListener = l
     }
 
     fun clear() {
@@ -249,8 +256,17 @@ class HandwritingFieldView @JvmOverloads constructor(
             return false
         }
 
-        // Block touch when confirmed
-        if (isConfirmed) return false
+        // When confirmed (read-only): only detect strikethrough gestures
+        if (isConfirmed) {
+            gestureDetector.handleMotionEvent(event)
+            if (event.actionMasked == MotionEvent.ACTION_UP) {
+                if (gestureDetector.isStrikethrough()) {
+                    onStrikethroughListener?.invoke()
+                }
+                gestureDetector.clear()
+            }
+            return true
+        }
 
         val x = event.x
         val y = event.y
