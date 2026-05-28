@@ -73,11 +73,27 @@ class DashboardAdapter(
             b.habitName.setContent(h.name, h.nameStrokes)
             b.habitName.completed = item.completedToday
             b.scheduleLabel.text = item.scheduleLabel
-            if (item.anchor.isNotBlank()) {
-                b.anchorLabel.visibility = View.VISIBLE
-                b.anchorLabel.text = "after ${item.anchor}"
-            } else {
-                b.anchorLabel.visibility = View.GONE
+            when {
+                StrokeRenderer.hasInk(item.anchorStrokes) -> {
+                    b.anchorLabel.visibility = View.GONE
+                    b.anchorInkRow.visibility = View.VISIBLE
+                    b.anchorInk.post {
+                        val w = b.anchorInk.width.takeIf { it > 0 } ?: 240
+                        val h = b.anchorInk.height.takeIf { it > 0 } ?: 44
+                        b.anchorInk.setImageBitmap(
+                            StrokeRenderer.renderToBitmap(item.anchorStrokes, w, h)
+                        )
+                    }
+                }
+                item.anchor.isNotBlank() -> {
+                    b.anchorInkRow.visibility = View.GONE
+                    b.anchorLabel.visibility = View.VISIBLE
+                    b.anchorLabel.text = "after ${item.anchor}"
+                }
+                else -> {
+                    b.anchorLabel.visibility = View.GONE
+                    b.anchorInkRow.visibility = View.GONE
+                }
             }
             b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
 

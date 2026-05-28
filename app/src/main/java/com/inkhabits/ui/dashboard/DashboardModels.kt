@@ -12,7 +12,8 @@ sealed class DashboardItem {
         val completedToday: Boolean,
         val streak: Int,
         val scheduleLabel: String,
-        val anchor: String
+        val anchor: String,
+        val anchorStrokes: String
     ) : DashboardItem()
     object AddFooter : DashboardItem()
 }

@@ -56,7 +56,7 @@ class OnboardingActivity : WritingHostActivity() {
     private val pendingHabits = mutableListOf<PendingHabit>()
     private var habitInput: InputField? = null
     private var habitSchedule: SchedulePicker? = null
-    private var habitAnchorInput: EditText? = null
+    private var habitAnchor: InputField? = null
     private var habitReminder: Int = -1
 
     private data class PendingHabit(
@@ -64,7 +64,8 @@ class OnboardingActivity : WritingHostActivity() {
         val strokes: String,
         val cfg: ScheduleConfig,
         val reminderMinutes: Int,
-        val anchor: String
+        val anchor: String,
+        val anchorStrokes: String
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -231,22 +232,15 @@ class OnboardingActivity : WritingHostActivity() {
         timeBtn.setOnClickListener { pickTime(timeBtn) }
         binding.contentArea.addView(timeBtn)
 
-        // Anchor cue (optional, habit-stacking)
+        // Anchor cue (optional, habit-stacking) — type or write, like the habit.
         binding.contentArea.addView(label("Anchor — after what? (optional)").apply {
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(10); layoutParams = lp
         })
-        val anchorEt = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            setTextColor(Color.parseColor("#6B6B6B"))
-            setHintTextColor(Color.parseColor("#9A958A"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            hint = "e.g. after my morning coffee"
-            maxLines = 1
-        }
-        habitAnchorInput = anchorEt
-        binding.contentArea.addView(anchorEt)
+        val anchor = InputField(this).apply { setHint("e.g. after my morning coffee") }
+        habitAnchor = anchor
+        binding.contentArea.addView(anchor)
 
         // Secondary action: add the current habit to the list.
         binding.contentArea.addView(MaterialButton(
@@ -324,7 +318,8 @@ class OnboardingActivity : WritingHostActivity() {
         pendingHabits.add(
             PendingHabit(
                 input.getText(), input.getStrokes(), habitSchedule!!.getConfig(),
-                habitReminder, habitAnchorInput?.text?.toString()?.trim().orEmpty()
+                habitReminder,
+                habitAnchor?.getText().orEmpty(), habitAnchor?.getStrokes().orEmpty()
             )
         )
         habitReminder = -1
@@ -402,7 +397,8 @@ class OnboardingActivity : WritingHostActivity() {
         habitInput?.let { if (it.hasContent()) {
             pendingHabits.add(PendingHabit(
                 it.getText(), it.getStrokes(), habitSchedule!!.getConfig(),
-                habitReminder, habitAnchorInput?.text?.toString()?.trim().orEmpty()
+                habitReminder,
+                habitAnchor?.getText().orEmpty(), habitAnchor?.getStrokes().orEmpty()
             ))
         } }
         if (pendingHabits.isEmpty()) {
@@ -434,6 +430,7 @@ class OnboardingActivity : WritingHostActivity() {
                         startEpochDay = today,
                         reminderMinutes = h.reminderMinutes,
                         anchor = h.anchor,
+                        anchorStrokes = h.anchorStrokes,
                         sortOrder = idx
                     )
                 )

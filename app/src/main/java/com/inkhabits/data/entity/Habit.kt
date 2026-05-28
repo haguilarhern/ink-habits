@@ -49,9 +49,11 @@ data class Habit(
     val reminderMinutes: Int = -1,
     /**
      * Optional habit-stacking anchor cue (e.g. "my morning coffee"). Not tracked;
-     * shown as a small reminder of when/after-what to do the habit.
+     * shown as a small reminder of when/after-what to do the habit. May be typed
+     * ([anchor]) or handwritten ([anchorStrokes]).
      */
     val anchor: String = "",
+    val anchorStrokes: String = "",
     val sortOrder: Int = 0,
     val isActive: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()

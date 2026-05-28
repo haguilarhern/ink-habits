@@ -39,6 +39,16 @@ class InlineInkView @JvmOverloads constructor(
     private var active = false
     private val strokeWidth = 6f
 
+    // Auto-release the pen a moment after writing stops, so other controls
+    // (time, anchor, scroll) respond to the pen instead of being captured.
+    private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val idleRunnable = Runnable { if (active) deactivate() }
+    private fun scheduleIdle() {
+        idleHandler.removeCallbacks(idleRunnable)
+        idleHandler.postDelayed(idleRunnable, 1800L)
+    }
+    private fun cancelIdle() = idleHandler.removeCallbacks(idleRunnable)
+
     private val inkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
         style = Paint.Style.STROKE
@@ -101,6 +111,7 @@ class InlineInkView @JvmOverloads constructor(
 
     fun deactivate() {
         active = false
+        cancelIdle()
         try {
             touchHelper?.setRawDrawingEnabled(false)
             touchHelper?.closeRawDrawing()
@@ -115,9 +126,7 @@ class InlineInkView @JvmOverloads constructor(
     fun refreshLimit() {
         if (!active || !surfaceReady) return
         val th = touchHelper ?: return
-        val limit = Rect()
-        getLocalVisibleRect(limit)
-        th.setLimitRect(limit, ArrayList())
+        th.setLimitRect(Rect(0, 0, w, h), ArrayList())
     }
 
     // ── surface lifecycle ──
@@ -151,26 +160,38 @@ class InlineInkView @JvmOverloads constructor(
 
     // Claim writing focus on tap (finger/pen) when not already active.
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!active && event.actionMasked == MotionEvent.ACTION_DOWN) {
-            activate()
-            return true
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            cancelIdle()
+            if (!active) { activate(); return true }
         }
         return super.onTouchEvent(event)
     }
 
     // ── internals ──
 
+    /** Bottom-right corner reserved for the "done" button; excluded from raw drawing. */
+    private val reservedCorner: Int get() = (54 * resources.displayMetrics.density).toInt()
+
+    private fun excludeRects(): ArrayList<Rect> {
+        val c = reservedCorner
+        return arrayListOf(Rect(w - c, h - c, w, h))
+    }
+
     private fun setupRaw() {
         val th = touchHelper ?: TouchHelper.create(this, callback).also { touchHelper = it }
-        val limit = Rect()
-        getLocalVisibleRect(limit)
+        // Use the box's actual bounds; getLocalVisibleRect can return empty before
+        // layout, which makes Onyx capture the pen across the whole screen.
+        val limit = Rect(0, 0, w, h)
         th.setStrokeColor(Color.BLACK)
         th.setStrokeStyle(TouchHelper.STROKE_STYLE_FOUNTAIN)
         th.openRawDrawing()
         th.setStrokeWidth(strokeWidth)
-        th.setLimitRect(limit, ArrayList())
+        th.setLimitRect(limit, excludeRects())
         th.setPenUpRefreshEnabled(true)
         th.setRawInputReaderEnable(true)
+        // Let the pen's eraser button erase strokes (like Onyx Notes).
+        try { th.enableSideBtnErase(true) } catch (_: Throwable) {}
+        try { th.setEraserRawDrawingEnabled(true) } catch (_: Throwable) {}
         th.setRawDrawingEnabled(true)
         th.setRawDrawingRenderEnabled(true)
     }
@@ -222,10 +243,12 @@ class InlineInkView @JvmOverloads constructor(
             val stroke = pts.map { InkPoint(it.x, it.y, strokeWidth) }.toMutableList()
             strokes.add(stroke)
             bmpCanvas?.let { drawStroke(it, stroke) }
+            post { scheduleIdle() } // release the pen if writing pauses
         }
 
         override fun onPenActive(point: TouchPoint?) {
             touchHelper?.setRawDrawingEnabled(true)
+            post { cancelIdle() } // pen is back on the box; keep writing
         }
 
         override fun onBeginRawErasing(b: Boolean, point: TouchPoint?) {}

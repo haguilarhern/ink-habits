@@ -15,7 +15,7 @@ import com.inkhabits.data.entity.ToDo
 
 @Database(
     entities = [IdentityGoal::class, Habit::class, HabitCompletion::class, ToDo::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

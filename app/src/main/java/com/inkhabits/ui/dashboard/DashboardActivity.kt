@@ -105,7 +105,8 @@ class DashboardActivity : EInkActivity() {
                                 completedToday = todayStr in completed,
                                 streak = Streaks.computeStreak(habit, completed, today),
                                 scheduleLabel = label,
-                                anchor = habit.anchor
+                                anchor = habit.anchor,
+                                anchorStrokes = habit.anchorStrokes
                             )
                         )
                     }

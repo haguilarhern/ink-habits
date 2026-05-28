@@ -72,30 +72,46 @@ class HabitNameView @JvmOverloads constructor(
         if (completed) {
             val y = height / 2f
             canvas.drawLine(4f, y, width - 8f, y, strikePaint)
+        } else if (dragging) {
+            // Live strike line following the finger/pen as you cross.
+            val y = height / 2f
+            canvas.drawLine(minOf(downX, liveX), y, maxOf(downX, liveX), y, strikePaint)
         }
     }
 
     private var downX = 0f
     private var downY = 0f
+    private var liveX = 0f
     private var maxDx = 0f
     private var maxDy = 0f
+    private var dragging = false
+    private var fired = false
+
+    private val strikeThreshold get() = width * 0.35f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                downX = event.x; downY = event.y; maxDx = 0f; maxDy = 0f
+                downX = event.x; downY = event.y; liveX = event.x
+                maxDx = 0f; maxDy = 0f; dragging = true; fired = false
                 parent?.requestDisallowInterceptTouchEvent(true)
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                liveX = event.x
                 maxDx = maxOf(maxDx, abs(event.x - downX))
                 maxDy = maxOf(maxDy, abs(event.y - downY))
-                return true
-            }
-            MotionEvent.ACTION_UP -> {
-                if (maxDx > width * 0.45f && maxDy < height * 0.45f) {
+                // Fire the moment the cross is long enough — feels live, no wait for lift.
+                if (!fired && maxDx > strikeThreshold && maxDy < height * 0.5f) {
+                    fired = true
                     onStrike?.invoke()
                 }
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                dragging = false
+                invalidate()
                 return true
             }
         }
