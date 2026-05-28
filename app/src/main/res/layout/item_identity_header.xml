@@ -10,28 +10,19 @@
     android:paddingBottom="4dp">
 
     <TextView
-        android:id="@+id/identityIcon"
-        android:layout_width="44dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textSize="22sp" />
-
-    <TextView
         android:id="@+id/identityName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="8dp"
         android:textColor="@color/ink_text"
-        android:textSize="20sp"
-        android:letterSpacing="0.06" />
+        android:textSize="16sp"
+        android:letterSpacing="0.04" />
 
     <ImageView
         android:id="@+id/identityNameInk"
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
-        android:layout_marginStart="8dp"
         android:scaleType="fitStart"
         android:visibility="gone"
         android:contentDescription="identity" />

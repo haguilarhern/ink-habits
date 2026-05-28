@@ -17,9 +17,9 @@
         <!-- Flat: no elevation/animation noise on e-ink -->
         <item name="elevationOverlayEnabled">false</item>
         <item name="android:windowAnimationStyle">@null</item>
-        <!-- Handwriting feel across the app -->
-        <item name="android:fontFamily">@font/patrick_hand</item>
-        <item name="fontFamily">@font/patrick_hand</item>
+        <!-- Clean sans-serif across the board -->
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="fontFamily">@font/inter_regular</item>
     </style>
 
     <style name="Theme.InkHabits.Translucent" parent="Theme.InkHabits">

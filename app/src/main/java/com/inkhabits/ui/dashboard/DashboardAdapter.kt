@@ -49,7 +49,6 @@ class DashboardAdapter(
     class HeaderVH(private val b: ItemIdentityHeaderBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(item: DashboardItem.Header) {
             val id = item.identity
-            b.identityIcon.text = id.icon
             if (StrokeRenderer.hasInk(id.nameStrokes)) {
                 b.identityName.visibility = View.GONE
                 b.identityNameInk.visibility = View.VISIBLE
@@ -78,8 +77,8 @@ class DashboardAdapter(
                     b.anchorLabel.visibility = View.GONE
                     b.anchorInkRow.visibility = View.VISIBLE
                     b.anchorInk.post {
-                        val w = b.anchorInk.width.takeIf { it > 0 } ?: 240
-                        val h = b.anchorInk.height.takeIf { it > 0 } ?: 44
+                        val w = b.anchorInk.width.takeIf { it > 0 } ?: 80
+                        val h = b.anchorInk.height.takeIf { it > 0 } ?: 28
                         b.anchorInk.setImageBitmap(
                             StrokeRenderer.renderToBitmap(item.anchorStrokes, w, h)
                         )
@@ -97,11 +96,17 @@ class DashboardAdapter(
             }
             b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
 
+            val hasAnchor = b.anchorLabel.visibility == View.VISIBLE ||
+                b.anchorInkRow.visibility == View.VISIBLE
+            b.contextColumn.visibility = if (hasAnchor) View.VISIBLE else View.GONE
+
             b.checkBox.onToggle = null
             b.checkBox.checked = item.completedToday
             b.checkBox.onToggle = { makeComplete -> onToggle(h.id, makeComplete) }
 
             b.habitName.onStrike = { onToggle(h.id, !item.completedToday) }
+
+            b.pillCard.setOnClickListener { onToggle(h.id, !item.completedToday) }
         }
     }
 

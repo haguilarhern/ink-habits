@@ -57,6 +57,17 @@ class InlineInkView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
 
+    private val checkCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#8C1D1D")
+    }
+    private val checkIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        strokeWidth = 3.2f * resources.displayMetrics.density
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
     init {
         holder.addCallback(this)
         isClickable = true
@@ -126,7 +137,7 @@ class InlineInkView @JvmOverloads constructor(
     fun refreshLimit() {
         if (!active || !surfaceReady) return
         val th = touchHelper ?: return
-        th.setLimitRect(Rect(0, 0, w, h), ArrayList())
+        th.setLimitRect(Rect(0, 0, w, h), excludeRects())
     }
 
     // ── surface lifecycle ──
@@ -159,10 +170,17 @@ class InlineInkView @JvmOverloads constructor(
     }
 
     // Claim writing focus on tap (finger/pen) when not already active.
+    // When active, a tap in the reserved corner (✓) deactivates to release
+    // the pen so other controls become responsive again.
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             cancelIdle()
             if (!active) { activate(); return true }
+            val c = reservedCorner
+            if (event.x > w - c && event.y > h - c) {
+                deactivate()
+                return true
+            }
         }
         return super.onTouchEvent(event)
     }
@@ -227,9 +245,22 @@ class InlineInkView @JvmOverloads constructor(
         try {
             c.drawColor(Color.WHITE)
             bitmap?.let { c.drawBitmap(it, 0f, 0f, null) }
+            if (active) drawCheckmark(c)
         } finally {
             holder.unlockCanvasAndPost(c)
         }
+    }
+
+    private fun drawCheckmark(canvas: Canvas) {
+        val size = reservedCorner
+        val pad = size * 0.22f
+        val cx = w - size / 2f
+        val cy = h - size / 2f
+        val radius = size / 2f - pad
+        canvas.drawCircle(cx, cy, radius, checkCirclePaint)
+        val inner = radius * 0.52f
+        canvas.drawLine(cx - inner, cy, cx - inner * 0.3f, cy + inner, checkIconPaint)
+        canvas.drawLine(cx - inner * 0.3f, cy + inner, cx + inner, cy - inner * 0.3f, checkIconPaint)
     }
 
     private val callback = object : RawInputCallback() {

@@ -3,6 +3,7 @@ package com.inkhabits.ui.onboarding
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.text.InputType
 import android.util.TypedValue
@@ -59,6 +60,9 @@ class OnboardingActivity : WritingHostActivity() {
     private var habitAnchor: InputField? = null
     private var habitReminder: Int = -1
 
+    private val interRegular by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_regular)!! }
+    private val interSemiBold by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_semibold)!! }
+
     private data class PendingHabit(
         val name: String,
         val strokes: String,
@@ -78,6 +82,7 @@ class OnboardingActivity : WritingHostActivity() {
         if (addMode) step = Step.IDENTITY
 
         binding.skipButton.setOnClickListener { onSkip() }
+        binding.skipButton.typeface = interRegular
         binding.backButton.setOnClickListener { onBack() }
         // Keep the active inline pen region aligned while scrolling.
         binding.scroll.setOnScrollChangeListener { _, _, _, _, _ ->
@@ -105,19 +110,33 @@ class OnboardingActivity : WritingHostActivity() {
         binding.contentArea.addView(MaterialButton(this).apply {
             this.text = text
             isAllCaps = false
+            typeface = interSemiBold
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            cornerRadius = dp(12)
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(56))
-            lp.topMargin = dp(20)
+            lp.topMargin = dp(24)
             layoutParams = lp
             setOnClickListener { onClick() }
         })
     }
 
     private fun header(indicator: String, title: String, subtitle: String) {
-        binding.stepIndicator.text = indicator
-        binding.stepTitle.text = title
-        binding.stepSubtitle.text = subtitle
+        binding.stepIndicator.apply {
+            text = indicator
+            setTypeface(interSemiBold)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            setLetterSpacing(0.14f)
+        }
+        binding.stepTitle.apply {
+            text = title
+            setTypeface(interSemiBold)
+            setLetterSpacing(-0.02f)
+        }
+        binding.stepSubtitle.apply {
+            text = subtitle
+            setTypeface(interRegular)
+        }
     }
 
     private fun renderWelcome() {
@@ -127,8 +146,9 @@ class OnboardingActivity : WritingHostActivity() {
                 "First you'll choose an identity — who you want to become — then add the " +
                 "habits that person does. You can write with your pen or type."
             setTextColor(Color.parseColor("#5A5A5A"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            setLineSpacing(0f, 1.2f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setLineSpacing(4f, 1.25f)
+            typeface = interRegular
         })
         primaryCta("Get started →") { step = Step.IDENTITY; render() }
     }
@@ -460,7 +480,10 @@ class OnboardingActivity : WritingHostActivity() {
     private fun label(text: String): TextView = TextView(this).apply {
         this.text = text
         setTextColor(Color.parseColor("#5A5A5A"))
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+        typeface = interSemiBold
+        setLetterSpacing(0.06f)
+        setPadding(0, dp(16), 0, dp(4))
     }
 
     private fun styleIcon(b: Button, on: Boolean) {
