@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="@dimen/screen_margin"
+    android:paddingVertical="4dp">
+
+    <com.inkhabits.ui.widget.CheckBoxView
+        android:id="@+id/checkBox"
+        android:layout_width="44dp"
+        android:layout_height="44dp" />
+
+    <com.inkhabits.ui.widget.HabitNameView
+        android:id="@+id/todoName"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp" />
+
+    <ImageButton
+        android:id="@+id/deleteButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_delete"
+        android:contentDescription="Delete"
+        app:tint="@color/ink_text_muted" />
+</LinearLayout>

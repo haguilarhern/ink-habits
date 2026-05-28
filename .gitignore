@@ -1,0 +1,17 @@
+# Android / Gradle
+*.iml
+.gradle/
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Local machine config
+/local.properties
+/.idea/
+.DS_Store
+
+# Keystores / secrets
+*.jks
+*.keystore

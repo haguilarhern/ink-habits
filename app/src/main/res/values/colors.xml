@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink_background">#FFFFFF</color>
+    <color name="ink_surface">#FFFFFF</color>
+    <color name="ink_text">#1A1A1A</color>
+    <color name="ink_text_muted">#6B6B6B</color>
+    <color name="ink_divider">#D8D5CC</color>
+    <color name="ink_hint">#9A958A</color>
+    <color name="ink_pill_stroke">#C9C5BA</color>
+
+    <!-- Accent: deep brick red, survives Kaleido 3 desaturation -->
+    <color name="ink_accent">#8C1D1D</color>
+    <color name="ink_accent_dim">#B56B6B</color>
+
+    <color name="ink_black">#1A1A1A</color>
+    <color name="ink_white">#FFFFFF</color>
+</resources>

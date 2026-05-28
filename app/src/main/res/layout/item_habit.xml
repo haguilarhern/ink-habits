@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="@dimen/screen_margin"
+    android:paddingEnd="@dimen/screen_margin"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp">
+
+    <!-- timeline rail -->
+    <FrameLayout
+        android:layout_width="44dp"
+        android:layout_height="match_parent">
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/ink_divider" />
+    </FrameLayout>
+
+    <!-- pill -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/pill_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:id="@+id/pillIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.inkhabits.ui.widget.HabitNameView
+                android:id="@+id/habitName"
+                android:layout_width="match_parent"
+                android:layout_height="44dp" />
+
+            <TextView
+                android:id="@+id/scheduleLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ink_text_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/anchorLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ink_hint"
+                android:textSize="11sp"
+                android:textStyle="italic"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/streakText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="4dp"
+            android:textColor="@color/ink_accent"
+            android:textSize="13sp" />
+
+        <com.inkhabits.ui.widget.CheckBoxView
+            android:id="@+id/checkBox"
+            android:layout_width="40dp"
+            android:layout_height="40dp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:name=".InkHabitsApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.InkHabits"
+        tools:replace="android:label">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.InkHabits">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.onboarding.OnboardingActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.dashboard.DashboardActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.history.HistoryActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.todo.ToDoActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.writing.WritingPadActivity"
+            android:exported="false"
+            android:theme="@style/Theme.InkHabits.Translucent"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- Habits widget -->
+        <receiver
+            android:name=".widget.HabitsWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.inkhabits.action.TOGGLE_HABIT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habits_widget_info" />
+        </receiver>
+        <service
+            android:name=".widget.HabitsWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <!-- To-do widget -->
+        <receiver
+            android:name=".widget.ToDoWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.inkhabits.action.TOGGLE_TODO" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_info" />
+        </receiver>
+        <service
+            android:name=".widget.ToDoWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+    </application>
+</manifest>

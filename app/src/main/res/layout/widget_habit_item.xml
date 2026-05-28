@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/itemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="6dp">
+
+    <ImageView
+        android:id="@+id/itemCheck"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:contentDescription="check"
+        android:src="@drawable/ic_widget_check_off" />
+
+    <TextView
+        android:id="@+id/itemName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#000000"
+        android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/itemNameInk"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitStart"
+        android:visibility="gone"
+        android:contentDescription="habit" />
+
+    <TextView
+        android:id="@+id/itemStreak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:textColor="#8C1D1D"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

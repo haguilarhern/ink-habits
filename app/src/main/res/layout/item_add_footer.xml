@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:paddingHorizontal="@dimen/screen_margin"
+    android:paddingTop="16dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/addIdentity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="+ Add identity"
+        android:textColor="@color/ink_accent"
+        android:textSize="16sp"
+        android:padding="10dp"
+        tools:ignore="HardcodedText" />
+</LinearLayout>
