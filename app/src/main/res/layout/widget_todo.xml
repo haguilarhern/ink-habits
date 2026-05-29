@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="To-Do"
-            android:fontFamily="@font/inter_semibold"
+            android:textStyle="bold"
             android:textColor="#1A1A1A"
             android:textSize="16sp"
             tools:ignore="HardcodedText" />
@@ -28,26 +28,42 @@
             android:id="@+id/widgetCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/inter_semibold"
+            android:textStyle="bold"
             android:textColor="#8C1D1D"
-            android:textSize="18sp"
+            android:textSize="16sp"
             tools:text="12" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="10dp"
             android:text="done"
             android:textColor="#6B6B6B"
             android:textSize="11sp"
             tools:ignore="HardcodedText" />
+
+        <!-- Add a new to-do (opens the To-Do screen) -->
+        <TextView
+            android:id="@+id/widgetAdd"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:background="@drawable/widget_add_bg"
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
-    <View
+    <!-- Divider: a 1dp LinearLayout (RemoteViews disallows the base <View> class). -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
+        android:orientation="horizontal"
         android:background="#E4E1D8" />
 
     <ListView
@@ -64,7 +80,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="No to-dos"
+        android:text="No to-dos — tap + to add"
         android:textColor="#6B6B6B"
         android:textSize="13sp"
         tools:ignore="HardcodedText" />

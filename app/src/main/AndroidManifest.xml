@@ -54,7 +54,7 @@
         <!-- Habits widget -->
         <receiver
             android:name=".widget.HabitsWidgetProvider"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.inkhabits.action.TOGGLE_HABIT" />
@@ -71,7 +71,7 @@
         <!-- To-do widget -->
         <receiver
             android:name=".widget.ToDoWidgetProvider"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.inkhabits.action.TOGGLE_TODO" />

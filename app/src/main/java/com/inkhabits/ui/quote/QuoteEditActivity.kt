@@ -20,6 +20,9 @@ class QuoteEditActivity : WritingHostActivity() {
         setContentView(binding.root)
 
         binding.input.setHint("Your quote…")
+        binding.input.onRequestWrite = { existing, onResult ->
+            openWritingPad(existing, "Your quote") { onResult(it) }
+        }
         binding.input.prefill(QuotePrefs.text(this), QuotePrefs.strokes(this))
 
         binding.backButton.setOnClickListener { finish() }

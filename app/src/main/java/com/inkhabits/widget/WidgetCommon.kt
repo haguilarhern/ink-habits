@@ -13,18 +13,21 @@ object WidgetCommon {
     /** Rebuilds and refreshes all of the app's home-screen widgets. */
     fun updateAll(context: Context) {
         val mgr = AppWidgetManager.getInstance(context)
-        notify(context, mgr, HabitsWidgetProvider::class.java)
-        notify(context, mgr, ToDoWidgetProvider::class.java)
+        refresh(context, mgr, HabitsWidgetProvider(), HabitsWidgetProvider::class.java)
+        refresh(context, mgr, ToDoWidgetProvider(), ToDoWidgetProvider::class.java)
     }
 
-    private fun notify(context: Context, mgr: AppWidgetManager, cls: Class<*>) {
+    // Apps can't send the protected ACTION_APPWIDGET_UPDATE broadcast, so call the
+    // provider's onUpdate directly (rebuilds the frame) + refresh the list contents.
+    private fun refresh(
+        context: Context,
+        mgr: AppWidgetManager,
+        provider: android.appwidget.AppWidgetProvider,
+        cls: Class<*>
+    ) {
         val ids = mgr.getAppWidgetIds(ComponentName(context, cls))
         if (ids.isEmpty()) return
-        val intent = android.content.Intent(context, cls).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-        }
-        context.sendBroadcast(intent)
         mgr.notifyAppWidgetViewDataChanged(ids, R.id.widgetList)
+        provider.onUpdate(context, mgr, ids)
     }
 }

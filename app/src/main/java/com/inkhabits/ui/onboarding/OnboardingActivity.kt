@@ -214,7 +214,7 @@ class OnboardingActivity : WritingHostActivity() {
         header("IDENTITY", "Who do you want to become?", "e.g. a Reader, an Athlete, a Writer")
 
         binding.contentArea.addView(label("Name this identity"))
-        val field = InputField(this).apply { setHint("I am a…") }
+        val field = inkField("I am a…", "Name your identity")
         identityField = field
         binding.contentArea.addView(field)
         field.prefill(pendingName, pendingStrokes)
@@ -263,7 +263,7 @@ class OnboardingActivity : WritingHostActivity() {
             "Write a habit, set how often, and an optional anchor.")
 
         binding.contentArea.addView(label("Habit"))
-        val input = InputField(this).apply { setHint("Habit name…") }
+        val input = inkField("Habit name…", "Write the habit")
         habitInput = input
         binding.contentArea.addView(input)
 
@@ -289,7 +289,7 @@ class OnboardingActivity : WritingHostActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(10); layoutParams = lp
         })
-        val anchor = InputField(this).apply { setHint("e.g. after my morning coffee") }
+        val anchor = inkField("e.g. after my morning coffee", "Anchor — after what?")
         habitAnchor = anchor
         binding.contentArea.addView(anchor)
 
@@ -699,6 +699,12 @@ class OnboardingActivity : WritingHostActivity() {
     }
 
     // ── helpers ──
+
+    /** An InputField whose WRITE mode opens the full-screen writing pad. */
+    private fun inkField(hint: String, padTitle: String): InputField = InputField(this).apply {
+        setHint(hint)
+        onRequestWrite = { existing, onResult -> openWritingPad(existing, padTitle) { onResult(it) } }
+    }
 
     private fun label(text: String): TextView = TextView(this).apply {
         this.text = text

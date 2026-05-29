@@ -9,12 +9,19 @@ import android.view.Gravity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
+import com.inkhabits.util.StrokeRenderer
 
 /**
- * Hybrid text/handwriting input. TYPE mode is a plain EditText. WRITE mode is an
- * inline [InlineInkView] you write directly into with the pen (Onyx raw drawing,
- * zero-lag). Only one inline writer is active at a time across the screen.
+ * Hybrid text/handwriting input.
+ *
+ * TYPE mode is a plain EditText. WRITE mode is a tappable box that shows a preview of
+ * the handwritten ink and opens the full-screen writing pad to create/edit it — the
+ * same stable, smooth pattern the to-do list uses. There is NO inline drawing surface
+ * (those churn and freeze the Onyx engine in scrolling forms). The host wires
+ * [onRequestWrite] to its writing-pad launcher.
  */
 class InputField @JvmOverloads constructor(
     context: Context,
@@ -24,18 +31,21 @@ class InputField @JvmOverloads constructor(
 
     enum class Mode { TYPE, INK }
 
+    /** Host hook: open the writing pad with [existing] strokes; deliver the result to [onResult]. */
+    var onRequestWrite: ((existing: String, onResult: (String) -> Unit) -> Unit)? = null
+
     private val toggleRow: LinearLayout
     private val clearChip: Button
     private val toggleType: Button
     private val toggleInk: Button
     private val editText: EditText
     private val inkBox: FrameLayout
-    private val inkView: InlineInkView
-    private val inkPreview: android.widget.ImageView
-    private val lockBtn: android.widget.ImageView
+    private val inkPreview: ImageView
+    private val inkHint: TextView
 
-    private var mode = Mode.TYPE
+    private var mode = Mode.INK
     private var typeOnly = false
+    private var strokes = ""
 
     init {
         orientation = VERTICAL
@@ -44,7 +54,7 @@ class InputField @JvmOverloads constructor(
             orientation = HORIZONTAL
             gravity = Gravity.END
         }
-        clearChip = chip("Clear").apply { styleChip(this, selected = false); setTextColor(ACCENT) }
+        clearChip = chip("Clear").apply { styleChip(this, false); setTextColor(ACCENT) }
         toggleType = chip("Type")
         toggleInk = chip("Write")
         toggleRow.addView(clearChip)
@@ -61,69 +71,66 @@ class InputField @JvmOverloads constructor(
         }
         addView(editText, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
-        // Inline writing box with a thin hairline frame. (SurfaceView can't clip to
-        // rounded corners, so the frame stays square — clean 1px rule all around.)
+        // Tappable write box: shows the ink preview (or a hint) and opens the pad.
         inkBox = FrameLayout(context).apply {
-            setBackgroundColor(Color.parseColor("#CFCBC0")) // border color (acts as 1px frame)
-            val f = dp(1).coerceAtLeast(1)
-            setPadding(f, f, f, f)
-        }
-        inkView = InlineInkView(context)
-        inkBox.addView(inkView, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, dp(120)
-        ))
-
-        // Static preview shown when the box is "locked" (released). The live SurfaceView
-        // doesn't repaint reliably on e-ink once raw-drawing closes, so we display the
-        // captured ink as a plain image instead — text never disappears.
-        inkPreview = android.widget.ImageView(context).apply {
-            scaleType = android.widget.ImageView.ScaleType.FIT_XY
-            setBackgroundColor(Color.WHITE)
-            visibility = GONE
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.WHITE)
+                setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
+            }
             isClickable = true
-            setOnClickListener { inkView.activate() } // tap to unlock and keep writing
+            setOnClickListener { requestWrite() }
+        }
+        inkPreview = ImageView(context).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            visibility = GONE
+        }
+        inkHint = TextView(context).apply {
+            text = "Tap to write with your pen"
+            setTextColor(Color.parseColor("#9A958A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            gravity = Gravity.CENTER
         }
         inkBox.addView(inkPreview, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT, dp(120)))
-
-        // Lock / unlock button in the reserved corner. Open lock = editable (writing);
-        // closed lock = locked (ink preserved, pen released). Tapping toggles.
-        lockBtn = android.widget.ImageView(context).apply {
-            setPadding(dp(8), dp(8), dp(8), dp(8))
-            background = android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(ACCENT)
-            }
-            setColorFilter(Color.WHITE)
-            isClickable = true
-            setOnClickListener { if (inkView.isActive()) inkView.deactivate() else inkView.activate() }
-        }
-        val lockLp = FrameLayout.LayoutParams(dp(40), dp(40), Gravity.BOTTOM or Gravity.END)
-        lockLp.setMargins(0, 0, dp(7), dp(7))
-        inkBox.addView(lockBtn, lockLp)
-
+            FrameLayout.LayoutParams.MATCH_PARENT, dp(110)))
+        inkBox.addView(inkHint, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, dp(110), Gravity.CENTER))
         addView(inkBox, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
-        // Surface ↔ preview swap + highlight follow the active/locked state.
-        inkView.onActiveChanged = { applyInkState() }
-
-        clearChip.setOnClickListener { inkView.clear(); applyInkState() }
+        clearChip.setOnClickListener { strokes = ""; editText.setText(""); renderPreview() }
         toggleType.setOnClickListener { setMode(Mode.TYPE) }
-        toggleInk.setOnClickListener { setMode(Mode.INK); inkView.activate() }
-        // e-ink first: default to handwriting. Don't auto-activate the pen on
-        // construction (so a later field can't steal focus) — tapping the box claims it.
+        toggleInk.setOnClickListener { setMode(Mode.INK) }
+        // e-ink first: default to handwriting.
         setMode(Mode.INK)
-        applyInkState()
+    }
+
+    private fun requestWrite() {
+        val handler = onRequestWrite ?: return
+        handler(strokes) { result ->
+            strokes = result
+            renderPreview()
+        }
+    }
+
+    private fun renderPreview() {
+        val has = StrokeRenderer.hasInk(strokes)
+        if (has) {
+            val w = inkBox.width.takeIf { it > 0 } ?: dp(300)
+            inkPreview.setImageBitmap(
+                StrokeRenderer.renderToBitmap(strokes, w, dp(110), maxScale = 1f, centerHorizontal = true))
+            inkPreview.visibility = VISIBLE
+            inkHint.visibility = GONE
+        } else {
+            inkPreview.visibility = GONE
+            inkHint.visibility = VISIBLE
+        }
     }
 
     private fun chip(label: String): Button = Button(context).apply {
         text = label
         isAllCaps = false
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-        minWidth = 0
-        minimumWidth = 0
-        minHeight = 0
-        minimumHeight = 0
+        minWidth = 0; minimumWidth = 0; minHeight = 0; minimumHeight = 0
         setPadding(dp(16), dp(6), dp(16), dp(6))
         elevation = 0f
         stateListAnimator = null
@@ -132,86 +139,28 @@ class InputField @JvmOverloads constructor(
         layoutParams = lp
     }
 
-    /** Rounded pill background: accent fill when selected, hairline outline when idle. */
     private fun styleChip(b: Button, selected: Boolean) {
         b.background = android.graphics.drawable.GradientDrawable().apply {
             cornerRadius = dp(14).toFloat()
-            if (selected) {
-                setColor(ACCENT)
-            } else {
-                setColor(Color.WHITE)
-                setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
-            }
+            if (selected) setColor(ACCENT)
+            else { setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0")) }
         }
     }
 
     fun setHint(hint: String) {
         editText.hint = hint
+        inkHint.text = "Tap to write — ${hint.removeSuffix("…")}"
     }
 
-    /**
-     * Force plain-text entry and hide the Type/Write toggles. Used for short cues
-     * (e.g. the anchor) that we display as text — avoids a second raw-drawing
-     * surface on screen, which is both cleaner and far more stable.
-     */
+    /** Force plain-text entry and hide the Type/Write toggles. */
     fun setTypeOnly() {
         typeOnly = true
         toggleRow.visibility = GONE
         setMode(Mode.TYPE)
     }
 
-    /**
-     * Reconcile the box to its current state:
-     *  • active        → live surface, accent border, open (accent) lock.
-     *  • locked w/ ink → static preview, gray border, closed (gray) lock.
-     *  • empty + idle  → live surface ready to write, gray border, open lock.
-     */
-    private fun applyInkState() {
-        val active = inkView.isActive()
-        val hasInk = inkView.hasStrokes()
-        // IMPORTANT: never toggle the SurfaceView's visibility — doing so destroys and
-        // recreates the Onyx drawing surface, and that churn hangs the engine. The
-        // surface stays alive; the locked preview is just an opaque overlay on top.
-        when {
-            active -> {
-                inkPreview.visibility = GONE
-                inkBox.setBackgroundColor(ACCENT)
-                setLock(open = true, accent = true)
-            }
-            hasInk -> {
-                // Reposition the ink into the box (always visible regardless of where it
-                // was captured) at natural size (maxScale 1x), centered, on white.
-                val tw = inkView.width.takeIf { it > 0 } ?: inkBox.width.takeIf { it > 0 } ?: dp(280)
-                val th = inkView.height.takeIf { it > 0 } ?: dp(120)
-                inkPreview.setImageBitmap(
-                    com.inkhabits.util.StrokeRenderer.renderToBitmap(
-                        inkView.getStrokeData(), tw, th, maxScale = 1f, centerHorizontal = true))
-                inkPreview.visibility = VISIBLE
-                inkBox.setBackgroundColor(IDLE_BORDER)
-                setLock(open = false, accent = false)
-                inkBox.post { try { com.inkhabits.eink.EInkUtils.cleanRefresh(inkBox) } catch (_: Throwable) {} }
-            }
-            else -> {
-                inkPreview.visibility = GONE
-                inkBox.setBackgroundColor(IDLE_BORDER)
-                setLock(open = true, accent = false)
-            }
-        }
-    }
-
-    private fun setLock(open: Boolean, accent: Boolean) {
-        lockBtn.setImageResource(
-            if (open) com.inkhabits.R.drawable.ic_lock_open else com.inkhabits.R.drawable.ic_lock)
-        (lockBtn.background as? android.graphics.drawable.GradientDrawable)
-            ?.setColor(if (accent) ACCENT else DONE_IDLE)
-    }
-
-    /** Switch to handwriting and claim the pen now (used to move focus to this field). */
-    fun focusInk() {
-        if (typeOnly) return
-        setMode(Mode.INK)
-        inkView.activate()
-    }
+    /** No-op kept for call sites; WRITE no longer holds a live surface to focus. */
+    fun focusInk() { if (!typeOnly) setMode(Mode.INK) }
 
     fun setMode(newMode: Mode) {
         mode = newMode
@@ -223,14 +172,14 @@ class InputField @JvmOverloads constructor(
         styleChip(toggleInk, !type)
         toggleInk.setTextColor(if (!type) Color.WHITE else Color.parseColor("#1A1A1A"))
         clearChip.visibility = if (type) GONE else VISIBLE
-        // Releasing on TYPE; activation in INK is on-demand (tap or the Write button).
-        if (type) inkView.deactivate() else applyInkState()
+        if (!type) renderPreview()
     }
 
     fun prefill(text: String, strokes: String) {
         if (strokes.isNotEmpty()) {
+            this.strokes = strokes
             setMode(Mode.INK)
-            post { inkView.setStrokeData(strokes); applyInkState() }
+            inkBox.post { renderPreview() }
         } else if (text.isNotEmpty()) {
             setMode(Mode.TYPE)
             editText.setText(text)
@@ -239,35 +188,28 @@ class InputField @JvmOverloads constructor(
 
     fun clear() {
         editText.setText("")
-        inkView.clear()
+        strokes = ""
         setMode(Mode.INK)
-        applyInkState()
+        renderPreview()
     }
 
-    /**
-     * Reset content for the next entry WITHOUT changing mode or hiding the ink
-     * surface. Releases the pen first so raw-drawing isn't torn down mid-stroke —
-     * destroying/hiding the surface while it's active is what froze the screen.
-     */
+    /** Reset content for the next entry (no surface teardown needed). */
     fun prepareForNext() {
-        inkView.deactivate()
         editText.setText("")
-        inkView.clear()
-        applyInkState()
+        strokes = ""
+        renderPreview()
     }
 
     fun getText(): String = if (mode == Mode.TYPE) editText.text.toString().trim() else ""
 
-    fun getStrokes(): String = if (mode == Mode.INK && inkView.hasStrokes()) inkView.getStrokeData() else ""
+    fun getStrokes(): String = if (mode == Mode.INK && StrokeRenderer.hasInk(strokes)) strokes else ""
 
     fun hasContent(): Boolean =
-        if (mode == Mode.TYPE) editText.text.toString().isNotBlank() else inkView.hasStrokes()
+        if (mode == Mode.TYPE) editText.text.toString().isNotBlank() else StrokeRenderer.hasInk(strokes)
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
         private val ACCENT = Color.parseColor("#8C1D1D")
-        private val IDLE_BORDER = Color.parseColor("#CFCBC0")
-        private val DONE_IDLE = Color.parseColor("#8E8A7F")
     }
 }

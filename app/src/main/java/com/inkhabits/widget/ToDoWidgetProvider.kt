@@ -66,11 +66,15 @@ class ToDoWidgetProvider : AppWidgetProvider() {
         )
         views.setPendingIntentTemplate(R.id.widgetList, togglePi)
 
-        val openPi = PendingIntent.getActivity(
-            context, widgetId + 10_000, Intent(context, MainActivity::class.java),
+        // Open the To-Do screen (to add / manage) from the header or the + button.
+        val openTodo = PendingIntent.getActivity(
+            context, widgetId + 10_000,
+            Intent(context, com.inkhabits.ui.todo.ToDoActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        views.setOnClickPendingIntent(R.id.widgetHeader, openPi)
+        views.setOnClickPendingIntent(R.id.widgetHeader, openTodo)
+        views.setOnClickPendingIntent(R.id.widgetAdd, openTodo)
 
         mgr.updateAppWidget(widgetId, views)
     }
