@@ -46,6 +46,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.rewards.RewardsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.writing.WritingPadActivity"
             android:exported="false"
             android:theme="@style/Theme.InkHabits.Translucent"

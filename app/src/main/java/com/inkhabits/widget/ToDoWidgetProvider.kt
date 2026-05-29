@@ -66,7 +66,7 @@ class ToDoWidgetProvider : AppWidgetProvider() {
         )
         views.setPendingIntentTemplate(R.id.widgetList, togglePi)
 
-        // Open the To-Do screen (to add / manage) from the header or the + button.
+        // Header opens the To-Do screen (view / manage).
         val openTodo = PendingIntent.getActivity(
             context, widgetId + 10_000,
             Intent(context, com.inkhabits.ui.todo.ToDoActivity::class.java)
@@ -74,7 +74,18 @@ class ToDoWidgetProvider : AppWidgetProvider() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widgetHeader, openTodo)
-        views.setOnClickPendingIntent(R.id.widgetAdd, openTodo)
+
+        // "+" opens the quick writing pad straight from the home screen — write a
+        // to-do and it saves on Done without ever entering the full app.
+        val quickAdd = PendingIntent.getActivity(
+            context, widgetId + 20_000,
+            Intent(context, com.inkhabits.ui.writing.WritingPadActivity::class.java)
+                .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_SAVE_TODO, true)
+                .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_TITLE, "New to-do")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widgetAdd, quickAdd)
 
         mgr.updateAppWidget(widgetId, views)
     }

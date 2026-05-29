@@ -161,6 +161,20 @@ class WritingPadActivity : EInkActivity() {
 
     private fun done() {
         val data = StrokeSerializer.serialize(surfaceW, surfaceH, strokes)
+        // Quick-add mode (launched from the home-screen widget): save a new to-do
+        // directly and refresh widgets, without ever opening the full app.
+        if (intent.getBooleanExtra(EXTRA_SAVE_TODO, false)) {
+            if (strokes.any { it.isNotEmpty() }) {
+                kotlinx.coroutines.runBlocking {
+                    val db = com.inkhabits.data.AppDatabase.get(applicationContext)
+                    val order = db.toDoDao().getAll().size
+                    db.toDoDao().insert(com.inkhabits.data.entity.ToDo(titleStrokes = data, sortOrder = order))
+                }
+                com.inkhabits.widget.WidgetCommon.updateAll(applicationContext)
+            }
+            finish()
+            return
+        }
         setResult(RESULT_OK, intent.putExtra(EXTRA_RESULT, data))
         finish()
     }
@@ -206,5 +220,6 @@ class WritingPadActivity : EInkActivity() {
         const val EXTRA_STROKES = "extra_strokes_in"
         const val EXTRA_RESULT = "extra_strokes_out"
         const val EXTRA_TITLE = "extra_title"
+        const val EXTRA_SAVE_TODO = "extra_save_todo"  // widget quick-add: save a new to-do on Done
     }
 }

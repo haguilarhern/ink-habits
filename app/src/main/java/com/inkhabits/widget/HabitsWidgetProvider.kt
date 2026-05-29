@@ -34,6 +34,8 @@ class HabitsWidgetProvider : AppWidgetProvider() {
                         db.habitCompletionDao().delete(habitId, today)
                     } else {
                         db.habitCompletionDao().insert(HabitCompletion(habitId = habitId, date = today))
+                        // Completing from the widget can unlock a reward too.
+                        com.inkhabits.util.Rewards.checkAndUnlock(context)
                     }
                 }
                 notifyData(context)

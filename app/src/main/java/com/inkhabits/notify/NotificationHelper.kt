@@ -28,6 +28,28 @@ object NotificationHelper {
         }
     }
 
+    fun showRewardUnlocked(context: Context, rewardTitle: String, rewardId: Long) {
+        ensureChannel(context)
+        val openPi = PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val body = rewardTitle.ifBlank { "Open the app to see your reward." }
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("🎁 Reward unlocked!")
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openPi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(2000 + rewardId.toInt(), notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
     fun showNeverMissTwice(context: Context, title: String, body: String) {
         ensureChannel(context)
         val openPi = PendingIntent.getActivity(

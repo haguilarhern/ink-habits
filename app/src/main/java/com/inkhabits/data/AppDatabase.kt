@@ -7,15 +7,17 @@ import androidx.room.RoomDatabase
 import com.inkhabits.data.dao.HabitCompletionDao
 import com.inkhabits.data.dao.HabitDao
 import com.inkhabits.data.dao.IdentityGoalDao
+import com.inkhabits.data.dao.RewardDao
 import com.inkhabits.data.dao.ToDoDao
 import com.inkhabits.data.entity.Habit
 import com.inkhabits.data.entity.HabitCompletion
 import com.inkhabits.data.entity.IdentityGoal
+import com.inkhabits.data.entity.Reward
 import com.inkhabits.data.entity.ToDo
 
 @Database(
-    entities = [IdentityGoal::class, Habit::class, HabitCompletion::class, ToDo::class],
-    version = 3,
+    entities = [IdentityGoal::class, Habit::class, HabitCompletion::class, ToDo::class, Reward::class],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,6 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun habitCompletionDao(): HabitCompletionDao
     abstract fun toDoDao(): ToDoDao
+    abstract fun rewardDao(): RewardDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null

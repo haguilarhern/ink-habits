@@ -50,6 +50,9 @@ class DashboardActivity : EInkActivity() {
         binding.navTodo.setOnClickListener {
             startActivity(Intent(this, ToDoActivity::class.java))
         }
+        binding.navRewards.setOnClickListener {
+            startActivity(Intent(this, com.inkhabits.ui.rewards.RewardsActivity::class.java))
+        }
         binding.navHome.setOnClickListener {
             binding.habitList.smoothScrollToPosition(0)
         }
@@ -183,6 +186,8 @@ class DashboardActivity : EInkActivity() {
                 db.habitCompletionDao().delete(habitId, todayStr)
             }
             com.inkhabits.widget.WidgetCommon.updateAll(this@DashboardActivity)
+            // Gamification: completing may push a habit over a reward's streak target.
+            if (makeComplete) com.inkhabits.util.Rewards.checkAndUnlock(this@DashboardActivity)
         }
     }
 }
