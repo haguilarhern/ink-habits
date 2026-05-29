@@ -38,7 +38,8 @@ class ToDoRemoteViewsFactory(
     override fun onDataSetChanged() {
         val db = AppDatabase.get(context)
         rows = runBlocking {
-            db.toDoDao().getAll().map {
+            // Active tasks only — checking one off removes it from the widget.
+            db.toDoDao().getAll().filter { !it.isDone }.map {
                 WidgetTodo(it.id, it.title, it.titleStrokes, it.isDone)
             }
         }

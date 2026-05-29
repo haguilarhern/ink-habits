@@ -13,7 +13,7 @@ data class IdentityGoal(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String = "",
     val nameStrokes: String = "",
-    val icon: String = "★",
+    val icon: String = "star",
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )

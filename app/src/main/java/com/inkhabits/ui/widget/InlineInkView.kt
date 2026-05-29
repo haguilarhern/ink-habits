@@ -39,6 +39,17 @@ class InlineInkView @JvmOverloads constructor(
     private var active = false
     private val strokeWidth = 6f
 
+    // Onyx delivers raw points in SCREEN coordinates; the callback runs on a reader
+    // thread. Cache the view's on-screen origin (on the UI thread) so we can translate
+    // points to view-local coords — otherwise ink in a box low on screen overflows.
+    @Volatile private var originX = 0
+    @Volatile private var originY = 0
+    private val locBuf = IntArray(2)
+    private fun cacheOrigin() {
+        getLocationOnScreen(locBuf)
+        originX = locBuf[0]; originY = locBuf[1]
+    }
+
     // Auto-release the pen a moment after writing stops, so other controls
     // (time, anchor, scroll) respond to the pen instead of being captured.
     private val idleHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -57,17 +68,6 @@ class InlineInkView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
 
-    private val checkCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8C1D1D")
-    }
-    private val checkIconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        strokeWidth = 3.2f * resources.displayMetrics.density
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-
     init {
         holder.addCallback(this)
         isClickable = true
@@ -76,6 +76,12 @@ class InlineInkView @JvmOverloads constructor(
     // ── public API ──
 
     fun hasStrokes(): Boolean = strokes.any { it.isNotEmpty() }
+
+    /** A static copy of the current ink (white bg), for reliable display while "locked". */
+    fun snapshot(): android.graphics.Bitmap? {
+        drawAllToBitmap()
+        return bitmap?.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+    }
 
     fun getStrokeData(): String = StrokeSerializer.serialize(w, h, strokes)
 
@@ -112,15 +118,22 @@ class InlineInkView @JvmOverloads constructor(
         }
     }
 
+    /** Notified when this box becomes the active writer (true) or is released (false). */
+    var onActiveChanged: ((Boolean) -> Unit)? = null
+
+    fun isActive(): Boolean = active
+
     fun activate() {
         if (current === this && active) return
         current?.let { if (it !== this) it.deactivate() }
         current = this
         active = true
         if (surfaceReady) setupRaw()
+        onActiveChanged?.invoke(true)
     }
 
     fun deactivate() {
+        val wasActive = active
         active = false
         cancelIdle()
         try {
@@ -130,13 +143,26 @@ class InlineInkView @JvmOverloads constructor(
         }
         touchHelper = null
         if (current === this) current = null
-        renderPersistent() // keep the captured ink visible while inactive
+        // Rebuild the bitmap from the stroke list and re-blit. Closing raw drawing
+        // clears the firmware ink layer asynchronously, so re-blit again after it
+        // settles — otherwise the box can flash blank ("text erased").
+        drawAllToBitmap()
+        renderPersistent()
+        post { renderPersistent() }
+        postDelayed({
+            renderPersistent()
+            // Force a panel repaint from our buffer — the firmware clear can leave the
+            // e-ink showing blank even though the ink is in the surface buffer.
+            try { com.inkhabits.eink.EInkUtils.cleanRefresh(this) } catch (_: Throwable) {}
+        }, 80)
+        if (wasActive) onActiveChanged?.invoke(false)
     }
 
     /** Re-sync the raw-drawing region to the box's current on-screen position. */
     fun refreshLimit() {
         if (!active || !surfaceReady) return
         val th = touchHelper ?: return
+        cacheOrigin()
         th.setLimitRect(Rect(0, 0, w, h), excludeRects())
     }
 
@@ -169,34 +195,36 @@ class InlineInkView @JvmOverloads constructor(
         super.onDetachedFromWindow()
     }
 
-    // Claim writing focus on tap (finger/pen) when not already active.
-    // When active, a tap in the reserved corner (✓) deactivates to release
-    // the pen so other controls become responsive again.
+    // Claim writing focus on tap (finger/pen) when not already active. The "done"
+    // button is a real overlay view (see InputField) sitting in the reserved corner,
+    // so it consumes its own taps; here we just (re)activate when the box is tapped.
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             cancelIdle()
             if (!active) { activate(); return true }
-            val c = reservedCorner
-            if (event.x > w - c && event.y > h - c) {
-                deactivate()
-                return true
-            }
         }
         return super.onTouchEvent(event)
     }
 
     // ── internals ──
 
-    /** Bottom-right corner reserved for the "done" button; excluded from raw drawing. */
-    private val reservedCorner: Int get() = (54 * resources.displayMetrics.density).toInt()
+    /** Bottom-right corner reserved for the "done" button; excluded from raw drawing
+     *  so the firmware never paints over it and the button stays visible/tappable. */
+    val reservedCorner: Int get() = (54 * resources.displayMetrics.density).toInt()
+
+    /** Whether to reserve the bottom-right corner for an overlay done button.
+     *  False when the host puts its controls outside the writing area (e.g. to-do lines). */
+    var reserveDoneCorner: Boolean = true
 
     private fun excludeRects(): ArrayList<Rect> {
+        if (!reserveDoneCorner) return arrayListOf()
         val c = reservedCorner
         return arrayListOf(Rect(w - c, h - c, w, h))
     }
 
     private fun setupRaw() {
         val th = touchHelper ?: TouchHelper.create(this, callback).also { touchHelper = it }
+        cacheOrigin()
         // Use the box's actual bounds; getLocalVisibleRect can return empty before
         // layout, which makes Onyx capture the pen across the whole screen.
         val limit = Rect(0, 0, w, h)
@@ -245,22 +273,9 @@ class InlineInkView @JvmOverloads constructor(
         try {
             c.drawColor(Color.WHITE)
             bitmap?.let { c.drawBitmap(it, 0f, 0f, null) }
-            if (active) drawCheckmark(c)
         } finally {
             holder.unlockCanvasAndPost(c)
         }
-    }
-
-    private fun drawCheckmark(canvas: Canvas) {
-        val size = reservedCorner
-        val pad = size * 0.22f
-        val cx = w - size / 2f
-        val cy = h - size / 2f
-        val radius = size / 2f - pad
-        canvas.drawCircle(cx, cy, radius, checkCirclePaint)
-        val inner = radius * 0.52f
-        canvas.drawLine(cx - inner, cy, cx - inner * 0.3f, cy + inner, checkIconPaint)
-        canvas.drawLine(cx - inner * 0.3f, cy + inner, cx + inner, cy - inner * 0.3f, checkIconPaint)
     }
 
     private val callback = object : RawInputCallback() {
@@ -271,7 +286,9 @@ class InlineInkView @JvmOverloads constructor(
         override fun onRawDrawingTouchPointListReceived(list: TouchPointList) {
             val pts = list.points ?: return
             if (pts.isEmpty()) return
-            val stroke = pts.map { InkPoint(it.x, it.y, strokeWidth) }.toMutableList()
+            // Translate screen coords -> view-local so ink lands inside the box.
+            val ox = originX.toFloat(); val oy = originY.toFloat()
+            val stroke = pts.map { InkPoint(it.x - ox, it.y - oy, strokeWidth) }.toMutableList()
             strokes.add(stroke)
             bmpCanvas?.let { drawStroke(it, stroke) }
             post { scheduleIdle() } // release the pen if writing pauses

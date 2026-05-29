@@ -27,7 +27,10 @@ class ToDoWidgetProvider : AppWidgetProvider() {
                 val db = AppDatabase.get(context)
                 runBlocking {
                     db.toDoDao().getAll().firstOrNull { it.id == todoId }?.let {
-                        db.toDoDao().update(it.copy(isDone = !it.isDone))
+                        val newDone = !it.isDone
+                        db.toDoDao().update(it.copy(isDone = newDone))
+                        // Keep the cumulative "done this year" tally in sync.
+                        com.inkhabits.util.YearTally.add(context, if (newDone) 1 else -1)
                     }
                 }
                 notifyData(context)
@@ -44,6 +47,7 @@ class ToDoWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, mgr: AppWidgetManager, widgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.widget_todo)
+        views.setTextViewText(R.id.widgetCount, com.inkhabits.util.YearTally.get(context).toString())
 
         val serviceIntent = Intent(context, ToDoWidgetService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)

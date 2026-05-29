@@ -59,15 +59,28 @@ object Schedule {
         return null
     }
 
-    /** Formats minutes-after-midnight as a 12-hour time, or "" when unset (-1). */
-    fun formatTime(minutes: Int): String {
-        if (minutes < 0) return ""
-        val h24 = (minutes / 60) % 24
-        val m = minutes % 60
-        val ampm = if (h24 < 12) "AM" else "PM"
-        var h12 = h24 % 12
-        if (h12 == 0) h12 = 12
-        return "%d:%02d %s".format(h12, m, ampm)
+    // Reminder sentinels (stored in Habit.reminderMinutes): a daypart instead of an hour.
+    const val TIME_ANY = -1
+    const val TIME_MORNING = -2
+    const val TIME_AFTERNOON = -3
+    const val TIME_EVENING = -4
+
+    /** Formats the reminder as a daypart, a 12-hour time, or "" when unset. */
+    fun formatTime(minutes: Int): String = when (minutes) {
+        TIME_MORNING -> "Morning"
+        TIME_AFTERNOON -> "Afternoon"
+        TIME_EVENING -> "Evening"
+        else -> {
+            if (minutes < 0) ""
+            else {
+                val h24 = (minutes / 60) % 24
+                val m = minutes % 60
+                val ampm = if (h24 < 12) "AM" else "PM"
+                var h12 = h24 % 12
+                if (h12 == 0) h12 = 12
+                "%d:%02d %s".format(h12, m, ampm)
+            }
+        }
     }
 
     /** Short human label for the schedule, e.g. "Daily", "Mon, Wed, Fri", "Every 2 days", "3x / week". */

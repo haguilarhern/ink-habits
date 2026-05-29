@@ -31,6 +31,16 @@ class HabitNameView @JvmOverloads constructor(
 
     var onStrike: (() -> Unit)? = null
 
+    /** Fired on a quick tap (no strike drag) — used to enter edit mode on a to-do line. */
+    var onTap: (() -> Unit)? = null
+
+    /** When false, the view ignores touches (display-only) so a parent can handle taps. */
+    var strikeEnabled: Boolean = true
+
+    /** Ink rendering: cap scale (1f = natural size, no enlargement) and optional centering. */
+    var inkMaxScale: Float = 6f
+    var inkCenterHorizontal: Boolean = false
+
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
         setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 20f, resources.displayMetrics))
@@ -63,8 +73,8 @@ class HabitNameView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (StrokeRenderer.hasInk(strokes)) {
             val ink = StrokeSerializer.deserialize(strokes)
-            // preserve aspect: render into a width proportional to height
-            StrokeRenderer.drawInto(canvas, ink, width, height, Color.BLACK)
+            StrokeRenderer.drawInto(canvas, ink, width, height, Color.BLACK,
+                maxScale = inkMaxScale, centerHorizontal = inkCenterHorizontal)
         } else if (text.isNotEmpty()) {
             val y = height / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(text, 4f, y, textPaint)
@@ -90,6 +100,7 @@ class HabitNameView @JvmOverloads constructor(
     private val strikeThreshold get() = width * 0.35f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!strikeEnabled) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 downX = event.x; downY = event.y; liveX = event.x
@@ -111,6 +122,11 @@ class HabitNameView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 dragging = false
+                // Quick tap (no strike drag) = request edit.
+                if (event.actionMasked == MotionEvent.ACTION_UP && !fired) {
+                    val slop = 12f * resources.displayMetrics.density
+                    if (maxDx < slop && maxDy < slop) onTap?.invoke()
+                }
                 invalidate()
                 return true
             }

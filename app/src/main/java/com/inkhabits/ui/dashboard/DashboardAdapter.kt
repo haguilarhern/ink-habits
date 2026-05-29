@@ -11,7 +11,8 @@ import com.inkhabits.util.StrokeRenderer
 
 class DashboardAdapter(
     private val onToggle: (habitId: Long, makeComplete: Boolean) -> Unit,
-    private val onAddIdentity: () -> Unit
+    private val onAddIdentity: () -> Unit,
+    private val onEditIdentity: (identityId: Long) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items: List<DashboardItem> = emptyList()
@@ -46,15 +47,18 @@ class DashboardAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    class HeaderVH(private val b: ItemIdentityHeaderBinding) : RecyclerView.ViewHolder(b.root) {
+    inner class HeaderVH(private val b: ItemIdentityHeaderBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(item: DashboardItem.Header) {
             val id = item.identity
+            b.root.setOnClickListener { onEditIdentity(id.id) }
+            b.identityIcon.setImageResource(com.inkhabits.ui.widget.HabitIcons.resFor(id.icon))
             if (StrokeRenderer.hasInk(id.nameStrokes)) {
                 b.identityName.visibility = View.GONE
                 b.identityNameInk.visibility = View.VISIBLE
                 b.identityNameInk.post {
-                    val w = b.identityNameInk.width.takeIf { it > 0 } ?: 400
-                    val h = b.identityNameInk.height.takeIf { it > 0 } ?: 100
+                    val h = b.identityNameInk.height.takeIf { it > 0 } ?: 84
+                    // Render at a width proportional to the ink so the trailing rule sits flush.
+                    val w = (h * 4).coerceAtLeast(120)
                     b.identityNameInk.setImageBitmap(StrokeRenderer.renderToBitmap(id.nameStrokes, w, h))
                 }
             } else {
@@ -68,37 +72,34 @@ class DashboardAdapter(
     inner class HabitVH(private val b: ItemHabitBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(item: DashboardItem.HabitRow) {
             val h = item.habit
-            b.pillIcon.text = item.identityIcon
+            b.pillIcon.setImageResource(com.inkhabits.ui.widget.HabitIcons.resFor(item.identityIcon))
             b.habitName.setContent(h.name, h.nameStrokes)
             b.habitName.completed = item.completedToday
             b.scheduleLabel.text = item.scheduleLabel
+
+            // Anchor cue above the habit: handwritten ink, or gray text, or nothing.
             when {
                 StrokeRenderer.hasInk(item.anchorStrokes) -> {
                     b.anchorLabel.visibility = View.GONE
-                    b.anchorInkRow.visibility = View.VISIBLE
+                    b.anchorInk.visibility = View.VISIBLE
                     b.anchorInk.post {
-                        val w = b.anchorInk.width.takeIf { it > 0 } ?: 80
-                        val h = b.anchorInk.height.takeIf { it > 0 } ?: 28
+                        val h = b.anchorInk.height.takeIf { it > 0 } ?: 56
                         b.anchorInk.setImageBitmap(
-                            StrokeRenderer.renderToBitmap(item.anchorStrokes, w, h)
-                        )
+                            StrokeRenderer.renderToBitmap(item.anchorStrokes, h * 6, h))
                     }
                 }
                 item.anchor.isNotBlank() -> {
-                    b.anchorInkRow.visibility = View.GONE
+                    b.anchorInk.visibility = View.GONE
                     b.anchorLabel.visibility = View.VISIBLE
                     b.anchorLabel.text = "after ${item.anchor}"
                 }
                 else -> {
                     b.anchorLabel.visibility = View.GONE
-                    b.anchorInkRow.visibility = View.GONE
+                    b.anchorInk.visibility = View.GONE
                 }
             }
-            b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
 
-            val hasAnchor = b.anchorLabel.visibility == View.VISIBLE ||
-                b.anchorInkRow.visibility == View.VISIBLE
-            b.contextColumn.visibility = if (hasAnchor) View.VISIBLE else View.GONE
+            b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
 
             b.checkBox.onToggle = null
             b.checkBox.checked = item.completedToday

@@ -107,10 +107,10 @@ class WritingPadActivity : EInkActivity() {
 
     private fun setupTouchHelper() {
         val th = touchHelper ?: TouchHelper.create(binding.surface, callback).also { touchHelper = it }
-        // Limit rect is in the host surface's LOCAL coordinates; TouchHelper maps
-        // it to the screen via the bound view's position (same as boox-rapid-draw).
-        val limit = Rect()
-        binding.surface.getLocalVisibleRect(limit)
+        // Limit rect in the surface's local coordinates (full surface). Explicit size
+        // is more reliable than getLocalVisibleRect, which can be empty/partial before
+        // layout fully settles.
+        val limit = Rect(0, 0, surfaceW, surfaceH)
         th.setStrokeColor(Color.BLACK)
         th.setStrokeStyle(TouchHelper.STROKE_STYLE_FOUNTAIN)
         th.openRawDrawing()

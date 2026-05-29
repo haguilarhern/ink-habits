@@ -68,14 +68,17 @@ object StrokeRenderer {
         data: String,
         targetWidth: Int,
         targetHeight: Int,
-        color: Int = Color.BLACK
+        color: Int = Color.BLACK,
+        maxScale: Float = MAX_SCALE,
+        centerHorizontal: Boolean = false
     ): Bitmap? {
         if (targetWidth <= 0 || targetHeight <= 0) return null
         val ink = StrokeSerializer.deserialize(data)
         val bmp = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
         if (ink.isEmpty) return bmp
         val canvas = Canvas(bmp)
-        drawInto(canvas, ink, targetWidth, targetHeight, color)
+        drawInto(canvas, ink, targetWidth, targetHeight, color,
+            maxScale = maxScale, centerHorizontal = centerHorizontal)
         return bmp
     }
 
@@ -90,7 +93,9 @@ object StrokeRenderer {
         targetWidth: Int,
         targetHeight: Int,
         color: Int,
-        padding: Float = 8f
+        padding: Float = 8f,
+        maxScale: Float = MAX_SCALE,
+        centerHorizontal: Boolean = false
     ) {
         if (ink.isEmpty) return
 
@@ -106,12 +111,13 @@ object StrokeRenderer {
         val inkH = (maxY - minY).coerceAtLeast(1f)
         val availW = (targetWidth - padding * 2).coerceAtLeast(1f)
         val availH = (targetHeight - padding * 2).coerceAtLeast(1f)
-        val scale = minOf(availW / inkW, availH / inkH).coerceAtMost(MAX_SCALE)
+        val scale = minOf(availW / inkW, availH / inkH).coerceAtMost(maxScale)
 
         val drawW = inkW * scale
         val drawH = inkH * scale
-        // left-align horizontally, center vertically (reads like a label)
-        val offX = padding - minX * scale
+        // center vertically; horizontally centered or left-aligned per caller
+        val offX = if (centerHorizontal) padding + (availW - drawW) / 2f - minX * scale
+                   else padding - minX * scale
         val offY = padding + (availH - drawH) / 2f - minY * scale
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

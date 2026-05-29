@@ -123,6 +123,20 @@ class SchedulePicker @JvmOverloads constructor(
         weeklyLabel.text = "$weekly times / week"
     }
 
+    /** Restore a previously captured selection (used when editing a habit). */
+    fun setConfig(cfg: ScheduleConfig) {
+        interval = cfg.intervalDays.coerceIn(2, 30)
+        weekly = cfg.weeklyTarget.coerceIn(1, 7)
+        for (i in 0..6) daySelected[i] = false
+        if (cfg.daysOfWeek.isNotBlank()) cfg.daysOfWeek.split(",").forEach {
+            val d = it.trim().toIntOrNull()
+            if (d != null && d in 1..7) daySelected[d - 1] = true
+        }
+        dayChips.forEachIndexed { i, c -> styleDayChip(c, daySelected[i]) }
+        refreshLabels()
+        setFreq(cfg.frequencyType)
+    }
+
     fun getConfig(): ScheduleConfig {
         val days = (0..6).filter { daySelected[it] }.joinToString(",") { (it + 1).toString() }
         // If "Days" chosen but nothing ticked, fall back to daily to stay valid.
@@ -168,19 +182,33 @@ class SchedulePicker @JvmOverloads constructor(
     }
 
     private fun styleModeChip(b: Button, on: Boolean) {
-        b.setBackgroundColor(if (on) ACCENT else IDLE)
-        b.setTextColor(if (on) Color.WHITE else Color.BLACK)
+        b.background = chipBg(on)
+        b.elevation = 0f
+        b.stateListAnimator = null
+        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
     }
 
     private fun styleDayChip(b: Button, on: Boolean) {
-        b.setBackgroundColor(if (on) ACCENT else IDLE)
-        b.setTextColor(if (on) Color.WHITE else Color.BLACK)
+        b.background = chipBg(on)
+        b.elevation = 0f
+        b.stateListAnimator = null
+        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+    }
+
+    /** Rounded pill: accent fill when selected, hairline outline when idle. */
+    private fun chipBg(on: Boolean) = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(12).toFloat()
+        if (on) {
+            setColor(ACCENT)
+        } else {
+            setColor(Color.WHITE)
+            setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
+        }
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
         private val ACCENT = Color.parseColor("#8C1D1D")
-        private val IDLE = Color.parseColor("#E8E8E8")
     }
 }

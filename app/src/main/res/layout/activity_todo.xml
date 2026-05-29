@@ -14,7 +14,7 @@
         android:gravity="center_vertical"
         android:paddingHorizontal="@dimen/screen_margin"
         android:paddingTop="@dimen/screen_margin"
-        android:paddingBottom="8dp">
+        android:paddingBottom="10dp">
 
         <ImageButton
             android:id="@+id/backButton"
@@ -26,14 +26,45 @@
             app:tint="@color/ink_text" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="To-dos"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="To-Do"
+            android:fontFamily="@font/inter_semibold"
             android:textColor="@color/ink_text"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold"
             tools:ignore="HardcodedText" />
+
+        <!-- Cumulative "done this year" counter -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/yearCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="0"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/ink_accent"
+                android:textSize="28sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/yearLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="done this year"
+                android:textColor="@color/ink_text_muted"
+                android:textSize="11sp"
+                android:letterSpacing="0.04"
+                tools:ignore="HardcodedText" />
+        </LinearLayout>
     </LinearLayout>
 
     <View
@@ -41,52 +72,53 @@
         android:layout_height="1dp"
         android:background="@color/ink_divider" />
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingTop="8dp" />
-
-        <TextView
-            android:id="@+id/emptyState"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="No to-dos yet.\nAdd one below."
-            android:gravity="center"
-            android:textColor="@color/ink_text_muted"
-            android:visibility="gone"
-            tools:ignore="HardcodedText" />
-    </FrameLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/ink_divider" />
-
+    <!-- Sub-tabs: active to-dos vs completed -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/screen_margin">
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingTop="12dp">
 
-        <com.inkhabits.ui.widget.InputField
-            android:id="@+id/input"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/tabActive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="7dp"
+            android:text="To-Do"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addButton"
-            style="@style/InkButton"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/touch_target"
-            android:layout_marginTop="8dp"
-            android:text="Add to-do"
+        <TextView
+            android:id="@+id/tabCompleted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="7dp"
+            android:text="Completed"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
             tools:ignore="HardcodedText" />
     </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="14dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:id="@+id/lineContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_margin" />
+    </ScrollView>
 </LinearLayout>

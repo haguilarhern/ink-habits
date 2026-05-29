@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -13,7 +14,7 @@
         android:gravity="center_vertical"
         android:paddingHorizontal="@dimen/screen_margin"
         android:paddingTop="@dimen/screen_margin"
-        android:paddingBottom="8dp">
+        android:paddingBottom="10dp">
 
         <ImageButton
             android:id="@+id/backButton"
@@ -25,15 +26,15 @@
             app:tint="@color/ink_text" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="History"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="Records"
+            android:fontFamily="@font/inter_semibold"
             android:textColor="@color/ink_text"
             android:textSize="@dimen/text_title"
-            android:textStyle="bold"
-            tools:ignore="HardcodedText"
-            xmlns:tools="http://schemas.android.com/tools" />
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
     <View
@@ -41,25 +42,97 @@
         android:layout_height="1dp"
         android:background="@color/ink_divider" />
 
-    <FrameLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <TextView
-            android:id="@+id/emptyState"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="No habits yet."
-            android:textColor="@color/ink_text_muted"
-            android:visibility="gone"
-            tools:ignore="HardcodedText"
-            xmlns:tools="http://schemas.android.com/tools" />
-    </FrameLayout>
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingTop="14dp"
+            android:paddingBottom="24dp">
+
+            <!-- Month navigation -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/monthLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textColor="@color/ink_text"
+                    android:textSize="18sp"
+                    tools:text="May 2026" />
+
+                <ImageButton
+                    android:id="@+id/prevMonth"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_back"
+                    android:contentDescription="Previous month"
+                    app:tint="@color/ink_text" />
+
+                <ImageButton
+                    android:id="@+id/nextMonth"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:rotation="180"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_back"
+                    android:contentDescription="Next month"
+                    app:tint="@color/ink_text" />
+            </LinearLayout>
+
+            <com.inkhabits.ui.widget.CalendarView
+                android:id="@+id/calendar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+
+            <!-- Selected-day detail -->
+            <TextView
+                android:id="@+id/dayTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/ink_text"
+                android:textSize="16sp"
+                tools:text="Monday, May 12" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="2dp"
+                android:layout_marginTop="6dp"
+                android:background="@color/ink_accent" />
+
+            <LinearLayout
+                android:id="@+id/dayDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp" />
+
+            <TextView
+                android:id="@+id/emptyState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="40dp"
+                android:text="No habits yet."
+                android:textColor="@color/ink_text_muted"
+                android:visibility="gone"
+                tools:ignore="HardcodedText" />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

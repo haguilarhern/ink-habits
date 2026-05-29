@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_bg"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:id="@+id/widgetHeader"
@@ -17,27 +18,37 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="To-dos"
-            android:textColor="#000000"
+            android:text="To-Do"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="#1A1A1A"
             android:textSize="16sp"
-            android:textStyle="bold"
-            tools:ignore="HardcodedText"
-            xmlns:tools="http://schemas.android.com/tools" />
+            tools:ignore="HardcodedText" />
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_add"
-            android:contentDescription="Open"
-            app:tint="#8C1D1D"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
+        <TextView
+            android:id="@+id/widgetCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="#8C1D1D"
+            android:textSize="18sp"
+            tools:text="12" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="done"
+            android:textColor="#6B6B6B"
+            android:textSize="11sp"
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginVertical="6dp"
-        android:background="#D0D0D0" />
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:background="#E4E1D8" />
 
     <ListView
         android:id="@+id/widgetList"
@@ -54,8 +65,7 @@
         android:layout_weight="1"
         android:gravity="center"
         android:text="No to-dos"
-        android:textColor="#5A5A5A"
+        android:textColor="#6B6B6B"
         android:textSize="13sp"
-        tools:ignore="HardcodedText"
-        xmlns:tools="http://schemas.android.com/tools" />
+        tools:ignore="HardcodedText" />
 </LinearLayout>

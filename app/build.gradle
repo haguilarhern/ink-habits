@@ -52,4 +52,7 @@ dependencies {
 
     // Lets the Onyx SDK reach hidden android.onyx.* firmware APIs (raw pen drawing)
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
+
+    // On-device handwriting -> text (used to convert the handwritten anchor cue)
+    implementation 'com.google.mlkit:digital-ink-recognition:18.1.0'
 }

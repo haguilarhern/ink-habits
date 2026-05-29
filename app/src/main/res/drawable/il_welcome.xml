@@ -1,0 +1,39 @@
+<!-- Minimalist e-ink welcome illustration: a sun rising over hills + a small sprout.
+     Line art so it reads cleanly on Kaleido (accent + ink, no fills to wash out). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="220dp"
+    android:height="132dp"
+    android:viewportWidth="220"
+    android:viewportHeight="132">
+
+    <!-- rays -->
+    <path android:pathData="M110,16 V30" android:strokeColor="#8C1D1D" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M74,26 L82,38" android:strokeColor="#8C1D1D" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M146,26 L138,38" android:strokeColor="#8C1D1D" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M44,52 L56,58" android:strokeColor="#8C1D1D" android:strokeWidth="3" android:strokeLineCap="round" />
+    <path android:pathData="M176,52 L164,58" android:strokeColor="#8C1D1D" android:strokeWidth="3" android:strokeLineCap="round" />
+
+    <!-- rising sun (upper half) -->
+    <path android:pathData="M72,96 a38,38 0 0 1 76,0"
+        android:strokeColor="#8C1D1D" android:strokeWidth="3.5"
+        android:strokeLineCap="round" android:fillColor="#00000000" />
+
+    <!-- horizon -->
+    <path android:pathData="M16,96 H204"
+        android:strokeColor="#1A1A1A" android:strokeWidth="3" android:strokeLineCap="round" />
+
+    <!-- a hill on the right -->
+    <path android:pathData="M150,96 q26,-30 54,0"
+        android:strokeColor="#1A1A1A" android:strokeWidth="2.5"
+        android:strokeLineCap="round" android:fillColor="#00000000" />
+
+    <!-- a small sprout near the left -->
+    <path android:pathData="M44,96 V78"
+        android:strokeColor="#1A1A1A" android:strokeWidth="2.5" android:strokeLineCap="round" />
+    <path android:pathData="M44,84 q-12,-2 -14,-14 q12,0 14,12"
+        android:strokeColor="#1A1A1A" android:strokeWidth="2.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
+    <path android:pathData="M44,80 q12,-2 14,-13 q-12,0 -14,11"
+        android:strokeColor="#1A1A1A" android:strokeWidth="2.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" />
+</vector>

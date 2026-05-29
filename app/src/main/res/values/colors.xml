@@ -3,10 +3,12 @@
     <color name="ink_background">#FFFFFF</color>
     <color name="ink_surface">#FFFFFF</color>
     <color name="ink_text">#1A1A1A</color>
+    <color name="ink_text_soft">#3C3C3C</color>
     <color name="ink_text_muted">#6B6B6B</color>
-    <color name="ink_divider">#D8D5CC</color>
+    <color name="ink_divider">#E4E1D8</color>
+    <color name="ink_rule">#CFCBC0</color>
     <color name="ink_hint">#9A958A</color>
-    <color name="ink_pill_stroke">#C9C5BA</color>
+    <color name="ink_pill_stroke">#CFCBC0</color>
 
     <!-- Accent: deep brick red, survives Kaleido 3 desaturation -->
     <color name="ink_accent">#8C1D1D</color>

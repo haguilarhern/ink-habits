@@ -40,70 +40,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
+                android:fontFamily="@font/inter_semibold"
                 android:textColor="@color/ink_text_muted"
-                android:textSize="11sp"
+                android:textSize="10sp"
+                android:letterSpacing="0.04"
                 android:rotation="-90"
-                tools:text="Daily \u00B7 5:00 PM" />
+                tools:text="Daily · 5:00 PM" />
         </FrameLayout>
     </FrameLayout>
-
-    <!-- Context column: anchor text only (vertical, rotated) -->
-    <!-- FrameLayout wrappers use 18dp to give rotated text breathing room -->
-    <LinearLayout
-        android:id="@+id/contextColumn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginEnd="4dp"
-        android:visibility="gone"
-        tools:visibility="visible">
-
-        <LinearLayout
-            android:id="@+id/anchorInkRow"
-            android:layout_width="18dp"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:rotation="-90"
-            android:clipChildren="false"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="after "
-                android:textColor="@color/ink_hint"
-                android:textSize="13sp"
-                android:textStyle="italic"
-                tools:ignore="HardcodedText" />
-
-            <ImageView
-                android:id="@+id/anchorInk"
-                android:layout_width="50dp"
-                android:layout_height="16dp"
-                android:scaleType="fitEnd"
-                android:contentDescription="anchor" />
-        </LinearLayout>
-
-        <FrameLayout
-            android:layout_width="18dp"
-            android:layout_height="wrap_content"
-            android:clipChildren="false">
-
-            <TextView
-                android:id="@+id/anchorLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:textColor="@color/ink_hint"
-                android:textSize="13sp"
-                android:textStyle="italic"
-                android:rotation="-90"
-                android:visibility="gone"
-                tools:text="after Dinner"
-                tools:visibility="visible" />
-        </FrameLayout>
-    </LinearLayout>
 
     <!-- pill card: tappable anywhere to toggle completion -->
     <LinearLayout
@@ -111,42 +55,77 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:orientation="vertical"
         android:background="@drawable/pill_bg"
-        android:paddingStart="14dp"
+        android:paddingStart="16dp"
         android:paddingEnd="10dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
+        android:paddingTop="9dp"
+        android:paddingBottom="9dp"
         android:clickable="true"
         android:focusable="true"
         android:foreground="?attr/selectableItemBackground">
 
+        <!-- Anchor cue: small gray text above the habit (habit-stacking reminder) -->
         <TextView
-            android:id="@+id/pillIcon"
+            android:id="@+id/anchorLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:textSize="20sp" />
+            android:layout_marginStart="2dp"
+            android:layout_marginBottom="1dp"
+            android:textColor="@color/ink_hint"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            tools:text="after my morning coffee"
+            tools:visibility="visible" />
 
-        <com.inkhabits.ui.widget.HabitNameView
-            android:id="@+id/habitName"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/streakText"
+        <!-- Handwritten anchor cue rendered as ink -->
+        <ImageView
+            android:id="@+id/anchorInk"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="4dp"
-            android:textColor="@color/ink_accent"
-            android:textSize="13sp" />
+            android:layout_height="22dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginBottom="1dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitStart"
+            android:visibility="gone"
+            android:contentDescription="anchor" />
 
-        <com.inkhabits.ui.widget.CheckBoxView
-            android:id="@+id/checkBox"
-            android:layout_width="40dp"
-            android:layout_height="40dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/pillIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="12dp"
+                android:tint="@color/ink_text"
+                android:contentDescription="habit icon" />
+
+            <com.inkhabits.ui.widget.HabitNameView
+                android:id="@+id/habitName"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/streakText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="4dp"
+                android:textColor="@color/ink_accent"
+                android:textSize="13sp" />
+
+            <com.inkhabits.ui.widget.CheckBoxView
+                android:id="@+id/checkBox"
+                android:layout_width="40dp"
+                android:layout_height="40dp" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

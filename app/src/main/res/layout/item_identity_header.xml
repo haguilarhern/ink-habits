@@ -1,29 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Minimalist identity group header: icon + name + trailing hairline rule.
+     Clearly delineates which identity the habits below belong to. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingStart="@dimen/screen_margin"
     android:paddingEnd="@dimen/screen_margin"
-    android:paddingTop="18dp"
-    android:paddingBottom="4dp">
+    android:paddingTop="26dp"
+    android:paddingBottom="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/identityIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginEnd="9dp"
+        android:tint="@color/ink_text_muted"
+        android:contentDescription="identity icon"
+        tools:src="@drawable/ic_hb_run" />
 
     <TextView
         android:id="@+id/identityName"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:textColor="@color/ink_text"
-        android:textSize="16sp"
-        android:letterSpacing="0.04" />
+        android:fontFamily="@font/inter_semibold"
+        android:textColor="@color/ink_text_muted"
+        android:textSize="@dimen/text_eyebrow"
+        android:letterSpacing="0.14"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="ATHLETE" />
 
     <ImageView
         android:id="@+id/identityNameInk"
-        android:layout_width="0dp"
-        android:layout_height="40dp"
-        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:adjustViewBounds="true"
         android:scaleType="fitStart"
         android:visibility="gone"
         android:contentDescription="identity" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:background="@color/ink_rule" />
+
+    <ImageView
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="10dp"
+        android:src="@drawable/ic_hb_write"
+        android:tint="@color/ink_text_muted"
+        android:contentDescription="Edit identity" />
 </LinearLayout>

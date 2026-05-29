@@ -50,7 +50,17 @@ class HabitsWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, mgr: AppWidgetManager, widgetId: Int) {
         val views = RemoteViews(context.packageName, R.layout.widget_habits)
-        views.setTextViewText(R.id.widgetQuote, "“" + Quotes.forToday() + "”")
+        // Headline perfect-day streak (same number the dashboard shows).
+        val streak = runBlocking {
+            val db = AppDatabase.get(context)
+            val today = LocalDate.now()
+            val habits = db.habitDao().getActive()
+            val byHabit = habits.associate { h ->
+                h.id to db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+            }
+            com.inkhabits.util.Streaks.perfectDayStreak(habits, byHabit, today)
+        }
+        views.setTextViewText(R.id.widgetStreak, streak.toString())
 
         // List adapter
         val serviceIntent = Intent(context, HabitsWidgetService::class.java).apply {

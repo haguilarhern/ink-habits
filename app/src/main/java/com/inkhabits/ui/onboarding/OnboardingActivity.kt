@@ -39,16 +39,17 @@ class OnboardingActivity : WritingHostActivity() {
     private lateinit var binding: ActivityOnboardingBinding
     private lateinit var db: AppDatabase
 
-    private enum class Step { WELCOME, IDENTITY, HABITS, ANOTHER }
+    private enum class Step { WELCOME, IDENTITY, HABITS, REVIEW, ANOTHER }
     private var step = Step.WELCOME
     private var addMode = false
 
-    private val icons = listOf("★", "📖", "🏃", "✍️", "🎨", "🧘", "💻", "🎵", "💪", "🌱", "🎯", "🍳")
+    // Minimal Lucide line icons, by key (see HabitIcons).
+    private val icons = com.inkhabits.ui.widget.HabitIcons.keys
 
     // Pending identity being built (saved only when leaving the HABITS step).
     private var pendingName = ""
     private var pendingStrokes = ""
-    private var pendingIcon = "★"
+    private var pendingIcon = com.inkhabits.ui.widget.HabitIcons.DEFAULT
 
     private var identityField: InputField? = null
     private val createdIdentities = mutableListOf<IdentityGoal>()
@@ -59,6 +60,14 @@ class OnboardingActivity : WritingHostActivity() {
     private var habitSchedule: SchedulePicker? = null
     private var habitAnchor: InputField? = null
     private var habitReminder: Int = -1
+    private var timeRefresh: (() -> Unit)? = null
+    // A habit pulled back from the Review step to edit (re-populates the entry).
+    private var editingHabit: PendingHabit? = null
+    private var editingHabitId: Long = 0L  // DB id carried through an edit so history is kept
+
+    // Editing an existing identity (0 = creating a new one).
+    private var editIdentityId: Long = 0L
+    private val originalHabitIds = mutableSetOf<Long>()
 
     private val interRegular by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_regular)!! }
     private val interSemiBold by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_semibold)!! }
@@ -69,7 +78,8 @@ class OnboardingActivity : WritingHostActivity() {
         val cfg: ScheduleConfig,
         val reminderMinutes: Int,
         val anchor: String,
-        val anchorStrokes: String
+        val anchorStrokes: String,
+        val habitId: Long = 0L  // existing DB row when editing; 0 = new
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +90,10 @@ class OnboardingActivity : WritingHostActivity() {
 
         addMode = intent.getBooleanExtra(EXTRA_ADD_IDENTITY, false)
         if (addMode) step = Step.IDENTITY
+        editIdentityId = intent.getLongExtra(EXTRA_EDIT_IDENTITY, 0L)
+
+        // Warm up handwriting recognition (anchor OCR) so the model is ready when needed.
+        com.inkhabits.util.InkRecognizer.preload()
 
         binding.skipButton.setOnClickListener { onSkip() }
         binding.skipButton.typeface = interRegular
@@ -88,26 +102,58 @@ class OnboardingActivity : WritingHostActivity() {
         binding.scroll.setOnScrollChangeListener { _, _, _, _, _ ->
             com.inkhabits.ui.widget.InlineInkView.current?.refreshLimit()
         }
-        render()
+
+        if (editIdentityId != 0L) loadIdentityForEdit() else render()
+    }
+
+    /** Load an existing identity + its habits into the flow, opening on the Review step. */
+    private fun loadIdentityForEdit() {
+        lifecycleScope.launch {
+            val goal = db.identityGoalDao().getAll().firstOrNull { it.id == editIdentityId }
+            if (goal == null) { render(); return@launch }
+            pendingName = goal.name
+            pendingStrokes = goal.nameStrokes
+            pendingIcon = goal.icon
+            pendingHabits.clear()
+            originalHabitIds.clear()
+            db.habitDao().getActive().filter { it.identityGoalId == editIdentityId }.forEach { h ->
+                originalHabitIds.add(h.id)
+                pendingHabits.add(PendingHabit(
+                    name = h.name, strokes = h.nameStrokes,
+                    cfg = ScheduleConfig(h.frequencyType, h.daysOfWeek, h.intervalDays, h.weeklyTarget),
+                    reminderMinutes = h.reminderMinutes,
+                    anchor = h.anchor, anchorStrokes = h.anchorStrokes,
+                    habitId = h.id))
+            }
+            step = Step.REVIEW
+            render()
+        }
     }
 
     private fun render() {
         binding.contentArea.removeAllViews()
+        // Entry views only live on the HABITS step — drop stale refs elsewhere so
+        // save logic never reads a detached input.
+        if (step != Step.HABITS) {
+            habitInput = null; habitSchedule = null; habitAnchor = null; timeRefresh = null
+        }
         // Top bar: back hidden on first screen; skip hidden on the final loop screen.
         val onFirst = step == Step.WELCOME || (step == Step.IDENTITY && addMode)
         binding.backButton.visibility = if (onFirst) View.INVISIBLE else View.VISIBLE
-        binding.skipButton.visibility = if (step == Step.ANOTHER) View.GONE else View.VISIBLE
+        binding.skipButton.visibility =
+            if (step == Step.ANOTHER || editIdentityId != 0L) View.GONE else View.VISIBLE
         when (step) {
             Step.WELCOME -> renderWelcome()
             Step.IDENTITY -> renderIdentity()
             Step.HABITS -> renderHabits()
+            Step.REVIEW -> renderReview()
             Step.ANOTHER -> renderAnother()
         }
     }
 
     /** A full-width primary action button placed in the content flow (below the step's content). */
-    private fun primaryCta(text: String, onClick: () -> Unit) {
-        binding.contentArea.addView(MaterialButton(this).apply {
+    private fun primaryCta(text: String, onClick: () -> Unit): MaterialButton {
+        val btn = MaterialButton(this).apply {
             this.text = text
             isAllCaps = false
             typeface = interSemiBold
@@ -118,7 +164,9 @@ class OnboardingActivity : WritingHostActivity() {
             lp.topMargin = dp(24)
             layoutParams = lp
             setOnClickListener { onClick() }
-        })
+        }
+        binding.contentArea.addView(btn)
+        return btn
     }
 
     private fun header(indicator: String, title: String, subtitle: String) {
@@ -141,6 +189,15 @@ class OnboardingActivity : WritingHostActivity() {
 
     private fun renderWelcome() {
         header("WELCOME", "Ink Habits", "")
+        binding.contentArea.addView(android.widget.ImageView(this).apply {
+            setImageResource(com.inkhabits.R.drawable.il_welcome)
+            adjustViewBounds = true
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(150))
+            lp.topMargin = dp(12); lp.bottomMargin = dp(20)
+            lp.gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = lp
+        })
         binding.contentArea.addView(TextView(this).apply {
             text = "Build habits by becoming the person who already has them.\n\n" +
                 "First you'll choose an identity — who you want to become — then add the " +
@@ -171,22 +228,23 @@ class OnboardingActivity : WritingHostActivity() {
             layoutParams = lp
         })
 
-        val iconButtons = mutableListOf<Button>()
+        val iconButtons = mutableListOf<android.widget.ImageButton>()
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        for (icon in icons) {
-            val b = Button(this).apply {
-                text = icon; isAllCaps = false
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-                minWidth = 0; minimumWidth = dp(52)
-                val lp = LinearLayout.LayoutParams(dp(52), dp(52))
-                lp.marginEnd = dp(6)
+        for (key in icons) {
+            val b = android.widget.ImageButton(this).apply {
+                tag = key
+                setImageResource(com.inkhabits.ui.widget.HabitIcons.resFor(key))
+                scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                setPadding(dp(13), dp(13), dp(13), dp(13))
+                val lp = LinearLayout.LayoutParams(dp(54), dp(54))
+                lp.marginEnd = dp(8)
                 layoutParams = lp
             }
             b.setOnClickListener {
-                pendingIcon = icon
-                iconButtons.forEach { styleIcon(it, it.text == pendingIcon) }
+                pendingIcon = key
+                iconButtons.forEach { styleIcon(it, it.tag == pendingIcon) }
             }
-            styleIcon(b, icon == pendingIcon)
+            styleIcon(b, key == pendingIcon)
             iconButtons.add(b)
             row.addView(b)
         }
@@ -200,59 +258,32 @@ class OnboardingActivity : WritingHostActivity() {
 
     private fun renderHabits() {
         val who = pendingName.ifBlank { "this person" }
-        header("HABITS", "What would $who do?", "Write a habit, set how often, then tap Add. Repeat for more.")
+        val editing = editingHabit != null
+        header("HABITS", if (editing) "Edit habit" else "What would $who do?",
+            "Write a habit, set how often, and an optional anchor.")
 
-        // Already-added habits
-        if (pendingHabits.isNotEmpty()) {
-            binding.contentArea.addView(label("Habits added (${pendingHabits.size})"))
-            pendingHabits.forEachIndexed { idx, h ->
-                binding.contentArea.addView(pendingHabitRow(idx, h))
-            }
-            binding.contentArea.addView(View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
-                setBackgroundColor(Color.parseColor("#E0E0E0"))
-                (layoutParams as LinearLayout.LayoutParams).topMargin = dp(8)
-            })
-        }
-
-        // New habit entry
-        binding.contentArea.addView(label("Add a habit").apply {
-            val lp = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            lp.topMargin = dp(12)
-            layoutParams = lp
-        })
+        binding.contentArea.addView(label("Habit"))
         val input = InputField(this).apply { setHint("Habit name…") }
         habitInput = input
         binding.contentArea.addView(input)
 
         binding.contentArea.addView(label("How often?").apply {
+            (layoutParams as? LinearLayout.LayoutParams)
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            lp.topMargin = dp(6)
-            layoutParams = lp
+            lp.topMargin = dp(6); layoutParams = lp
         })
         val picker = SchedulePicker(this)
         habitSchedule = picker
         binding.contentArea.addView(picker)
 
-        // Time of day (optional)
         binding.contentArea.addView(label("Time of day (optional)").apply {
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(10); layoutParams = lp
         })
-        val timeBtn = MaterialButton(
-            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
-        ).apply {
-            isAllCaps = false
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            text = timeButtonLabel()
-        }
-        timeBtn.setOnClickListener { pickTime(timeBtn) }
-        binding.contentArea.addView(timeBtn)
+        binding.contentArea.addView(timeSelector())
 
-        // Anchor cue (optional, habit-stacking) — type or write, like the habit.
         binding.contentArea.addView(label("Anchor — after what? (optional)").apply {
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -262,93 +293,236 @@ class OnboardingActivity : WritingHostActivity() {
         habitAnchor = anchor
         binding.contentArea.addView(anchor)
 
-        // Secondary action: add the current habit to the list.
-        binding.contentArea.addView(MaterialButton(
-            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
-        ).apply {
-            text = "✓ Add this habit"; isAllCaps = false
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            val lp = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(52))
-            lp.topMargin = dp(10)
-            layoutParams = lp
-            setOnClickListener { addPendingHabit() }
-        })
+        // Add-another stays here for quick entry; primary goes to the review list.
+        if (!editing) {
+            binding.contentArea.addView(MaterialButton(
+                this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "✓ Add & write another"; isAllCaps = false
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52))
+                lp.topMargin = dp(10); layoutParams = lp
+                setOnClickListener {
+                    if (habitInput?.hasContent() != true) toast("Write or type the habit first")
+                    else captureAndAdd(reset = true) { toast("Habit added") }
+                }
+            })
+        }
+        val cta = if (editing) "Save habit →" else "Review →"
+        primaryCta(cta) {
+            captureAndAdd(reset = false) {
+                if (pendingHabits.isEmpty()) toast("Add at least one habit first")
+                else { step = Step.REVIEW; render() }
+            }
+        }
 
-        // Primary action: finish this identity.
-        primaryCta(if (pendingHabits.isEmpty()) "Done →" else "Done (${pendingHabits.size}) →") {
-            saveIdentityAndHabits()
+        // Re-populate the entry when editing an existing habit.
+        editingHabit?.let { h ->
+            input.prefill(h.name, h.strokes)
+            anchor.prefill(h.anchor, h.anchorStrokes)
+            picker.setConfig(h.cfg)
+            habitReminder = h.reminderMinutes
+            timeRefresh?.invoke()
+            editingHabit = null
         }
     }
 
-    private fun pendingHabitRow(index: Int, h: PendingHabit): View {
+    /** Review/confirm screen: list created habits with edit + delete. */
+    private fun renderReview() {
+        val editingIdentity = editIdentityId != 0L
+        header("REVIEW", if (editingIdentity) "Edit ${pendingName.ifBlank { "identity" }}" else "Your habits",
+            "Confirm, edit, or remove — then save.")
+
+        // When editing an existing identity, let the user change its name/icon too.
+        binding.contentArea.addView(MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = "Edit identity name & icon"; isAllCaps = false
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48))
+            lp.bottomMargin = dp(6); layoutParams = lp
+            setOnClickListener { step = Step.IDENTITY; render() }
+        })
+
+        if (pendingHabits.isEmpty()) {
+            binding.contentArea.addView(label("No habits yet."))
+        }
+        pendingHabits.forEachIndexed { idx, h ->
+            binding.contentArea.addView(reviewRow(idx, h))
+        }
+        binding.contentArea.addView(MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = "+ Add another habit"; isAllCaps = false
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52))
+            lp.topMargin = dp(14); layoutParams = lp
+            setOnClickListener { step = Step.HABITS; render() }
+        })
+        primaryCta("Save identity →") { saveIdentityAndHabits() }
+    }
+
+    private fun reviewRow(index: Int, h: PendingHabit): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(0, dp(6), 0, dp(6))
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(14), dp(10), dp(6), dp(10))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp(8); layoutParams = lp
+            isClickable = true
+            setOnClickListener { editHabit(index) } // tap to edit
         }
-        row.addView(TextView(this).apply {
-            text = if (h.strokes.isNotEmpty()) "✎ ${if (h.name.isNotBlank()) h.name else "Handwritten"}"
-            else h.name.ifBlank { "Habit" }
-            setTextColor(Color.BLACK)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        texts.addView(TextView(this).apply {
+            text = h.name.ifBlank { if (h.strokes.isNotEmpty()) "Handwritten habit" else "Habit" }
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            typeface = interSemiBold
         })
-        row.addView(TextView(this).apply {
-            text = com.inkhabits.util.Schedule.label(
-                com.inkhabits.data.entity.Habit(
-                    identityGoalId = 0, frequencyType = h.cfg.frequencyType,
-                    daysOfWeek = h.cfg.daysOfWeek, intervalDays = h.cfg.intervalDays,
-                    weeklyTarget = h.cfg.weeklyTarget
-                )
-            )
+        val sched = com.inkhabits.util.Schedule.label(
+            com.inkhabits.data.entity.Habit(
+                identityGoalId = 0, frequencyType = h.cfg.frequencyType,
+                daysOfWeek = h.cfg.daysOfWeek, intervalDays = h.cfg.intervalDays,
+                weeklyTarget = h.cfg.weeklyTarget))
+        val time = com.inkhabits.util.Schedule.formatTime(h.reminderMinutes)
+        texts.addView(TextView(this).apply {
+            text = if (time.isEmpty()) sched else "$sched · $time"
             setTextColor(Color.parseColor("#6B6B6B"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            val lp = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            lp.marginStart = dp(8)
-            layoutParams = lp
         })
+        row.addView(texts)
         row.addView(Button(this).apply {
             text = "✕"; isAllCaps = false
             setTextColor(Color.parseColor("#8C1D1D"))
             setBackgroundColor(Color.TRANSPARENT)
-            setOnClickListener { pendingHabits.removeAt(index); rerenderHabits() }
+            setOnClickListener { pendingHabits.removeAt(index); render() }
         })
         return row
     }
 
-    private fun timeButtonLabel(): String =
-        if (habitReminder < 0) "Any time" else com.inkhabits.util.Schedule.formatTime(habitReminder)
+    private fun editHabit(index: Int) {
+        val h = pendingHabits.removeAt(index)
+        editingHabit = h
+        editingHabitId = h.habitId  // preserve the DB row so completion history survives
+        step = Step.HABITS; render()
+    }
 
-    private fun pickTime(btn: MaterialButton) {
+    /**
+     * Capture the current entry (if any), resolve its anchor/name via OCR off the UI
+     * thread, add it to the list, then run [then]. When [reset] is true the entry is
+     * cleared in place for another habit (without rebuilding — keeps the ink surface alive).
+     */
+    private fun captureAndAdd(reset: Boolean, then: () -> Unit) {
+        val input = habitInput
+        if (input == null || !input.hasContent()) { then(); return }
+        val name = input.getText(); val strokes = input.getStrokes()
+        val cfg = habitSchedule!!.getConfig(); val reminder = habitReminder
+        val anchorText = habitAnchor?.getText().orEmpty()
+        val anchorStrokes = habitAnchor?.getStrokes().orEmpty()
+        if (reset) {
+            input.prepareForNext()
+            habitAnchor?.prepareForNext()
+            habitReminder = -1
+            timeRefresh?.invoke()
+            input.focusInk()
+            binding.scroll.post { cleanRefresh(binding.root) }
+        }
+        val carryId = editingHabitId
+        editingHabitId = 0L
+        lifecycleScope.launch {
+            val (aText, aStrokes) = resolveAnchor(anchorText, anchorStrokes)
+            val resolvedName = resolveName(name, strokes)
+            pendingHabits.add(PendingHabit(resolvedName, strokes, cfg, reminder, aText, aStrokes, carryId))
+            then()
+        }
+    }
+
+    /** Daypart chips ("Any / Morning / Afternoon / Evening") + a specific-time chip. */
+    private fun timeSelector(): View {
+        val scroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        scroll.addView(row)
+
+        val entries = listOf(
+            "Any time" to com.inkhabits.util.Schedule.TIME_ANY,
+            "Morning" to com.inkhabits.util.Schedule.TIME_MORNING,
+            "Afternoon" to com.inkhabits.util.Schedule.TIME_AFTERNOON,
+            "Evening" to com.inkhabits.util.Schedule.TIME_EVENING,
+        )
+        val chips = mutableListOf<Pair<TextView, Int>>()
+        val pickChip = timeChip("Pick time")
+
+        fun refresh() {
+            for ((c, v) in chips) styleTimeChip(c, habitReminder == v)
+            val specific = habitReminder >= 0
+            pickChip.text = if (specific) com.inkhabits.util.Schedule.formatTime(habitReminder) else "Pick time"
+            styleTimeChip(pickChip, specific)
+        }
+
+        for ((labelTxt, value) in entries) {
+            val c = timeChip(labelTxt)
+            c.setOnClickListener { habitReminder = value; refresh() }
+            chips.add(c to value)
+            row.addView(c)
+        }
+        pickChip.setOnClickListener { pickTime { refresh() } }
+        row.addView(pickChip)
+
+        timeRefresh = { refresh() }
+        refresh()
+        return scroll
+    }
+
+    private fun timeChip(text: String): TextView = TextView(this).apply {
+        this.text = text
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        typeface = interSemiBold
+        setPadding(dp(14), dp(7), dp(14), dp(7))
+        isClickable = true
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        lp.marginEnd = dp(8)
+        layoutParams = lp
+    }
+
+    private fun styleTimeChip(c: TextView, on: Boolean) {
+        c.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = dp(14).toFloat()
+            if (on) setColor(Color.parseColor("#8C1D1D"))
+            else { setColor(Color.WHITE); setStroke(dp(1), Color.parseColor("#CFCBC0")) }
+        }
+        c.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+    }
+
+    private fun pickTime(onPicked: () -> Unit) {
         val start = if (habitReminder >= 0) habitReminder else 8 * 60
         TimePickerDialog(this, { _, hour, minute ->
             habitReminder = hour * 60 + minute
-            btn.text = timeButtonLabel()
+            onPicked()
         }, start / 60, start % 60, false).show()
     }
 
-    private fun addPendingHabit() {
-        val input = habitInput ?: return
-        if (!input.hasContent()) {
-            toast("Write or type the habit first")
-            return
-        }
-        pendingHabits.add(
-            PendingHabit(
-                input.getText(), input.getStrokes(), habitSchedule!!.getConfig(),
-                habitReminder,
-                habitAnchor?.getText().orEmpty(), habitAnchor?.getStrokes().orEmpty()
-            )
-        )
-        habitReminder = -1
-        rerenderHabits()
+    /** Typed name wins; otherwise OCR the handwriting for a preview transcription ("" if none). */
+    private suspend fun resolveName(text: String, strokes: String): String {
+        if (text.isNotBlank()) return text
+        if (!com.inkhabits.util.StrokeRenderer.hasInk(strokes)) return ""
+        return com.inkhabits.util.InkRecognizer.recognize(strokes).orEmpty()
     }
 
-    private fun rerenderHabits() {
-        binding.contentArea.removeAllViews()
-        renderHabits()
+    /**
+     * Turn an anchor entry into displayable form: typed text wins; otherwise run
+     * handwriting recognition. Falls back to keeping the ink if OCR is unavailable.
+     */
+    private suspend fun resolveAnchor(text: String, strokes: String): Pair<String, String> {
+        if (text.isNotBlank()) return text to ""
+        if (!com.inkhabits.util.StrokeRenderer.hasInk(strokes)) return "" to ""
+        val recognized = com.inkhabits.util.InkRecognizer.recognize(strokes)
+        return if (!recognized.isNullOrBlank()) recognized to "" else "" to strokes
     }
 
     private fun renderAnother() {
@@ -356,10 +530,15 @@ class OnboardingActivity : WritingHostActivity() {
         binding.contentArea.addView(label("Created so far"))
         for (g in createdIdentities) {
             binding.contentArea.addView(TextView(this).apply {
-                text = "${g.icon}  ${g.name.ifBlank { "Handwritten identity" }}"
+                text = g.name.ifBlank { "Handwritten identity" }
                 setTextColor(Color.BLACK)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
                 setPadding(0, dp(8), 0, dp(8))
+                setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    com.inkhabits.ui.widget.HabitIcons.resFor(g.icon), 0, 0, 0)
+                compoundDrawablePadding = dp(10)
+                androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(
+                    this, android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1A1A")))
             })
         }
         binding.contentArea.addView(MaterialButton(
@@ -388,14 +567,24 @@ class OnboardingActivity : WritingHostActivity() {
         }
         pendingName = field.getText()
         pendingStrokes = field.getStrokes()
-        step = Step.HABITS; render()
+        // When editing an existing identity, return to the review list; otherwise go add habits.
+        step = if (editIdentityId != 0L) Step.REVIEW else Step.HABITS
+        render()
     }
 
     private fun onBack() {
         when (step) {
             Step.WELCOME -> finish()
-            Step.IDENTITY -> if (addMode) finish() else { step = Step.WELCOME; render() }
-            Step.HABITS -> { step = Step.IDENTITY; render() }
+            Step.IDENTITY -> when {
+                editIdentityId != 0L -> { step = Step.REVIEW; render() }
+                addMode -> finish()
+                else -> { step = Step.WELCOME; render() }
+            }
+            Step.HABITS -> {
+                step = if (pendingHabits.isNotEmpty() || editIdentityId != 0L) Step.REVIEW else Step.IDENTITY
+                render()
+            }
+            Step.REVIEW -> if (editIdentityId != 0L) finish() else { step = Step.IDENTITY; render() }
             Step.ANOTHER -> {}
         }
     }
@@ -406,21 +595,13 @@ class OnboardingActivity : WritingHostActivity() {
     }
 
     private fun startNewIdentity() {
-        pendingName = ""; pendingStrokes = ""; pendingIcon = "★"
+        pendingName = ""; pendingStrokes = ""; pendingIcon = com.inkhabits.ui.widget.HabitIcons.DEFAULT
         pendingHabits.clear()
         habitReminder = -1
         step = Step.IDENTITY; render()
     }
 
     private fun saveIdentityAndHabits() {
-        // If the user wrote a habit but didn't tap "Add", fold it in automatically.
-        habitInput?.let { if (it.hasContent()) {
-            pendingHabits.add(PendingHabit(
-                it.getText(), it.getStrokes(), habitSchedule!!.getConfig(),
-                habitReminder,
-                habitAnchor?.getText().orEmpty(), habitAnchor?.getStrokes().orEmpty()
-            ))
-        } }
         if (pendingHabits.isEmpty()) {
             toast("Add at least one habit for this identity")
             return
@@ -430,12 +611,53 @@ class OnboardingActivity : WritingHostActivity() {
         val strokes = pendingStrokes
         val icon = pendingIcon
         val today = LocalDate.now().toEpochDay()
-        val habitData = pendingHabits.toList()
+        val habitData = pendingHabits.toMutableList()
 
+        val editingId = editIdentityId
         lifecycleScope.launch {
+            // Transcribe a handwritten identity name so previews show it (ink still wins on screen).
+            val idName = resolveName(name, strokes)
+
+            if (editingId != 0L) {
+                // ── Update an existing identity ──
+                val existing = db.identityGoalDao().getAll().firstOrNull { it.id == editingId }
+                db.identityGoalDao().update(IdentityGoal(
+                    id = editingId, name = idName, nameStrokes = strokes, icon = icon,
+                    sortOrder = existing?.sortOrder ?: 0,
+                    createdAt = existing?.createdAt ?: System.currentTimeMillis()))
+                val keptIds = mutableSetOf<Long>()
+                habitData.forEachIndexed { idx, h ->
+                    if (h.habitId != 0L) {
+                        val cur = db.habitDao().getById(h.habitId)
+                        db.habitDao().update((cur ?: Habit(identityGoalId = editingId, startEpochDay = today)).copy(
+                            id = h.habitId, identityGoalId = editingId, name = h.name, nameStrokes = h.strokes,
+                            frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
+                            intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
+                            reminderMinutes = h.reminderMinutes, anchor = h.anchor, anchorStrokes = h.anchorStrokes,
+                            sortOrder = idx, isActive = true))
+                        keptIds.add(h.habitId)
+                    } else {
+                        db.habitDao().insert(Habit(
+                            identityGoalId = editingId, name = h.name, nameStrokes = h.strokes,
+                            frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
+                            intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
+                            startEpochDay = today, reminderMinutes = h.reminderMinutes,
+                            anchor = h.anchor, anchorStrokes = h.anchorStrokes, sortOrder = idx))
+                    }
+                }
+                // Soft-delete removed habits (keep their completion history).
+                (originalHabitIds - keptIds).forEach { id ->
+                    db.habitDao().getById(id)?.let { db.habitDao().update(it.copy(isActive = false)) }
+                }
+                com.inkhabits.widget.WidgetCommon.updateAll(this@OnboardingActivity)
+                finish()
+                return@launch
+            }
+
+            // ── Create a new identity ──
             val order = db.identityGoalDao().count()
             val goalId = db.identityGoalDao().insert(
-                IdentityGoal(name = name, nameStrokes = strokes, icon = icon, sortOrder = order)
+                IdentityGoal(name = idName, nameStrokes = strokes, icon = icon, sortOrder = order)
             )
             habitData.forEachIndexed { idx, h ->
                 db.habitDao().insert(
@@ -455,7 +677,7 @@ class OnboardingActivity : WritingHostActivity() {
                     )
                 )
             }
-            createdIdentities.add(IdentityGoal(id = goalId, name = name, nameStrokes = strokes, icon = icon, sortOrder = order))
+            createdIdentities.add(IdentityGoal(id = goalId, name = idName, nameStrokes = strokes, icon = icon, sortOrder = order))
             pendingHabits.clear()
             step = Step.ANOTHER
             render()
@@ -473,6 +695,7 @@ class OnboardingActivity : WritingHostActivity() {
 
     companion object {
         const val EXTRA_ADD_IDENTITY = "add_identity"
+        const val EXTRA_EDIT_IDENTITY = "edit_identity"  // Long identity id to edit
     }
 
     // ── helpers ──
@@ -486,8 +709,19 @@ class OnboardingActivity : WritingHostActivity() {
         setPadding(0, dp(16), 0, dp(4))
     }
 
-    private fun styleIcon(b: Button, on: Boolean) {
-        b.setBackgroundColor(if (on) Color.parseColor("#8C1D1D") else Color.parseColor("#E8E8E8"))
+    private fun styleIcon(b: android.widget.ImageButton, on: Boolean) {
+        b.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = dp(12).toFloat()
+            if (on) {
+                setColor(Color.parseColor("#8C1D1D"))
+            } else {
+                setColor(Color.WHITE)
+                setStroke(dp(1), Color.parseColor("#CFCBC0"))
+            }
+        }
+        b.setColorFilter(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+        b.elevation = 0f
+        b.stateListAnimator = null
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()

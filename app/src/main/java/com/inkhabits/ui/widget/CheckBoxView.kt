@@ -23,10 +23,12 @@ class CheckBoxView @JvmOverloads constructor(
 
     var onToggle: ((Boolean) -> Unit)? = null
 
+    private val density = resources.displayMetrics.density
+
     private val box = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 3f
-        color = Color.BLACK
+        strokeWidth = 1.8f * density
+        color = Color.parseColor("#4A4A4A")
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -34,7 +36,7 @@ class CheckBoxView @JvmOverloads constructor(
     }
     private val check = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 5f
+        strokeWidth = 2.4f * density
         color = Color.WHITE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
@@ -51,7 +53,7 @@ class CheckBoxView @JvmOverloads constructor(
         val s = minOf(width, height) - pad * 2
         val left = pad; val top = (height - s) / 2f
         val right = left + s; val bottom = top + s
-        val r = 6f
+        val r = 5f * density
         if (checked) {
             canvas.drawRoundRect(left, top, right, bottom, r, r, fill)
             canvas.drawLine(left + s * 0.24f, top + s * 0.52f, left + s * 0.44f, bottom - s * 0.24f, check)

@@ -31,11 +31,14 @@ class DashboardActivity : EInkActivity() {
         setContentView(binding.root)
         db = AppDatabase.get(this)
 
-        binding.quoteText.text = Quotes.forToday(LocalDate.now())
+        binding.quoteCard.setOnClickListener {
+            startActivity(Intent(this, com.inkhabits.ui.quote.QuoteEditActivity::class.java))
+        }
 
         adapter = DashboardAdapter(
             onToggle = { habitId, makeComplete -> toggle(habitId, makeComplete) },
-            onAddIdentity = { openAddIdentity() }
+            onAddIdentity = { openAddIdentity() },
+            onEditIdentity = { identityId -> openEditIdentity(identityId) }
         )
         binding.habitList.layoutManager = LinearLayoutManager(this)
         binding.habitList.adapter = adapter
@@ -51,13 +54,61 @@ class DashboardActivity : EInkActivity() {
             binding.habitList.smoothScrollToPosition(0)
         }
 
+        renderQuote()
         maybeRequestNotificationPermission()
         observe()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        renderQuote() // reflect a quote the user may have just edited
+    }
+
+    private fun renderQuote() {
+        val text = com.inkhabits.util.QuotePrefs.text(this)
+        val strokes = com.inkhabits.util.QuotePrefs.strokes(this)
+        val hasInk = com.inkhabits.util.StrokeRenderer.hasInk(strokes)
+        val prefHand = com.inkhabits.util.QuotePrefs.preferHandwritten(this)
+        // Typed text by default; show handwriting if preferred (or if there's no text).
+        val showInk = hasInk && (prefHand || text.isBlank())
+
+        if (showInk) {
+            binding.quoteText.visibility = View.GONE
+            binding.quoteInk.visibility = View.VISIBLE
+            binding.quoteInk.post {
+                val w = binding.quoteInk.width.takeIf { it > 0 } ?: 600
+                val h = binding.quoteInk.height.takeIf { it > 0 } ?: 150
+                binding.quoteInk.setImageBitmap(
+                    com.inkhabits.util.StrokeRenderer.renderToBitmap(strokes, w, h))
+            }
+        } else {
+            binding.quoteInk.visibility = View.GONE
+            binding.quoteText.visibility = View.VISIBLE
+            binding.quoteText.text =
+                if (text.isNotBlank()) text else Quotes.forToday(LocalDate.now())
+        }
+
+        // Offer the typed<->handwritten toggle only when both forms exist.
+        if (text.isNotBlank() && hasInk) {
+            binding.quoteToggle.visibility = View.VISIBLE
+            binding.quoteToggle.text = if (showInk) "Aa typed" else "✍ handwritten"
+            binding.quoteToggle.setOnClickListener {
+                com.inkhabits.util.QuotePrefs.setPreferHandwritten(this, !showInk)
+                renderQuote()
+            }
+        } else {
+            binding.quoteToggle.visibility = View.GONE
+        }
     }
 
     private fun openAddIdentity() {
         startActivity(Intent(this, OnboardingActivity::class.java)
             .putExtra(OnboardingActivity.EXTRA_ADD_IDENTITY, true))
+    }
+
+    private fun openEditIdentity(identityId: Long) {
+        startActivity(Intent(this, OnboardingActivity::class.java)
+            .putExtra(OnboardingActivity.EXTRA_EDIT_IDENTITY, identityId))
     }
 
     private val notifPermLauncher = registerForActivityResult(
