@@ -21,7 +21,15 @@ open class EInkActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        window.decorView.postDelayed({ cleanRefresh(window.decorView) }, 80L)
+        // Light GU repaint on entry (no full-screen GC flash) keeps tab switches snappy.
+        window.decorView.postDelayed({ EInkUtils.lightRefresh(window.decorView) }, 50L)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Make sure a scroll's system fast-mode never lingers into the next screen
+        // (a likely cause of sluggish-feeling navigation).
+        EInkUtils.systemFastMode(false)
     }
 
     protected fun cleanRefresh(view: View) {

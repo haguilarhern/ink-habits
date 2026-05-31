@@ -44,6 +44,10 @@ class RewardsActivity : WritingHostActivity() {
     private var identities: List<IdentityGoal> = emptyList()
     private var habits: List<Habit> = emptyList()
 
+    /** Which division of rewards is shown (subtab filter). */
+    private enum class RewardFilter { HABIT, IDENTITY }
+    private var rewardFilter = RewardFilter.HABIT
+
     /** A selectable basis for a reward's streak. */
     private data class TargetOption(val label: String, val habitId: Long, val identityId: Long)
     private var targetOptions: List<TargetOption> = emptyList()
@@ -97,16 +101,16 @@ class RewardsActivity : WritingHostActivity() {
         val c = binding.content
         c.removeAllViews()
 
-        rewards.forEach { c.addView(rewardRow(it)) }
-
-        if (rewards.isEmpty()) {
-            c.addView(TextView(this).apply {
-                text = "No rewards yet. Promise yourself one below."
-                setTextColor(muted)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-                setPadding(0, dp(4), 0, dp(4))
-            })
-        }
+        // Subtab filter: choose the habit division or the identity division.
+        c.addView(filterTabs())
+        val shown = if (rewardFilter == RewardFilter.IDENTITY)
+            rewards.filter { it.identityId > 0L }
+        else rewards.filter { it.identityId == 0L }
+        if (shown.isEmpty()) {
+            c.addView(emptyNote(
+                if (rewardFilter == RewardFilter.IDENTITY) "No identity-based rewards yet."
+                else "No habit-based rewards yet."))
+        } else shown.forEach { c.addView(rewardRow(it)) }
 
         c.addView(View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
@@ -264,6 +268,59 @@ class RewardsActivity : WritingHostActivity() {
         typeface = androidx.core.content.res.ResourcesCompat.getFont(this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
         setLetterSpacing(0.06f)
         setPadding(0, dp(14), 0, dp(4))
+    }
+
+    /** Bold division header (BY HABIT / BY IDENTITY). */
+    private fun sectionHeader(text: String): TextView = TextView(this).apply {
+        this.text = text.uppercase()
+        setTextColor(Color.parseColor("#1A1A1A"))
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        typeface = androidx.core.content.res.ResourcesCompat.getFont(this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+        setLetterSpacing(0.08f)
+        setPadding(0, dp(18), 0, dp(6))
+    }
+
+    private fun emptyNote(text: String): TextView = TextView(this).apply {
+        this.text = text
+        setTextColor(muted)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        setPadding(0, dp(4), 0, dp(4))
+    }
+
+    /** Two-segment subtab (By habit / By identity) with an underline on the active one. */
+    private fun filterTabs(): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(8) }
+        }
+        fun seg(text: String, f: RewardFilter): View {
+            val active = rewardFilter == f
+            val box = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                isClickable = true
+                setOnClickListener { if (rewardFilter != f) { rewardFilter = f; render() } }
+            }
+            box.addView(TextView(this).apply {
+                this.text = text
+                gravity = Gravity.CENTER
+                setPadding(0, dp(9), 0, dp(8))
+                setTextColor(if (active) accent else muted)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(
+                    this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+            })
+            box.addView(View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(2))
+                setBackgroundColor(if (active) accent else android.graphics.Color.TRANSPARENT)
+            })
+            return box
+        }
+        row.addView(seg("By habit", RewardFilter.HABIT))
+        row.addView(seg("By identity", RewardFilter.IDENTITY))
+        return row
     }
 
     private fun stepBtn(label: String, onClick: () -> Unit): Button = Button(this).apply {

@@ -35,16 +35,39 @@ public final class EInkUtils {
         } catch (Throwable ignored) {}
     }
 
-    /** Smooth-scroll mode: ANIMATION is purpose-built for scrolling content on Boox. */
+    /** Fastest scroll mode: DU (fast B/W direct update) — lowest latency motion. */
     public static void setScrollMode(View view) {
         try {
-            EpdController.setViewDefaultUpdateMode(view, UpdateMode.ANIMATION);
+            EpdController.setViewDefaultUpdateMode(view, UpdateMode.DU);
         } catch (Throwable ignored) {}
     }
 
     /**
-     * Toggle the panel's system fast mode for fluid motion (flings/scrolls). Must be
-     * cleared once motion ends, followed by a clean refresh. Greatly smooths lists.
+     * App-scope fast refresh for the duration of a scroll/fling: REGAL partial
+     * updates with a clear-to-white to limit ghosting (Onyx's recommended recipe).
+     * Pair appScopeFast(pkg,true) on scroll start with appScopeFast(pkg,false) plus
+     * a clean GC refresh on scroll stop.
+     */
+    public static void appScopeFast(String packageName, boolean enable) {
+        try {
+            if (enable) {
+                EpdController.applyAppScopeUpdate(packageName, true, true, UpdateMode.REGAL, 0);
+            } else {
+                EpdController.clearAppScopeUpdate();
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    /** Light, flash-free repaint (GU) — use when entering a screen. */
+    public static void lightRefresh(View view) {
+        try {
+            EpdController.invalidate(view, UpdateMode.GU);
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Toggle the panel's system fast mode for fluid motion. Kept for completeness;
+     * the app-scope REGAL path above is preferred for lists.
      */
     public static void systemFastMode(boolean enable) {
         try {
