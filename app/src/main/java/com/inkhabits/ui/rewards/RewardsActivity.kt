@@ -27,8 +27,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Gamification tab: a ladder of self-rewards. Each reward unlocks when its target
- * streak is reached — measured against any habit, a chosen habit, or an identity's
- * perfect-day streak (the user picks the basis). Reinforces the habit loop.
+ * streak is reached. When adding a reward you first pick the basis category
+ * (Habit or Identity) via a subtab, then choose the specific one from the dropdown.
+ * Saved rewards are stacked under identity headers, like the home screen.
  */
 class RewardsActivity : WritingHostActivity() {
 
@@ -44,14 +45,16 @@ class RewardsActivity : WritingHostActivity() {
     private var identities: List<IdentityGoal> = emptyList()
     private var habits: List<Habit> = emptyList()
 
-    /** Which division of rewards is shown (subtab filter). */
-    private enum class RewardFilter { HABIT, IDENTITY }
-    private var rewardFilter = RewardFilter.HABIT
-
-    /** A selectable basis for a reward's streak. */
-    private data class TargetOption(val label: String, val habitId: Long, val identityId: Long)
-    private var targetOptions: List<TargetOption> = emptyList()
-    private var selectedTarget = 0
+    // Target picker: a Habit/Identity subtab that drives what the dropdown shows.
+    private enum class TargetKind { HABIT, IDENTITY }
+    private var targetKind = TargetKind.HABIT
+    private var selHabit = 0    // 0 = "Any habit", 1..n = habits[i-1]
+    private var selIdentity = 0 // index into identities
+    private var targetSpinner: Spinner? = null
+    private var segHabitText: TextView? = null
+    private var segHabitLine: View? = null
+    private var segIdText: TextView? = null
+    private var segIdLine: View? = null
 
     private val accent = Color.parseColor("#8C1D1D")
     private val muted = Color.parseColor("#6B6B6B")
@@ -74,43 +77,40 @@ class RewardsActivity : WritingHostActivity() {
             habits = db.habitDao().getActive()
             rewards = db.rewardDao().getAll()
                 .sortedWith(compareBy({ it.unlocked }, { it.targetStreak }))
-            buildTargetOptions()
             render()
         }
     }
 
-    private fun buildTargetOptions() {
-        val opts = mutableListOf(TargetOption("Any habit", 0, 0))
-        identities.forEach { id ->
-            opts.add(TargetOption("Identity · ${identityName(id)}", 0, id.id))
-        }
-        habits.forEach { h ->
-            opts.add(TargetOption(habitName(h), h.id, 0))
-        }
-        targetOptions = opts
-        if (selectedTarget >= opts.size) selectedTarget = 0
+    private fun identityName(id: IdentityGoal): String = id.name.ifBlank { "Identity ${id.id}" }
+    private fun habitName(h: Habit): String = h.name.ifBlank { "Habit ${h.id}" }
+
+    /** The identity a reward belongs to, for grouping (0 = none / any habit). */
+    private fun rewardIdentityId(r: Reward): Long = when {
+        r.identityId > 0 -> r.identityId
+        r.habitId > 0 -> habits.find { it.id == r.habitId }?.identityGoalId ?: 0L
+        else -> 0L
     }
-
-    private fun identityName(id: IdentityGoal): String =
-        id.name.ifBlank { "Identity ${id.id}" }
-
-    private fun habitName(h: Habit): String =
-        h.name.ifBlank { "Habit ${h.id}" }
 
     private fun render() {
         val c = binding.content
         c.removeAllViews()
 
-        // Subtab filter: choose the habit division or the identity division.
-        c.addView(filterTabs())
-        val shown = if (rewardFilter == RewardFilter.IDENTITY)
-            rewards.filter { it.identityId > 0L }
-        else rewards.filter { it.identityId == 0L }
-        if (shown.isEmpty()) {
-            c.addView(emptyNote(
-                if (rewardFilter == RewardFilter.IDENTITY) "No identity-based rewards yet."
-                else "No habit-based rewards yet."))
-        } else shown.forEach { c.addView(rewardRow(it)) }
+        // --- Saved rewards, stacked under identity headers (like home) ---
+        if (rewards.isEmpty()) {
+            c.addView(emptyNote("No rewards yet. Promise yourself one below."))
+        } else {
+            for (identity in identities) {
+                val group = rewards.filter { rewardIdentityId(it) == identity.id }
+                if (group.isEmpty()) continue
+                c.addView(sectionHeader(identityName(identity)))
+                group.forEach { c.addView(rewardRow(it)) }
+            }
+            val general = rewards.filter { rewardIdentityId(it) == 0L }
+            if (general.isNotEmpty()) {
+                c.addView(sectionHeader("Any habit"))
+                general.forEach { c.addView(rewardRow(it)) }
+            }
+        }
 
         c.addView(View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
@@ -119,6 +119,7 @@ class RewardsActivity : WritingHostActivity() {
             (layoutParams as LinearLayout.LayoutParams).bottomMargin = dp(8)
         })
 
+        // --- Add a reward ---
         c.addView(label("Add a reward"))
         val input = InputField(this).apply {
             setHint("e.g. movie night")
@@ -127,21 +128,13 @@ class RewardsActivity : WritingHostActivity() {
         rewardInput = input
         c.addView(input)
 
-        // Basis: which streak unlocks it.
+        // Basis subtab (Habit / Identity) + dependent dropdown.
         c.addView(label("Track the streak of"))
+        c.addView(kindTabs())
         val spinner = Spinner(this)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item,
-            targetOptions.map { it.label })
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-        spinner.setSelection(selectedTarget)
-        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: View?, pos: Int, idd: Long) {
-                selectedTarget = pos
-            }
-            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
-        }
+        targetSpinner = spinner
         c.addView(spinner)
+        updateKindUi()
 
         // Streak target stepper
         c.addView(label("Unlock when it reaches"))
@@ -154,8 +147,7 @@ class RewardsActivity : WritingHostActivity() {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             typeface = androidx.core.content.res.ResourcesCompat.getFont(this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
             gravity = Gravity.CENTER
-            val lp = LinearLayout.LayoutParams(dp(150), LinearLayout.LayoutParams.WRAP_CONTENT)
-            layoutParams = lp
+            layoutParams = LinearLayout.LayoutParams(dp(150), LinearLayout.LayoutParams.WRAP_CONTENT)
         }
         targetLabel = tl
         row.addView(tl)
@@ -172,9 +164,77 @@ class RewardsActivity : WritingHostActivity() {
         })
     }
 
+    /** Habit/Identity subtab; switching it changes the dropdown's contents. */
+    private fun kindTabs(): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(4) }
+        }
+        fun seg(text: String, kind: TargetKind): View {
+            val box = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                isClickable = true
+                setOnClickListener { if (targetKind != kind) { targetKind = kind; updateKindUi() } }
+            }
+            val tv = TextView(this).apply {
+                this.text = text
+                gravity = Gravity.CENTER
+                setPadding(0, dp(8), 0, dp(7))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(
+                    this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+            }
+            val line = View(this).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(2))
+            }
+            box.addView(tv); box.addView(line)
+            if (kind == TargetKind.HABIT) { segHabitText = tv; segHabitLine = line }
+            else { segIdText = tv; segIdLine = line }
+            return box
+        }
+        row.addView(seg("Habit", TargetKind.HABIT))
+        row.addView(seg("Identity", TargetKind.IDENTITY))
+        return row
+    }
+
+    private fun updateKindUi() {
+        styleSeg(segHabitText, segHabitLine, targetKind == TargetKind.HABIT)
+        styleSeg(segIdText, segIdLine, targetKind == TargetKind.IDENTITY)
+        updateTargetSpinner()
+    }
+
+    private fun styleSeg(tv: TextView?, line: View?, active: Boolean) {
+        tv?.setTextColor(if (active) accent else muted)
+        line?.setBackgroundColor(if (active) accent else Color.TRANSPARENT)
+    }
+
+    private fun updateTargetSpinner() {
+        val sp = targetSpinner ?: return
+        val labels = if (targetKind == TargetKind.HABIT)
+            listOf("Any habit") + habits.map { habitName(it) }
+        else identities.map { identityName(it) }
+
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, labels)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        sp.adapter = adapter
+        if (labels.isNotEmpty()) {
+            val sel = (if (targetKind == TargetKind.HABIT) selHabit else selIdentity)
+                .coerceIn(0, labels.size - 1)
+            sp.setSelection(sel)
+        }
+        sp.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: View?, pos: Int, idd: Long) {
+                if (targetKind == TargetKind.HABIT) selHabit = pos else selIdentity = pos
+            }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
+    }
+
     private fun refreshTarget() {
-        val n = milestones[targetIdx]
-        targetLabel?.text = "$n-day streak"
+        targetLabel?.text = "${milestones[targetIdx]}-day streak"
     }
 
     /** Human label for what a saved reward tracks. */
@@ -203,7 +263,6 @@ class RewardsActivity : WritingHostActivity() {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
-        // Prize name: text if present, else an ink thumbnail.
         if (r.title.isNotBlank() || !StrokeRenderer.hasInk(r.titleStrokes)) {
             texts.addView(TextView(this).apply {
                 text = r.title.ifBlank { "Reward" }
@@ -213,8 +272,7 @@ class RewardsActivity : WritingHostActivity() {
         } else {
             texts.addView(ImageView(this).apply {
                 scaleType = ImageView.ScaleType.FIT_START
-                val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(26))
-                layoutParams = lp
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(26))
                 post { setImageBitmap(StrokeRenderer.renderToBitmap(r.titleStrokes, width.coerceAtLeast(1), dp(26), maxScale = 1f)) }
             })
         }
@@ -239,7 +297,17 @@ class RewardsActivity : WritingHostActivity() {
         if (!input.hasContent()) { toast("Write or type the reward first"); return }
         val text = input.getText(); val strokes = input.getStrokes()
         val target = milestones[targetIdx]
-        val basis = targetOptions.getOrElse(selectedTarget) { TargetOption("Any habit", 0, 0) }
+
+        var habitId = 0L
+        var identityId = 0L
+        if (targetKind == TargetKind.HABIT) {
+            if (selHabit > 0) habitId = habits.getOrNull(selHabit - 1)?.id ?: 0L
+            // selHabit == 0 -> "Any habit" (both ids stay 0)
+        } else {
+            identityId = identities.getOrNull(selIdentity)?.id ?: 0L
+            if (identityId == 0L) { toast("Create an identity first"); return }
+        }
+
         lifecycleScope.launch {
             val title = if (text.isNotBlank()) text
                 else if (StrokeRenderer.hasInk(strokes)) InkRecognizer.recognize(strokes).orEmpty()
@@ -247,8 +315,7 @@ class RewardsActivity : WritingHostActivity() {
             val order = db.rewardDao().getAll().size
             val draft = Reward(
                 title = title, titleStrokes = strokes, targetStreak = target,
-                habitId = basis.habitId, identityId = basis.identityId, sortOrder = order)
-            // Unlock immediately if the chosen streak is already there.
+                habitId = habitId, identityId = identityId, sortOrder = order)
             val already = Rewards.streakFor(db, draft) >= target
             db.rewardDao().insert(draft.copy(
                 unlocked = already,
@@ -270,7 +337,7 @@ class RewardsActivity : WritingHostActivity() {
         setPadding(0, dp(14), 0, dp(4))
     }
 
-    /** Bold division header (BY HABIT / BY IDENTITY). */
+    /** Identity / group header in the reward list. */
     private fun sectionHeader(text: String): TextView = TextView(this).apply {
         this.text = text.uppercase()
         setTextColor(Color.parseColor("#1A1A1A"))
@@ -285,42 +352,6 @@ class RewardsActivity : WritingHostActivity() {
         setTextColor(muted)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
         setPadding(0, dp(4), 0, dp(4))
-    }
-
-    /** Two-segment subtab (By habit / By identity) with an underline on the active one. */
-    private fun filterTabs(): View {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(8) }
-        }
-        fun seg(text: String, f: RewardFilter): View {
-            val active = rewardFilter == f
-            val box = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                isClickable = true
-                setOnClickListener { if (rewardFilter != f) { rewardFilter = f; render() } }
-            }
-            box.addView(TextView(this).apply {
-                this.text = text
-                gravity = Gravity.CENTER
-                setPadding(0, dp(9), 0, dp(8))
-                setTextColor(if (active) accent else muted)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-                typeface = androidx.core.content.res.ResourcesCompat.getFont(
-                    this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
-            })
-            box.addView(View(this).apply {
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(2))
-                setBackgroundColor(if (active) accent else android.graphics.Color.TRANSPARENT)
-            })
-            return box
-        }
-        row.addView(seg("By habit", RewardFilter.HABIT))
-        row.addView(seg("By identity", RewardFilter.IDENTITY))
-        return row
     }
 
     private fun stepBtn(label: String, onClick: () -> Unit): Button = Button(this).apply {
