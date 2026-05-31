@@ -5,13 +5,17 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.inkhabits.data.AppDatabase
+import com.inkhabits.data.entity.Habit
+import com.inkhabits.data.entity.IdentityGoal
 import com.inkhabits.data.entity.Reward
 import com.inkhabits.databinding.ActivityRewardsBinding
 import com.inkhabits.ui.widget.InputField
@@ -22,8 +26,9 @@ import com.inkhabits.util.StrokeRenderer
 import kotlinx.coroutines.launch
 
 /**
- * Gamification tab: a ladder of self-rewards. Each reward unlocks when any habit
- * reaches its target streak (the user is notified). Reinforces the habit loop.
+ * Gamification tab: a ladder of self-rewards. Each reward unlocks when its target
+ * streak is reached — measured against any habit, a chosen habit, or an identity's
+ * perfect-day streak (the user picks the basis). Reinforces the habit loop.
  */
 class RewardsActivity : WritingHostActivity() {
 
@@ -34,8 +39,15 @@ class RewardsActivity : WritingHostActivity() {
     private var targetIdx = 1 // default 7
     private var rewardInput: InputField? = null
     private var targetLabel: TextView? = null
-    private var maxStreak = 0
+
     private var rewards: List<Reward> = emptyList()
+    private var identities: List<IdentityGoal> = emptyList()
+    private var habits: List<Habit> = emptyList()
+
+    /** A selectable basis for a reward's streak. */
+    private data class TargetOption(val label: String, val habitId: Long, val identityId: Long)
+    private var targetOptions: List<TargetOption> = emptyList()
+    private var selectedTarget = 0
 
     private val accent = Color.parseColor("#8C1D1D")
     private val muted = Color.parseColor("#6B6B6B")
@@ -46,29 +58,55 @@ class RewardsActivity : WritingHostActivity() {
         setContentView(binding.root)
         db = AppDatabase.get(this)
         binding.backButton.setOnClickListener { finish() }
+        (binding.content.parent as? android.widget.ScrollView)?.let {
+            com.inkhabits.eink.EInk.attachFastScroll(it)
+        }
         load()
     }
 
     private fun load() {
         lifecycleScope.launch {
-            maxStreak = Rewards.maxHabitStreak(db)
-            rewards = db.rewardDao().getAll().sortedWith(compareBy({ it.unlocked }, { it.targetStreak }))
+            identities = db.identityGoalDao().getAll()
+            habits = db.habitDao().getActive()
+            rewards = db.rewardDao().getAll()
+                .sortedWith(compareBy({ it.unlocked }, { it.targetStreak }))
+            buildTargetOptions()
             render()
         }
     }
+
+    private fun buildTargetOptions() {
+        val opts = mutableListOf(TargetOption("Any habit", 0, 0))
+        identities.forEach { id ->
+            opts.add(TargetOption("Identity · ${identityName(id)}", 0, id.id))
+        }
+        habits.forEach { h ->
+            opts.add(TargetOption(habitName(h), h.id, 0))
+        }
+        targetOptions = opts
+        if (selectedTarget >= opts.size) selectedTarget = 0
+    }
+
+    private fun identityName(id: IdentityGoal): String =
+        id.name.ifBlank { "Identity ${id.id}" }
+
+    private fun habitName(h: Habit): String =
+        h.name.ifBlank { "Habit ${h.id}" }
 
     private fun render() {
         val c = binding.content
         c.removeAllViews()
 
-        c.addView(TextView(this).apply {
-            text = "Longest active streak: $maxStreak " + if (maxStreak == 1) "day" else "days"
-            setTextColor(muted)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setPadding(0, 0, 0, dp(8))
-        })
-
         rewards.forEach { c.addView(rewardRow(it)) }
+
+        if (rewards.isEmpty()) {
+            c.addView(TextView(this).apply {
+                text = "No rewards yet. Promise yourself one below."
+                setTextColor(muted)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                setPadding(0, dp(4), 0, dp(4))
+            })
+        }
 
         c.addView(View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
@@ -85,8 +123,24 @@ class RewardsActivity : WritingHostActivity() {
         rewardInput = input
         c.addView(input)
 
+        // Basis: which streak unlocks it.
+        c.addView(label("Track the streak of"))
+        val spinner = Spinner(this)
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item,
+            targetOptions.map { it.label })
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.setSelection(selectedTarget)
+        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: View?, pos: Int, idd: Long) {
+                selectedTarget = pos
+            }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
+        c.addView(spinner)
+
         // Streak target stepper
-        c.addView(label("Unlock when a habit reaches"))
+        c.addView(label("Unlock when it reaches"))
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         }
@@ -117,6 +171,13 @@ class RewardsActivity : WritingHostActivity() {
     private fun refreshTarget() {
         val n = milestones[targetIdx]
         targetLabel?.text = "$n-day streak"
+    }
+
+    /** Human label for what a saved reward tracks. */
+    private fun basisLabel(r: Reward): String = when {
+        r.habitId > 0 -> habits.find { it.id == r.habitId }?.let { habitName(it) } ?: "Habit"
+        r.identityId > 0 -> identities.find { it.id == r.identityId }?.let { identityName(it) } ?: "Identity"
+        else -> "Any habit"
     }
 
     private fun rewardRow(r: Reward): View {
@@ -154,7 +215,8 @@ class RewardsActivity : WritingHostActivity() {
             })
         }
         texts.addView(TextView(this).apply {
-            text = if (r.unlocked) "Unlocked ✓" else "🔒 ${r.targetStreak}-day streak"
+            text = if (r.unlocked) "Unlocked ✓ · ${basisLabel(r)}"
+                   else "🔒 ${r.targetStreak}-day streak · ${basisLabel(r)}"
             setTextColor(if (r.unlocked) accent else muted)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         })
@@ -173,16 +235,20 @@ class RewardsActivity : WritingHostActivity() {
         if (!input.hasContent()) { toast("Write or type the reward first"); return }
         val text = input.getText(); val strokes = input.getStrokes()
         val target = milestones[targetIdx]
+        val basis = targetOptions.getOrElse(selectedTarget) { TargetOption("Any habit", 0, 0) }
         lifecycleScope.launch {
             val title = if (text.isNotBlank()) text
                 else if (StrokeRenderer.hasInk(strokes)) InkRecognizer.recognize(strokes).orEmpty()
                 else ""
             val order = db.rewardDao().getAll().size
-            db.rewardDao().insert(Reward(
+            val draft = Reward(
                 title = title, titleStrokes = strokes, targetStreak = target,
-                unlocked = target <= maxStreak,
-                unlockedAt = if (target <= maxStreak) System.currentTimeMillis() else 0,
-                sortOrder = order))
+                habitId = basis.habitId, identityId = basis.identityId, sortOrder = order)
+            // Unlock immediately if the chosen streak is already there.
+            val already = Rewards.streakFor(db, draft) >= target
+            db.rewardDao().insert(draft.copy(
+                unlocked = already,
+                unlockedAt = if (already) System.currentTimeMillis() else 0))
             load()
         }
     }

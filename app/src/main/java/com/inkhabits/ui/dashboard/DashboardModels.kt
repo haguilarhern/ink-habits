@@ -6,6 +6,8 @@ import com.inkhabits.data.entity.IdentityGoal
 /** Flattened items for the dashboard RecyclerView. */
 sealed class DashboardItem {
     data class Header(val identity: IdentityGoal) : DashboardItem()
+    /** Plain text section header used by the "by time of day" sort. */
+    data class SectionHeader(val title: String) : DashboardItem()
     data class HabitRow(
         val habit: Habit,
         val identityIcon: String,

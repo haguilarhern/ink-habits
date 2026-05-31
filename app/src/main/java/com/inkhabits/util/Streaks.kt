@@ -133,6 +133,36 @@ object Streaks {
         return count
     }
 
+    /**
+     * Cumulative count of perfect days over all history (not necessarily
+     * consecutive): every day on which at least one habit was due and all due
+     * habits were completed. Used for identity progress goals.
+     */
+    fun totalPerfectDays(
+        habits: List<Habit>,
+        completedByHabit: Map<Long, Set<String>>,
+        today: LocalDate
+    ): Int {
+        if (habits.isEmpty()) return 0
+        val earliest = completedByHabit.values
+            .flatMap { it }
+            .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }
+            .minOrNull() ?: return 0
+        var day = earliest
+        var count = 0
+        var guard = 0
+        while (!day.isAfter(today) && guard < 5000) {
+            val due = habits.filter { Schedule.isDueOn(it, day) }
+            if (due.isNotEmpty() &&
+                due.all { (completedByHabit[it.id] ?: emptySet()).contains(day.toString()) }) {
+                count++
+            }
+            day = day.plusDays(1)
+            guard++
+        }
+        return count
+    }
+
     /** Number of completions in the calendar week containing [date]. */
     fun weeklyCount(completed: Set<String>, date: LocalDate): Int {
         val wf = WeekFields.of(Locale.getDefault())

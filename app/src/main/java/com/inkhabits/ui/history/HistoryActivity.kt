@@ -1,5 +1,6 @@
 package com.inkhabits.ui.history
 
+import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.util.TypedValue
@@ -11,10 +12,15 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.inkhabits.data.AppDatabase
 import com.inkhabits.data.entity.Habit
+import com.inkhabits.data.entity.IdentityGoal
 import com.inkhabits.databinding.ActivityHistoryBinding
 import com.inkhabits.eink.EInkActivity
+import com.inkhabits.ui.widget.BarChartView
 import com.inkhabits.ui.widget.CalendarView
+import com.inkhabits.ui.widget.HabitIcons
+import com.inkhabits.ui.widget.ProgressBarView
 import com.inkhabits.util.Schedule
+import com.inkhabits.util.Streaks
 import com.inkhabits.util.StrokeRenderer
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -23,8 +29,10 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 /**
- * Calendar-based records: a month grid marks each day by completion, and tapping a
- * day shows which habits were done / missed that day.
+ * Records screen with two views:
+ *  - Calendar: a month grid; tapping a day shows habits done / missed that day.
+ *  - Progress: per-identity goal bars (perfect days toward a target) plus
+ *    per-habit completion bars and a weekly histogram.
  */
 class HistoryActivity : EInkActivity() {
 
@@ -32,8 +40,11 @@ class HistoryActivity : EInkActivity() {
     private lateinit var db: AppDatabase
 
     private val today = LocalDate.now()
+    private var identities: List<IdentityGoal> = emptyList()
     private var habits: List<Habit> = emptyList()
     private var completedByHabit: Map<Long, Set<String>> = emptyMap()
+
+    private var showingProgress = false
 
     private val monthFmt = DateTimeFormatter.ofPattern("MMMM yyyy")
     private val dayFmt = DateTimeFormatter.ofPattern("EEEE, MMM d")
@@ -54,29 +65,46 @@ class HistoryActivity : EInkActivity() {
         binding.prevMonth.setOnClickListener { changeMonth(-1) }
         binding.nextMonth.setOnClickListener { changeMonth(1) }
 
+        binding.tabCalendar.setOnClickListener { switchTo(false) }
+        binding.tabProgress.setOnClickListener { switchTo(true) }
+        com.inkhabits.eink.EInk.attachFastScroll(binding.scroll)
+
         updateMonthLabel()
 
         lifecycleScope.launch {
             combine(
+                db.identityGoalDao().observeAll(),
                 db.habitDao().observeActive(),
                 db.habitCompletionDao().observeAll()
-            ) { hs, completions ->
-                hs to completions.groupBy { it.habitId }
-                    .mapValues { e -> e.value.map { it.date }.toSet() }
-            }.collect { (hs, byHabit) ->
+            ) { ids, hs, completions ->
+                Triple(ids, hs, completions.groupBy { it.habitId }
+                    .mapValues { e -> e.value.map { it.date }.toSet() })
+            }.collect { (ids, hs, byHabit) ->
+                identities = ids
                 habits = hs
                 completedByHabit = byHabit
                 binding.emptyState.visibility = if (hs.isEmpty()) View.VISIBLE else View.GONE
                 binding.calendar.invalidate()
                 renderDetail(binding.calendar.selected ?: today)
+                if (showingProgress) renderProgress()
             }
         }
     }
 
+    private fun switchTo(progress: Boolean) {
+        showingProgress = progress
+        binding.calendarPane.visibility = if (progress) View.GONE else View.VISIBLE
+        binding.progressPane.visibility = if (progress) View.VISIBLE else View.GONE
+        binding.tabCalendar.setTextColor(if (progress) MUTED else INK)
+        binding.tabProgress.setTextColor(if (progress) INK else MUTED)
+        if (progress) renderProgress()
+    }
+
+    // ---- Calendar view ----
+
     private fun changeMonth(delta: Int) {
         val m = binding.calendar.month.plusMonths(delta.toLong())
         binding.calendar.month = m
-        // Select today if it falls in view, else the 1st — keeps the detail meaningful.
         val sel = if (YearMonth.from(today) == m) today else m.atDay(1)
         binding.calendar.selected = sel
         updateMonthLabel()
@@ -87,8 +115,8 @@ class HistoryActivity : EInkActivity() {
         binding.monthLabel.text = binding.calendar.month.atDay(1).format(monthFmt)
     }
 
-    private fun dueOn(date: LocalDate): List<Habit> =
-        habits.filter { it.startEpochDay <= date.toEpochDay() && Schedule.isDueOn(it, date) }
+    private fun dueOn(date: LocalDate, list: List<Habit> = habits): List<Habit> =
+        list.filter { it.startEpochDay <= date.toEpochDay() && Schedule.isDueOn(it, date) }
 
     private fun statusFor(date: LocalDate): Int {
         if (date.isAfter(today)) return CalendarView.FUTURE
@@ -162,6 +190,192 @@ class HistoryActivity : EInkActivity() {
         return row
     }
 
+    // ---- Progress view ----
+
+    private fun renderProgress() {
+        val pane = binding.progressPane
+        pane.removeAllViews()
+        if (habits.isEmpty()) {
+            pane.addView(infoText("Add a habit to start tracking progress."))
+            return
+        }
+        for (identity in identities) {
+            val idHabits = habits.filter { it.identityGoalId == identity.id }
+            if (idHabits.isEmpty()) continue
+            pane.addView(identityCard(identity, idHabits))
+        }
+    }
+
+    private fun identityCard(identity: IdentityGoal, idHabits: List<Habit>): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(14); layoutParams = lp
+        }
+
+        // Header: icon + name
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+        }
+        header.addView(ImageView(this).apply {
+            setImageResource(HabitIcons.resFor(identity.icon))
+            setColorFilter(INK)
+            layoutParams = LinearLayout.LayoutParams(dp(22), dp(22)).apply { marginEnd = dp(10) }
+        })
+        header.addView(TextView(this).apply {
+            text = identity.name.ifBlank { "Identity" }.uppercase()
+            setTextColor(INK)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setLetterSpacing(0.08f)
+            typeface = font()
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        card.addView(header)
+
+        // Goal progress (perfect days). Tap card area to set / change goal.
+        val perfect = Streaks.totalPerfectDays(idHabits, completedByHabit, today)
+        val goal = identity.goalDays
+        val goalRow = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, dp(2))
+            isClickable = true
+            setOnClickListener { promptGoal(identity) }
+        }
+        val bar = ProgressBarView(this).apply {
+            progress = if (goal > 0) perfect / goal.toFloat() else 0f
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(10))
+            layoutParams = lp
+        }
+        goalRow.addView(bar)
+        goalRow.addView(TextView(this).apply {
+            text = if (goal > 0) {
+                val pct = ((perfect * 100f / goal).coerceAtMost(100f)).toInt()
+                "$perfect / $goal perfect days · $pct%  ·  tap to change"
+            } else {
+                "$perfect perfect days so far · tap to set a goal"
+            }
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setPadding(0, dp(6), 0, 0)
+        })
+        card.addView(goalRow)
+
+        // Divider
+        card.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
+                topMargin = dp(12); bottomMargin = dp(4)
+            }
+            setBackgroundColor(Color.parseColor("#E4E1D8"))
+        })
+
+        // Per-habit stats
+        for (h in idHabits) card.addView(habitStat(h))
+        return card
+    }
+
+    private fun habitStat(h: Habit): View {
+        val completed = completedByHabit[h.id] ?: emptySet()
+        // Completion rate over the last 8 weeks of scheduled occurrences.
+        val states = Streaks.dayStates(h, completed, today, 56)
+        val done = states.count { it == 1 }
+        val scheduled = states.count { it == 1 || it == 2 }
+        val rate = if (scheduled > 0) done.toFloat() / scheduled else 0f
+        val streak = Streaks.computeStreak(h, completed, today)
+        val best = Streaks.bestStreak(h, completed, today)
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, dp(6))
+        }
+        // Name + percent
+        val top = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+        }
+        if (StrokeRenderer.hasInk(h.nameStrokes)) {
+            top.addView(ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                val lp = LinearLayout.LayoutParams(0, dp(22), 1f)
+                layoutParams = lp
+                post { setImageBitmap(StrokeRenderer.renderToBitmap(
+                    h.nameStrokes, width.coerceAtLeast(1), dp(22), maxScale = 1f)) }
+            })
+        } else {
+            top.addView(TextView(this).apply {
+                text = h.name.ifBlank { "Habit" }
+                setTextColor(Color.parseColor("#1A1A1A"))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        top.addView(TextView(this).apply {
+            text = "${(rate * 100).toInt()}%"
+            setTextColor(ACCENT)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            typeface = font()
+        })
+        box.addView(top)
+
+        box.addView(ProgressBarView(this).apply {
+            progress = rate
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(8))
+            lp.topMargin = dp(6); layoutParams = lp
+        })
+
+        box.addView(TextView(this).apply {
+            text = "🔥 streak $streak · best $best · $done done (8 wk)"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            setPadding(0, dp(5), 0, 0)
+        })
+
+        // Weekly histogram: completions per week over the last 12 weeks.
+        box.addView(BarChartView(this).apply {
+            setData(weeklyCounts(completed, 12), weeklyMax(h))
+            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40))
+            lp.topMargin = dp(8); layoutParams = lp
+        })
+        return box
+    }
+
+    /** Completions in each of the last [weeks] calendar weeks, oldest first. */
+    private fun weeklyCounts(completed: Set<String>, weeks: Int): IntArray {
+        val out = IntArray(weeks)
+        for (i in 0 until weeks) {
+            val ref = today.minusWeeks((weeks - 1 - i).toLong())
+            out[i] = Streaks.weeklyCount(completed, ref)
+        }
+        return out
+    }
+
+    /** A sensible top of the histogram scale for this habit's schedule. */
+    private fun weeklyMax(h: Habit): Int = when (h.frequencyType) {
+        com.inkhabits.data.entity.Frequency.WEEKLY_COUNT -> h.weeklyTarget.coerceAtLeast(1)
+        com.inkhabits.data.entity.Frequency.DAYS_OF_WEEK ->
+            h.daysOfWeek.split(",").count { it.isNotBlank() }.coerceAtLeast(1)
+        com.inkhabits.data.entity.Frequency.INTERVAL ->
+            (7 / h.intervalDays.coerceAtLeast(1)).coerceAtLeast(1)
+        else -> 7
+    }
+
+    private fun promptGoal(identity: IdentityGoal) {
+        val options = intArrayOf(30, 50, 66, 100, 150, 200, 365)
+        val labels = options.map { "$it perfect days" }.toMutableList()
+        labels.add("Clear goal")
+        AlertDialog.Builder(this)
+            .setTitle("Goal for ${identity.name.ifBlank { "this identity" }}")
+            .setItems(labels.toTypedArray()) { _, which ->
+                val newGoal = if (which < options.size) options[which] else 0
+                lifecycleScope.launch {
+                    db.identityGoalDao().update(identity.copy(goalDays = newGoal))
+                    // Flow will re-emit and re-render.
+                }
+            }
+            .show()
+    }
+
     private fun infoText(msg: String) = TextView(this).apply {
         text = msg
         setTextColor(MUTED)
@@ -169,10 +383,14 @@ class HistoryActivity : EInkActivity() {
         setPadding(0, dp(4), 0, dp(4))
     }
 
+    private fun font() =
+        androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_semibold)
+
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
         private val ACCENT = Color.parseColor("#8C1D1D")
         private val MUTED = Color.parseColor("#6B6B6B")
+        private val INK = Color.parseColor("#1A1A1A")
     }
 }

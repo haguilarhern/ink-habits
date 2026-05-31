@@ -25,6 +25,19 @@ class DashboardActivity : EInkActivity() {
     private lateinit var db: AppDatabase
     private lateinit var adapter: DashboardAdapter
 
+    /** How the home list is ordered. */
+    private enum class SortMode { IDENTITY, TIME }
+    private var sortMode = SortMode.IDENTITY
+
+    /** Latest observed data, kept so re-sorting doesn't require a re-query. */
+    private data class Snapshot(
+        val identities: List<com.inkhabits.data.entity.IdentityGoal>,
+        val habits: List<com.inkhabits.data.entity.Habit>,
+        val completedByHabit: Map<Long, Set<String>>,
+        val perfect: Int
+    )
+    private var snapshot: Snapshot? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDashboardBinding.inflate(layoutInflater)
@@ -43,6 +56,9 @@ class DashboardActivity : EInkActivity() {
         binding.habitList.layoutManager = LinearLayoutManager(this)
         binding.habitList.adapter = adapter
         binding.habitList.itemAnimator = null
+        binding.habitList.setHasFixedSize(true)
+        binding.habitList.setItemViewCacheSize(12)
+        com.inkhabits.eink.EInk.attachFastScroll(binding.habitList)
 
         binding.navRecords.setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
@@ -55,6 +71,15 @@ class DashboardActivity : EInkActivity() {
         }
         binding.navHome.setOnClickListener {
             binding.habitList.smoothScrollToPosition(0)
+        }
+
+        sortMode = loadSortMode()
+        updateSortLabel()
+        binding.sortToggle.setOnClickListener {
+            sortMode = if (sortMode == SortMode.IDENTITY) SortMode.TIME else SortMode.IDENTITY
+            saveSortMode()
+            updateSortLabel()
+            renderList()
         }
 
         renderQuote()
@@ -127,8 +152,6 @@ class DashboardActivity : EInkActivity() {
     }
 
     private fun observe() {
-        val today = LocalDate.now()
-        val todayStr = today.toString()
         lifecycleScope.launch {
             combine(
                 db.identityGoalDao().observeAll(),
@@ -137,44 +160,92 @@ class DashboardActivity : EInkActivity() {
             ) { identities, habits, completions ->
                 val completedByHabit = completions.groupBy { it.habitId }
                     .mapValues { e -> e.value.map { it.date }.toSet() }
-
-                val perfect = Streaks.perfectDayStreak(habits, completedByHabit, today)
-
-                val items = mutableListOf<DashboardItem>()
-                for (identity in identities) {
-                    val due = habits.filter {
-                        it.identityGoalId == identity.id && Schedule.isDueOn(it, today)
-                    }
-                    if (due.isEmpty()) continue
-                    items.add(DashboardItem.Header(identity))
-                    for (habit in due) {
-                        val completed = completedByHabit[habit.id] ?: emptySet()
-                        val time = Schedule.formatTime(habit.reminderMinutes)
-                        val label = if (time.isEmpty()) Schedule.label(habit)
-                        else "${Schedule.label(habit)} · $time"
-                        items.add(
-                            DashboardItem.HabitRow(
-                                habit = habit,
-                                identityIcon = identity.icon,
-                                completedToday = todayStr in completed,
-                                streak = Streaks.computeStreak(habit, completed, today),
-                                scheduleLabel = label,
-                                anchor = habit.anchor,
-                                anchorStrokes = habit.anchorStrokes
-                            )
-                        )
-                    }
-                }
-                items.add(DashboardItem.AddFooter)
-                Pair(perfect, items)
-            }.collect { (perfect, items) ->
-                binding.streakNumber.text = perfect.toString()
-                adapter.submit(items)
-                val onlyFooter = items.size <= 1
-                binding.emptyState.visibility = if (onlyFooter) View.VISIBLE else View.GONE
-                binding.habitList.post { cleanRefresh(binding.habitList) }
+                val perfect = Streaks.perfectDayStreak(habits, completedByHabit, LocalDate.now())
+                Snapshot(identities, habits, completedByHabit, perfect)
+            }.collect { snap ->
+                snapshot = snap
+                renderList()
             }
         }
+    }
+
+    /** Rebuilds the list from the latest snapshot using the current sort mode. */
+    private fun renderList() {
+        val snap = snapshot ?: return
+        val today = LocalDate.now()
+        val todayStr = today.toString()
+        binding.streakNumber.text = snap.perfect.toString()
+
+        val items = if (sortMode == SortMode.TIME) buildByTime(snap, today, todayStr)
+        else buildByIdentity(snap, today, todayStr)
+        items.add(DashboardItem.AddFooter)
+
+        adapter.submit(items)
+        binding.emptyState.visibility = if (items.size <= 1) View.VISIBLE else View.GONE
+        // Avoid a full-screen GC flash on every change; clean only periodically.
+        binding.habitList.post { com.inkhabits.eink.EInk.afterChange(binding.habitList) }
+    }
+
+    private fun rowFor(
+        habit: com.inkhabits.data.entity.Habit,
+        identityIcon: String,
+        today: LocalDate,
+        todayStr: String,
+        completedByHabit: Map<Long, Set<String>>
+    ): DashboardItem.HabitRow {
+        val completed = completedByHabit[habit.id] ?: emptySet()
+        // Show only the time of day (specific or broad) — not the frequency/days.
+        val label = Schedule.formatTime(habit.reminderMinutes).ifEmpty { "Any time" }
+        return DashboardItem.HabitRow(
+            habit = habit,
+            identityIcon = identityIcon,
+            completedToday = todayStr in completed,
+            streak = Streaks.computeStreak(habit, completed, today),
+            scheduleLabel = label,
+            anchor = habit.anchor,
+            anchorStrokes = habit.anchorStrokes
+        )
+    }
+
+    /** Default order: grouped under each identity. */
+    private fun buildByIdentity(snap: Snapshot, today: LocalDate, todayStr: String): MutableList<DashboardItem> {
+        val items = mutableListOf<DashboardItem>()
+        for (identity in snap.identities) {
+            val due = snap.habits.filter {
+                it.identityGoalId == identity.id && Schedule.isDueOn(it, today)
+            }
+            if (due.isEmpty()) continue
+            items.add(DashboardItem.Header(identity))
+            for (habit in due) items.add(rowFor(habit, identity.icon, today, todayStr, snap.completedByHabit))
+        }
+        return items
+    }
+
+    /** Chronological order: grouped under Morning / Afternoon / Evening / Anytime. */
+    private fun buildByTime(snap: Snapshot, today: LocalDate, todayStr: String): MutableList<DashboardItem> {
+        val iconById = snap.identities.associate { it.id to it.icon }
+        val due = snap.habits.filter { Schedule.isDueOn(it, today) }
+            .sortedBy { Schedule.timeKey(it.reminderMinutes) }
+        val items = mutableListOf<DashboardItem>()
+        var section: String? = null
+        for (habit in due) {
+            val s = Schedule.timeSection(habit.reminderMinutes)
+            if (s != section) { items.add(DashboardItem.SectionHeader(s)); section = s }
+            items.add(rowFor(habit, iconById[habit.identityGoalId] ?: "star", today, todayStr, snap.completedByHabit))
+        }
+        return items
+    }
+
+    private fun updateSortLabel() {
+        binding.sortToggle.text = if (sortMode == SortMode.TIME) "◷  By time" else "≡  By identity"
+    }
+
+    private fun loadSortMode(): SortMode =
+        if (getSharedPreferences("dashboard", MODE_PRIVATE).getString("sort", "IDENTITY") == "TIME")
+            SortMode.TIME else SortMode.IDENTITY
+
+    private fun saveSortMode() {
+        getSharedPreferences("dashboard", MODE_PRIVATE).edit().putString("sort", sortMode.name).apply()
     }
 
     private fun toggle(habitId: Long, makeComplete: Boolean) {

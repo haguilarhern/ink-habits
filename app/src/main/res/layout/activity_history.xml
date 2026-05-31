@@ -37,91 +37,145 @@
             tools:ignore="HardcodedText" />
     </LinearLayout>
 
+    <!-- Calendar / Progress toggle -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/tabCalendar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="9dp"
+            android:text="Calendar"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="@color/ink_text"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/tabProgress"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:paddingVertical="9dp"
+            android:text="Progress"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="@color/ink_text_muted"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/ink_divider" />
 
     <ScrollView
+        android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:fillViewport="true">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="@dimen/screen_margin"
-            android:paddingTop="14dp"
-            android:paddingBottom="24dp">
+            android:layout_height="wrap_content">
 
-            <!-- Month navigation -->
+            <!-- CALENDAR PANE -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/monthLabel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/inter_semibold"
-                    android:textColor="@color/ink_text"
-                    android:textSize="18sp"
-                    tools:text="May 2026" />
-
-                <ImageButton
-                    android:id="@+id/prevMonth"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_back"
-                    android:contentDescription="Previous month"
-                    app:tint="@color/ink_text" />
-
-                <ImageButton
-                    android:id="@+id/nextMonth"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:rotation="180"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_back"
-                    android:contentDescription="Next month"
-                    app:tint="@color/ink_text" />
-            </LinearLayout>
-
-            <com.inkhabits.ui.widget.CalendarView
-                android:id="@+id/calendar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
-
-            <!-- Selected-day detail -->
-            <TextView
-                android:id="@+id/dayTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/inter_semibold"
-                android:textColor="@color/ink_text"
-                android:textSize="16sp"
-                tools:text="Monday, May 12" />
-
-            <View
-                android:layout_width="48dp"
-                android:layout_height="2dp"
-                android:layout_marginTop="6dp"
-                android:background="@color/ink_accent" />
-
-            <LinearLayout
-                android:id="@+id/dayDetail"
+                android:id="@+id/calendarPane"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="12dp" />
+                android:paddingHorizontal="@dimen/screen_margin"
+                android:paddingTop="14dp"
+                android:paddingBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/monthLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/inter_semibold"
+                        android:textColor="@color/ink_text"
+                        android:textSize="18sp"
+                        tools:text="May 2026" />
+
+                    <ImageButton
+                        android:id="@+id/prevMonth"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_back"
+                        android:contentDescription="Previous month"
+                        app:tint="@color/ink_text" />
+
+                    <ImageButton
+                        android:id="@+id/nextMonth"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:rotation="180"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_back"
+                        android:contentDescription="Next month"
+                        app:tint="@color/ink_text" />
+                </LinearLayout>
+
+                <com.inkhabits.ui.widget.CalendarView
+                    android:id="@+id/calendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:id="@+id/dayTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textColor="@color/ink_text"
+                    android:textSize="16sp"
+                    tools:text="Monday, May 12" />
+
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="2dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@color/ink_accent" />
+
+                <LinearLayout
+                    android:id="@+id/dayDetail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp" />
+            </LinearLayout>
+
+            <!-- PROGRESS PANE (built programmatically) -->
+            <LinearLayout
+                android:id="@+id/progressPane"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:paddingHorizontal="@dimen/screen_margin"
+                android:paddingTop="14dp"
+                android:paddingBottom="24dp" />
 
             <TextView
                 android:id="@+id/emptyState"
@@ -133,6 +187,6 @@
                 android:textColor="@color/ink_text_muted"
                 android:visibility="gone"
                 tools:ignore="HardcodedText" />
-        </LinearLayout>
+        </FrameLayout>
     </ScrollView>
 </LinearLayout>

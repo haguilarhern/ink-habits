@@ -98,4 +98,26 @@ object Schedule {
         Frequency.WEEKLY_COUNT -> "${habit.weeklyTarget.coerceAtLeast(1)}x / week"
         else -> "Daily"
     }
+
+    /**
+     * Sort key (minutes-of-day) for ordering habits chronologically. Dayparts map to
+     * representative times; "any time" sorts to the very end.
+     */
+    fun timeKey(minutes: Int): Int = when (minutes) {
+        TIME_MORNING -> 8 * 60
+        TIME_AFTERNOON -> 14 * 60
+        TIME_EVENING -> 20 * 60
+        TIME_ANY -> Int.MAX_VALUE
+        else -> if (minutes < 0) Int.MAX_VALUE else minutes
+    }
+
+    /** Section label for the time-sorted view, derived from [timeKey]. */
+    fun timeSection(minutes: Int): String = when (val k = timeKey(minutes)) {
+        Int.MAX_VALUE -> "Anytime"
+        else -> when {
+            k < 12 * 60 -> "Morning"
+            k < 17 * 60 -> "Afternoon"
+            else -> "Evening"
+        }
+    }
 }

@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import com.inkhabits.util.InkData
 import com.inkhabits.util.StrokeRenderer
 import com.inkhabits.util.StrokeSerializer
 import kotlin.math.abs
@@ -25,6 +26,8 @@ class HabitNameView @JvmOverloads constructor(
 
     private var text: String = ""
     private var strokes: String = ""
+    /** Deserialized once on [setContent], not per-frame — keeps scrolling snappy. */
+    private var ink: InkData? = null
 
     var completed: Boolean = false
         set(value) { field = value; invalidate() }
@@ -58,6 +61,7 @@ class HabitNameView @JvmOverloads constructor(
     fun setContent(text: String, strokes: String) {
         this.text = text
         this.strokes = strokes
+        ink = if (strokes.isNotBlank()) StrokeSerializer.deserialize(strokes) else null
         invalidate()
     }
 
@@ -71,10 +75,15 @@ class HabitNameView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (StrokeRenderer.hasInk(strokes)) {
-            val ink = StrokeSerializer.deserialize(strokes)
-            StrokeRenderer.drawInto(canvas, ink, width, height, Color.BLACK,
-                maxScale = inkMaxScale, centerHorizontal = inkCenterHorizontal)
+        val ink = ink
+        if (ink != null && !ink.isEmpty) {
+            // Blit a cached bitmap instead of re-vectorizing the strokes every frame —
+            // the renderer keeps an LRU cache keyed by content+size, so scrolling stays
+            // cheap even with many handwritten names on screen.
+            if (width > 0 && height > 0) {
+                StrokeRenderer.renderToBitmap(strokes, width, height, Color.BLACK,
+                    inkMaxScale, inkCenterHorizontal)?.let { canvas.drawBitmap(it, 0f, 0f, null) }
+            }
         } else if (text.isNotEmpty()) {
             val y = height / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(text, 4f, y, textPaint)
@@ -96,8 +105,11 @@ class HabitNameView @JvmOverloads constructor(
     private var maxDy = 0f
     private var dragging = false
     private var fired = false
+    /** Set once we decide the gesture is a vertical scroll — we hand it to the list. */
+    private var releasedToParent = false
 
     private val strikeThreshold get() = width * 0.35f
+    private val touchSlop get() = 8f * resources.displayMetrics.density
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!strikeEnabled) return false
@@ -105,25 +117,39 @@ class HabitNameView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 downX = event.x; downY = event.y; liveX = event.x
                 maxDx = 0f; maxDy = 0f; dragging = true; fired = false
-                parent?.requestDisallowInterceptTouchEvent(true)
+                releasedToParent = false
+                // Don't claim the gesture yet: a vertical drag must still scroll the list.
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                if (releasedToParent) return false
                 liveX = event.x
                 maxDx = maxOf(maxDx, abs(event.x - downX))
                 maxDy = maxOf(maxDy, abs(event.y - downY))
-                // Fire the moment the cross is long enough — feels live, no wait for lift.
-                if (!fired && maxDx > strikeThreshold && maxDy < height * 0.5f) {
-                    fired = true
-                    onStrike?.invoke()
+                // Decide intent once past slop: vertical -> scroll, horizontal -> strike.
+                if (!dragging || (maxDx < touchSlop && maxDy < touchSlop)) {
+                    // still ambiguous
+                } else if (maxDy > maxDx && maxDy > touchSlop) {
+                    // Vertical: give the gesture back to the RecyclerView to scroll.
+                    releasedToParent = true
+                    parent?.requestDisallowInterceptTouchEvent(false)
+                    invalidate()
+                    return false
+                } else {
+                    // Horizontal: this is a strike; keep the gesture.
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                    if (!fired && maxDx > strikeThreshold && maxDy < height * 0.5f) {
+                        fired = true
+                        onStrike?.invoke()
+                    }
                 }
                 invalidate()
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 dragging = false
-                // Quick tap (no strike drag) = request edit.
-                if (event.actionMasked == MotionEvent.ACTION_UP && !fired) {
+                // Quick tap (no strike drag, no scroll) = request edit.
+                if (event.actionMasked == MotionEvent.ACTION_UP && !fired && !releasedToParent) {
                     val slop = 12f * resources.displayMetrics.density
                     if (maxDx < slop && maxDy < slop) onTap?.invoke()
                 }

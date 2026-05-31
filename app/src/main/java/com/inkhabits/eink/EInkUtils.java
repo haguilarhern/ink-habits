@@ -35,6 +35,23 @@ public final class EInkUtils {
         } catch (Throwable ignored) {}
     }
 
+    /** Smooth-scroll mode: ANIMATION is purpose-built for scrolling content on Boox. */
+    public static void setScrollMode(View view) {
+        try {
+            EpdController.setViewDefaultUpdateMode(view, UpdateMode.ANIMATION);
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Toggle the panel's system fast mode for fluid motion (flings/scrolls). Must be
+     * cleared once motion ends, followed by a clean refresh. Greatly smooths lists.
+     */
+    public static void systemFastMode(boolean enable) {
+        try {
+            EpdController.applySystemFastMode(enable);
+        } catch (Throwable ignored) {}
+    }
+
     /** Set the default update mode for an entire activity window. */
     public static void setWindowMode(Activity activity, UpdateMode updateMode) {
         try {

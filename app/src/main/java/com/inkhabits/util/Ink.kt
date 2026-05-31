@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.LruCache
 
 /** A single ink point: x, y, and stroke width at that point. */
 data class InkPoint(val x: Float, val y: Float, val w: Float)
@@ -62,6 +63,10 @@ object StrokeSerializer {
 /** Renders serialized ink into a bitmap, scaled to fit the target size. */
 object StrokeRenderer {
 
+    // Cache rendered thumbnails so recycled list rows don't re-rasterize ink every
+    // time they scroll back into view. Keyed by content + size + style.
+    private val bitmapCache = object : LruCache<String, Bitmap>(64) {}
+
     fun hasInk(data: String): Boolean = !StrokeSerializer.deserialize(data).isEmpty
 
     fun renderToBitmap(
@@ -73,12 +78,15 @@ object StrokeRenderer {
         centerHorizontal: Boolean = false
     ): Bitmap? {
         if (targetWidth <= 0 || targetHeight <= 0) return null
+        val key = "$targetWidth|$targetHeight|$color|$maxScale|$centerHorizontal|$data"
+        bitmapCache.get(key)?.let { return it }
         val ink = StrokeSerializer.deserialize(data)
         val bmp = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-        if (ink.isEmpty) return bmp
-        val canvas = Canvas(bmp)
-        drawInto(canvas, ink, targetWidth, targetHeight, color,
-            maxScale = maxScale, centerHorizontal = centerHorizontal)
+        if (!ink.isEmpty) {
+            drawInto(Canvas(bmp), ink, targetWidth, targetHeight, color,
+                maxScale = maxScale, centerHorizontal = centerHorizontal)
+        }
+        bitmapCache.put(key, bmp)
         return bmp
     }
 

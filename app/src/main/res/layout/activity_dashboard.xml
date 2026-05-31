@@ -128,6 +128,32 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- Sort toggle: by identity (default) or by time of day -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end|center_vertical"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:id="@+id/sortToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp"
+            android:text="By identity"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="@color/ink_text_muted"
+            android:textSize="12sp"
+            android:letterSpacing="0.03"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
     <!-- Habit list -->
     <FrameLayout
         android:layout_width="match_parent"
