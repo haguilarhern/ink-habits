@@ -200,11 +200,110 @@ class HistoryActivity : EInkActivity() {
             pane.addView(infoText("Add a habit to start tracking progress."))
             return
         }
+
+        // --- Goal health overview at the top ---
+        pane.addView(goalHealthOverview())
+
         for (identity in identities) {
             val idHabits = habits.filter { it.identityGoalId == identity.id }
             if (idHabits.isEmpty()) continue
             pane.addView(identityCard(identity, idHabits))
         }
+    }
+
+    /**
+     * At-a-glance section: habits that are falling behind vs habits on track
+     * toward their goal streak. Sorted by progress % ascending.
+     */
+    private fun goalHealthOverview(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(14); layoutParams = lp
+        }
+
+        card.addView(TextView(this).apply {
+            text = "GOAL HEALTH"
+            setTextColor(INK)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setLetterSpacing(0.08f)
+            typeface = font()
+        })
+
+        val goalData = habits.map { h ->
+            val identity = identities.find { it.id == h.identityGoalId }
+            val identityGoalVal = identity?.let { Goals.identityGoal(it) } ?: Goals.DEFAULT
+            val goal = Goals.habitGoal(h, identityGoalVal)
+            val completed = completedByHabit[h.id] ?: emptySet()
+            val streak = Streaks.computeStreak(h, completed, today)
+            val pct = if (goal > 0) (streak * 100f / goal).coerceAtMost(100f) else 0f
+            h to pct
+        }.sortedBy { it.second }
+
+        val struggling = goalData.filter { it.second < 50f }
+        val onTrack = goalData.filter { it.second >= 50f }
+
+        if (struggling.isNotEmpty()) {
+            card.addView(sectionLabel("Needs attention", Color.parseColor("#8C1D1D")))
+            struggling.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
+        }
+
+        if (onTrack.isNotEmpty()) {
+            card.addView(sectionLabel("On track", Color.parseColor("#2E7D32")))
+            onTrack.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
+        }
+
+        if (struggling.isEmpty() && onTrack.isEmpty()) {
+            card.addView(infoText("No goal data yet."))
+        }
+
+        return card
+    }
+
+    private fun sectionLabel(text: String, color: Int): View = TextView(this).apply {
+        this.text = text
+        setTextColor(color)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+        setLetterSpacing(0.06f)
+        typeface = font()
+        setPadding(0, dp(10), 0, dp(6))
+    }
+
+    private fun healthRow(h: Habit, pct: Float): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(4), 0, dp(4))
+        }
+
+        val nameView: View = if (StrokeRenderer.hasInk(h.nameStrokes)) {
+            ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                layoutParams = LinearLayout.LayoutParams(0, dp(20), 1f)
+                post { setImageBitmap(StrokeRenderer.renderToBitmap(
+                    h.nameStrokes, width.coerceAtLeast(1), dp(20), maxScale = 1f)) }
+            }
+        } else {
+            TextView(this).apply {
+                text = h.name.ifBlank { "Habit" }
+                setTextColor(INK)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+        }
+        row.addView(nameView)
+
+        row.addView(TextView(this).apply {
+            text = "${pct.toInt()}%"
+            setTextColor(if (pct >= 50f) Color.parseColor("#2E7D32") else ACCENT)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = font()
+        })
+
+        return row
     }
 
     private fun identityCard(identity: IdentityGoal, idHabits: List<Habit>): View {
