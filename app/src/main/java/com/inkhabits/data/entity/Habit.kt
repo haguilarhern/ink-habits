@@ -54,6 +54,11 @@ data class Habit(
      */
     val anchor: String = "",
     val anchorStrokes: String = "",
+    /**
+     * Goal streak (target consecutive completions) driving this habit's progress
+     * bar. 0 = inherit the parent identity's goal; > 0 = a custom per-habit goal.
+     */
+    val goalDays: Int = 0,
     val sortOrder: Int = 0,
     val isActive: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()

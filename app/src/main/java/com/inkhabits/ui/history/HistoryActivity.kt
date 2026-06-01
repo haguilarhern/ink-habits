@@ -19,6 +19,7 @@ import com.inkhabits.ui.widget.BarChartView
 import com.inkhabits.ui.widget.CalendarView
 import com.inkhabits.ui.widget.HabitIcons
 import com.inkhabits.ui.widget.ProgressBarView
+import com.inkhabits.util.Goals
 import com.inkhabits.util.Schedule
 import com.inkhabits.util.Streaks
 import com.inkhabits.util.StrokeRenderer
@@ -235,28 +236,22 @@ class HistoryActivity : EInkActivity() {
         })
         card.addView(header)
 
-        // Goal progress (perfect days). Tap card area to set / change goal.
+        // Goal progress (perfect days toward the identity's goal). Tap to change.
         val perfect = Streaks.totalPerfectDays(idHabits, completedByHabit, today)
-        val goal = identity.goalDays
+        val goal = Goals.identityGoal(identity)
         val goalRow = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(10), 0, dp(2))
             isClickable = true
             setOnClickListener { promptGoal(identity) }
         }
-        val bar = ProgressBarView(this).apply {
-            progress = if (goal > 0) perfect / goal.toFloat() else 0f
-            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(10))
-            layoutParams = lp
-        }
-        goalRow.addView(bar)
+        goalRow.addView(ProgressBarView(this).apply {
+            progress = (perfect / goal.toFloat()).coerceIn(0f, 1f)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(10))
+        })
         goalRow.addView(TextView(this).apply {
-            text = if (goal > 0) {
-                val pct = ((perfect * 100f / goal).coerceAtMost(100f)).toInt()
-                "$perfect / $goal perfect days · $pct%  ·  tap to change"
-            } else {
-                "$perfect perfect days so far · tap to set a goal"
-            }
+            val pct = ((perfect * 100f / goal).coerceAtMost(100f)).toInt()
+            text = "$perfect / $goal perfect days · $pct%  ·  tap to change"
             setTextColor(MUTED)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             setPadding(0, dp(6), 0, 0)
@@ -271,24 +266,23 @@ class HistoryActivity : EInkActivity() {
             setBackgroundColor(Color.parseColor("#E4E1D8"))
         })
 
-        // Per-habit stats
-        for (h in idHabits) card.addView(habitStat(h))
+        // Per-habit stats (streak toward each habit's effective goal)
+        for (h in idHabits) card.addView(habitStat(h, goal))
         return card
     }
 
-    private fun habitStat(h: Habit): View {
+    private fun habitStat(h: Habit, identityGoal: Int): View {
         val completed = completedByHabit[h.id] ?: emptySet()
-        // Completion rate over the last 8 weeks of scheduled occurrences.
-        val states = Streaks.dayStates(h, completed, today, 56)
-        val done = states.count { it == 1 }
-        val scheduled = states.count { it == 1 || it == 2 }
-        val rate = if (scheduled > 0) done.toFloat() / scheduled else 0f
         val streak = Streaks.computeStreak(h, completed, today)
         val best = Streaks.bestStreak(h, completed, today)
+        val goal = Goals.habitGoal(h, identityGoal)
+        val frac = (streak / goal.toFloat()).coerceIn(0f, 1f)
 
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(10), 0, dp(6))
+            isClickable = true
+            setOnClickListener { promptHabitGoal(h, identityGoal) }
         }
         // Name + percent
         val top = LinearLayout(this).apply {
@@ -297,8 +291,7 @@ class HistoryActivity : EInkActivity() {
         if (StrokeRenderer.hasInk(h.nameStrokes)) {
             top.addView(ImageView(this).apply {
                 scaleType = ImageView.ScaleType.FIT_START
-                val lp = LinearLayout.LayoutParams(0, dp(22), 1f)
-                layoutParams = lp
+                layoutParams = LinearLayout.LayoutParams(0, dp(22), 1f)
                 post { setImageBitmap(StrokeRenderer.renderToBitmap(
                     h.nameStrokes, width.coerceAtLeast(1), dp(22), maxScale = 1f)) }
             })
@@ -311,7 +304,7 @@ class HistoryActivity : EInkActivity() {
             })
         }
         top.addView(TextView(this).apply {
-            text = "${(rate * 100).toInt()}%"
+            text = "${(frac * 100).toInt()}%"
             setTextColor(ACCENT)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             typeface = font()
@@ -319,13 +312,14 @@ class HistoryActivity : EInkActivity() {
         box.addView(top)
 
         box.addView(ProgressBarView(this).apply {
-            progress = rate
+            progress = frac
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(8))
             lp.topMargin = dp(6); layoutParams = lp
         })
 
         box.addView(TextView(this).apply {
-            text = "🔥 streak $streak · best $best · $done done (8 wk)"
+            val inherit = if (Goals.habitInherits(h)) " (inherited)" else ""
+            text = "🔥 streak $streak / $goal$inherit · best $best · tap to set goal"
             setTextColor(MUTED)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
             setPadding(0, dp(5), 0, 0)
@@ -338,6 +332,19 @@ class HistoryActivity : EInkActivity() {
             lp.topMargin = dp(8); layoutParams = lp
         })
         return box
+    }
+
+    private fun promptHabitGoal(h: Habit, identityGoal: Int) {
+        val presets = Goals.PRESETS
+        val labels = mutableListOf("Inherit identity goal ($identityGoal)")
+        labels.addAll(presets.map { "$it-day streak" })
+        AlertDialog.Builder(this)
+            .setTitle("Goal for ${h.name.ifBlank { "this habit" }}")
+            .setItems(labels.toTypedArray()) { _, which ->
+                val newGoal = if (which == 0) 0 else presets[which - 1]
+                lifecycleScope.launch { db.habitDao().update(h.copy(goalDays = newGoal)) }
+            }
+            .show()
     }
 
     /** Completions in each of the last [weeks] calendar weeks, oldest first. */
@@ -361,13 +368,13 @@ class HistoryActivity : EInkActivity() {
     }
 
     private fun promptGoal(identity: IdentityGoal) {
-        val options = intArrayOf(30, 50, 66, 100, 150, 200, 365)
-        val labels = options.map { "$it perfect days" }.toMutableList()
-        labels.add("Clear goal")
+        val presets = Goals.PRESETS
+        val labels = presets.map { "$it perfect days" }.toMutableList()
+        labels.add("Use default (${Goals.DEFAULT})")
         AlertDialog.Builder(this)
             .setTitle("Goal for ${identity.name.ifBlank { "this identity" }}")
             .setItems(labels.toTypedArray()) { _, which ->
-                val newGoal = if (which < options.size) options[which] else 0
+                val newGoal = if (which < presets.size) presets[which] else 0
                 lifecycleScope.launch {
                     db.identityGoalDao().update(identity.copy(goalDays = newGoal))
                     // Flow will re-emit and re-render.

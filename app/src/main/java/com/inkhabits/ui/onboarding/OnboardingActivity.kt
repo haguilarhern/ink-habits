@@ -61,6 +61,10 @@ class OnboardingActivity : WritingHostActivity() {
     private var habitAnchor: InputField? = null
     private var habitReminder: Int = -1
     private var timeRefresh: (() -> Unit)? = null
+    // Goal streaks (0 = default / inherit). Identity goal + the in-progress habit goal.
+    private var pendingIdentityGoal: Int = 0
+    private var pendingHabitGoal: Int = 0
+    private var habitGoalRefresh: (() -> Unit)? = null
     // A habit pulled back from the Review step to edit (re-populates the entry).
     private var editingHabit: PendingHabit? = null
     private var editingHabitId: Long = 0L  // DB id carried through an edit so history is kept
@@ -79,6 +83,7 @@ class OnboardingActivity : WritingHostActivity() {
         val reminderMinutes: Int,
         val anchor: String,
         val anchorStrokes: String,
+        val goalDays: Int = 0,  // 0 = inherit the identity's goal
         val habitId: Long = 0L  // existing DB row when editing; 0 = new
     )
 
@@ -114,6 +119,7 @@ class OnboardingActivity : WritingHostActivity() {
             pendingName = goal.name
             pendingStrokes = goal.nameStrokes
             pendingIcon = goal.icon
+            pendingIdentityGoal = goal.goalDays
             pendingHabits.clear()
             originalHabitIds.clear()
             db.habitDao().getActive().filter { it.identityGoalId == editIdentityId }.forEach { h ->
@@ -123,7 +129,7 @@ class OnboardingActivity : WritingHostActivity() {
                     cfg = ScheduleConfig(h.frequencyType, h.daysOfWeek, h.intervalDays, h.weeklyTarget),
                     reminderMinutes = h.reminderMinutes,
                     anchor = h.anchor, anchorStrokes = h.anchorStrokes,
-                    habitId = h.id))
+                    goalDays = h.goalDays, habitId = h.id))
             }
             step = Step.REVIEW
             render()
@@ -253,12 +259,25 @@ class OnboardingActivity : WritingHostActivity() {
             addView(row)
         })
 
+        binding.contentArea.addView(label("Goal streak (perfect days)").apply {
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp(16); layoutParams = lp
+        })
+        binding.contentArea.addView(goalChooser(
+            labels = listOf("Default (${com.inkhabits.util.Goals.DEFAULT})") +
+                com.inkhabits.util.Goals.PRESETS.map { "$it days" },
+            values = listOf(0) + com.inkhabits.util.Goals.PRESETS,
+            currentValue = { pendingIdentityGoal },
+            onPick = { pendingIdentityGoal = it }))
+
         primaryCta("Next →") { onIdentityNext() }
     }
 
     private fun renderHabits() {
         val who = pendingName.ifBlank { "this person" }
         val editing = editingHabit != null
+        editingHabit?.let { pendingHabitGoal = it.goalDays }  // load goal for the chooser
         header("HABITS", if (editing) "Edit habit" else "What would $who do?",
             "Write a habit, set how often, and an optional anchor.")
 
@@ -292,6 +311,19 @@ class OnboardingActivity : WritingHostActivity() {
         val anchor = inkField("e.g. after my morning coffee", "Anchor — after what?")
         habitAnchor = anchor
         binding.contentArea.addView(anchor)
+
+        binding.contentArea.addView(label("Goal streak").apply {
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp(10); layoutParams = lp
+        })
+        binding.contentArea.addView(goalChooser(
+            labels = listOf("Inherit identity") +
+                com.inkhabits.util.Goals.PRESETS.map { "$it-day streak" },
+            values = listOf(0) + com.inkhabits.util.Goals.PRESETS,
+            currentValue = { pendingHabitGoal },
+            onPick = { pendingHabitGoal = it },
+            registerRefresh = { habitGoalRefresh = it }))
 
         // Add-another stays here for quick entry; primary goes to the review list.
         if (!editing) {
@@ -424,11 +456,14 @@ class OnboardingActivity : WritingHostActivity() {
         val cfg = habitSchedule!!.getConfig(); val reminder = habitReminder
         val anchorText = habitAnchor?.getText().orEmpty()
         val anchorStrokes = habitAnchor?.getStrokes().orEmpty()
+        val goalSnap = pendingHabitGoal
         if (reset) {
             input.prepareForNext()
             habitAnchor?.prepareForNext()
             habitReminder = -1
+            pendingHabitGoal = 0
             timeRefresh?.invoke()
+            habitGoalRefresh?.invoke()
             input.focusInk()
             binding.scroll.post { cleanRefresh(binding.root) }
         }
@@ -437,7 +472,7 @@ class OnboardingActivity : WritingHostActivity() {
         lifecycleScope.launch {
             val (aText, aStrokes) = resolveAnchor(anchorText, anchorStrokes)
             val resolvedName = resolveName(name, strokes)
-            pendingHabits.add(PendingHabit(resolvedName, strokes, cfg, reminder, aText, aStrokes, carryId))
+            pendingHabits.add(PendingHabit(resolvedName, strokes, cfg, reminder, aText, aStrokes, goalSnap, carryId))
             then()
         }
     }
@@ -623,6 +658,7 @@ class OnboardingActivity : WritingHostActivity() {
                 val existing = db.identityGoalDao().getAll().firstOrNull { it.id == editingId }
                 db.identityGoalDao().update(IdentityGoal(
                     id = editingId, name = idName, nameStrokes = strokes, icon = icon,
+                    goalDays = pendingIdentityGoal,
                     sortOrder = existing?.sortOrder ?: 0,
                     createdAt = existing?.createdAt ?: System.currentTimeMillis()))
                 val keptIds = mutableSetOf<Long>()
@@ -634,7 +670,7 @@ class OnboardingActivity : WritingHostActivity() {
                             frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
                             intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
                             reminderMinutes = h.reminderMinutes, anchor = h.anchor, anchorStrokes = h.anchorStrokes,
-                            sortOrder = idx, isActive = true))
+                            goalDays = h.goalDays, sortOrder = idx, isActive = true))
                         keptIds.add(h.habitId)
                     } else {
                         db.habitDao().insert(Habit(
@@ -642,7 +678,8 @@ class OnboardingActivity : WritingHostActivity() {
                             frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
                             intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
                             startEpochDay = today, reminderMinutes = h.reminderMinutes,
-                            anchor = h.anchor, anchorStrokes = h.anchorStrokes, sortOrder = idx))
+                            anchor = h.anchor, anchorStrokes = h.anchorStrokes,
+                            goalDays = h.goalDays, sortOrder = idx))
                     }
                 }
                 // Soft-delete removed habits (keep their completion history).
@@ -657,7 +694,8 @@ class OnboardingActivity : WritingHostActivity() {
             // ── Create a new identity ──
             val order = db.identityGoalDao().count()
             val goalId = db.identityGoalDao().insert(
-                IdentityGoal(name = idName, nameStrokes = strokes, icon = icon, sortOrder = order)
+                IdentityGoal(name = idName, nameStrokes = strokes, icon = icon,
+                    goalDays = pendingIdentityGoal, sortOrder = order)
             )
             habitData.forEachIndexed { idx, h ->
                 db.habitDao().insert(
@@ -673,6 +711,7 @@ class OnboardingActivity : WritingHostActivity() {
                         reminderMinutes = h.reminderMinutes,
                         anchor = h.anchor,
                         anchorStrokes = h.anchorStrokes,
+                        goalDays = h.goalDays,
                         sortOrder = idx
                     )
                 )
@@ -728,6 +767,45 @@ class OnboardingActivity : WritingHostActivity() {
         b.setColorFilter(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
         b.elevation = 0f
         b.stateListAnimator = null
+    }
+
+    private fun stepBtn(s: String, onClick: () -> Unit): MaterialButton = MaterialButton(
+        this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+    ).apply {
+        text = s; isAllCaps = false
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+        minWidth = 0; minimumWidth = dp(48)
+        layoutParams = LinearLayout.LayoutParams(dp(54), dp(48))
+        setOnClickListener { onClick() }
+    }
+
+    /** A −/+ stepper over [labels]/[values]; reports the picked value via [onPick]. */
+    private fun goalChooser(
+        labels: List<String>, values: List<Int>,
+        currentValue: () -> Int, onPick: (Int) -> Unit,
+        registerRefresh: ((() -> Unit) -> Unit)? = null
+    ): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp(4); layoutParams = lp
+        }
+        val tv = TextView(this).apply {
+            gravity = android.view.Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            typeface = interSemiBold
+            layoutParams = LinearLayout.LayoutParams(dp(170), LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+        var idx = values.indexOf(currentValue()).coerceAtLeast(0)
+        fun show() { tv.text = labels[idx] }
+        row.addView(stepBtn("−") { if (idx > 0) { idx--; show(); onPick(values[idx]) } })
+        row.addView(tv)
+        row.addView(stepBtn("+") { if (idx < values.size - 1) { idx++; show(); onPick(values[idx]) } })
+        show()
+        registerRefresh?.invoke { idx = values.indexOf(currentValue()).coerceAtLeast(0); show() }
+        return row
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
