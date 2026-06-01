@@ -1,306 +1,326 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/ink_background">
 
-    <!-- Header: streak + quote card -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="@dimen/screen_margin"
-        android:paddingTop="20dp"
-        android:paddingBottom="14dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
+        <!-- Header: streak + quote card -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginEnd="18dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="STREAK"
-                android:fontFamily="@font/inter_semibold"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="@dimen/text_eyebrow"
-                android:letterSpacing="0.18"
-                tools:ignore="HardcodedText" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingTop="20dp"
+            android:paddingBottom="14dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="2dp">
-
-                <ImageView
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:src="@drawable/ic_flame"
-                    android:contentDescription="streak" />
+                android:orientation="vertical"
+                android:layout_marginEnd="18dp">
 
                 <TextView
-                    android:id="@+id/streakNumber"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="0"
-                    android:textColor="@color/ink_text"
-                    android:textSize="50sp"
-                    android:letterSpacing="-0.02"
+                    android:text="STREAK"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="@dimen/text_eyebrow"
+                    android:letterSpacing="0.18"
+                    tools:ignore="HardcodedText" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="2dp">
+
+                    <ImageView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:src="@drawable/ic_flame"
+                        android:contentDescription="streak" />
+
+                    <TextView
+                        android:id="@+id/streakNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0"
+                        android:textColor="@color/ink_text"
+                        android:textSize="50sp"
+                        android:letterSpacing="-0.02"
+                        tools:ignore="HardcodedText" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/quoteCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/quote_card_bg"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="end|top"
+                    android:alpha="0.3"
+                    android:src="@drawable/ic_leaf"
+                    android:contentDescription="" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/quoteText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingEnd="40dp"
+                        android:textColor="@color/ink_text_soft"
+                        android:textSize="16sp"
+                        android:lineSpacingMultiplier="1.3"
+                        tools:ignore="RtlSymmetry" />
+
+                    <ImageView
+                        android:id="@+id/quoteInk"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginEnd="40dp"
+                        android:scaleType="fitStart"
+                        android:visibility="gone"
+                        android:contentDescription="quote" />
+
+                    <View
+                        android:layout_width="48dp"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@color/ink_accent" />
+
+                    <!-- Toggle typed <-> handwritten (only shown when both exist) -->
+                    <TextView
+                        android:id="@+id/quoteToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="6dp"
+                        android:padding="4dp"
+                        android:textColor="@color/ink_text_muted"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/inter_semibold"
+                        android:visibility="gone"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        tools:text="✍ handwritten"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Sort toggle: by identity (default) or by time of day -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:id="@+id/sortToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:text="By identity"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/ink_text_muted"
+                android:textSize="12sp"
+                android:letterSpacing="0.03"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                tools:ignore="HardcodedText" />
+        </LinearLayout>
+
+        <!-- Habit list -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/habitList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingBottom="16dp"
+                android:clipToPadding="false" />
+
+            <TextView
+                android:id="@+id/emptyState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="24dp"
+                android:textColor="@color/ink_text_muted"
+                android:textSize="@dimen/text_body"
+                android:visibility="gone"
+                android:text="No habits yet.\nTap + to start building one."
+                tools:ignore="HardcodedText" />
+        </FrameLayout>
+
+        <!-- Bottom navigation -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/ink_divider" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+
+            <LinearLayout
+                android:id="@+id/navRecords"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_records"
+                    android:contentDescription="Records"
+                    app:tint="@color/ink_text_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Records"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.03"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/navHome"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_home"
+                    android:contentDescription="Home"
+                    app:tint="@color/ink_accent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Home"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textColor="@color/ink_accent"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.03"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/navTodo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_todo"
+                    android:contentDescription="To-Do"
+                    app:tint="@color/ink_text_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="To-Do"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.03"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/navRewards"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_gift"
+                    android:contentDescription="Rewards"
+                    app:tint="@color/ink_text_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="Rewards"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.03"
                     tools:ignore="HardcodedText" />
             </LinearLayout>
         </LinearLayout>
-
-        <FrameLayout
-            android:id="@+id/quoteCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/quote_card_bg"
-            android:paddingHorizontal="18dp"
-            android:paddingVertical="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="end|top"
-                android:alpha="0.3"
-                android:src="@drawable/ic_leaf"
-                android:contentDescription="" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/quoteText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingEnd="40dp"
-                    android:textColor="@color/ink_text_soft"
-                    android:textSize="16sp"
-                    android:lineSpacingMultiplier="1.3"
-                    tools:ignore="RtlSymmetry" />
-
-                <ImageView
-                    android:id="@+id/quoteInk"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginEnd="40dp"
-                    android:scaleType="fitStart"
-                    android:visibility="gone"
-                    android:contentDescription="quote" />
-
-                <View
-                    android:layout_width="48dp"
-                    android:layout_height="2dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@color/ink_accent" />
-
-                <!-- Toggle typed <-> handwritten (only shown when both exist) -->
-                <TextView
-                    android:id="@+id/quoteToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="6dp"
-                    android:padding="4dp"
-                    android:textColor="@color/ink_text_muted"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/inter_semibold"
-                    android:visibility="gone"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    tools:text="✍ handwritten"
-                    tools:visibility="visible" />
-            </LinearLayout>
-        </FrameLayout>
     </LinearLayout>
 
-    <!-- Sort toggle: by identity (default) or by time of day -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end|center_vertical"
-        android:paddingHorizontal="@dimen/screen_margin"
-        android:paddingBottom="2dp">
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginBottom="80dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Add"
+        app:backgroundTint="@color/ink_accent"
+        app:tint="@color/ink_white"
+        app:elevation="0dp"
+        app:fabSize="normal" />
 
-        <TextView
-            android:id="@+id/sortToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="6dp"
-            android:text="By identity"
-            android:fontFamily="@font/inter_semibold"
-            android:textColor="@color/ink_text_muted"
-            android:textSize="12sp"
-            android:letterSpacing="0.03"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            tools:ignore="HardcodedText" />
-    </LinearLayout>
-
-    <!-- Habit list -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/habitList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingBottom="16dp"
-            android:clipToPadding="false" />
-
-        <TextView
-            android:id="@+id/emptyState"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="24dp"
-            android:textColor="@color/ink_text_muted"
-            android:textSize="@dimen/text_body"
-            android:visibility="gone"
-            android:text="No habits yet.\nTap + to start building one."
-            tools:ignore="HardcodedText" />
-    </FrameLayout>
-
-    <!-- Bottom navigation -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/ink_divider" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
-
-        <LinearLayout
-            android:id="@+id/navRecords"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_records"
-                android:contentDescription="Records"
-                app:tint="@color/ink_text_muted" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="Records"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="11sp"
-                android:letterSpacing="0.03"
-                tools:ignore="HardcodedText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/navHome"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_home"
-                android:contentDescription="Home"
-                app:tint="@color/ink_accent" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="Home"
-                android:fontFamily="@font/inter_semibold"
-                android:textColor="@color/ink_accent"
-                android:textSize="11sp"
-                android:letterSpacing="0.03"
-                tools:ignore="HardcodedText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/navTodo"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_todo"
-                android:contentDescription="To-Do"
-                app:tint="@color/ink_text_muted" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="To-Do"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="11sp"
-                android:letterSpacing="0.03"
-                tools:ignore="HardcodedText" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/navRewards"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_gift"
-                android:contentDescription="Rewards"
-                app:tint="@color/ink_text_muted" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="Rewards"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="11sp"
-                android:letterSpacing="0.03"
-                tools:ignore="HardcodedText" />
-        </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
+</FrameLayout>

@@ -65,6 +65,7 @@ class RewardsActivity : WritingHostActivity() {
         setContentView(binding.root)
         db = AppDatabase.get(this)
         binding.backButton.setOnClickListener { finish() }
+        binding.fabAddReward.setOnClickListener { scrollToAddReward() }
         (binding.content.parent as? android.widget.ScrollView)?.let {
             com.inkhabits.eink.EInk.attachFastScroll(it)
         }
@@ -326,6 +327,13 @@ class RewardsActivity : WritingHostActivity() {
 
     private fun deleteReward(r: Reward) {
         lifecycleScope.launch { db.rewardDao().delete(r); load() }
+    }
+
+    private fun scrollToAddReward() {
+        (binding.content.parent as? android.widget.ScrollView)?.let { sv ->
+            sv.post { sv.fullScroll(android.view.View.FOCUS_DOWN) }
+        }
+        rewardInput?.focusInk()
     }
 
     private fun label(text: String): TextView = TextView(this).apply {

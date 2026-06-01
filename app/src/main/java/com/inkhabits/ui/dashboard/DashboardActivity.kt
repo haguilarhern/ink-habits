@@ -82,6 +82,8 @@ class DashboardActivity : EInkActivity() {
             renderList()
         }
 
+        binding.fabAdd.setOnClickListener { showAddMenu() }
+
         renderQuote()
         maybeRequestNotificationPermission()
         observe()
@@ -137,6 +139,25 @@ class DashboardActivity : EInkActivity() {
     private fun openEditIdentity(identityId: Long) {
         startActivity(Intent(this, OnboardingActivity::class.java)
             .putExtra(OnboardingActivity.EXTRA_EDIT_IDENTITY, identityId))
+    }
+
+    private fun showAddMenu() {
+        val popup = android.widget.PopupMenu(this, binding.fabAdd)
+        popup.menu.add(0, 1, 0, "Add identity")
+        popup.menu.add(0, 2, 1, "Add habit")
+        popup.setOnMenuItemClickListener {
+            when (it.itemId) {
+                1 -> { openAddIdentity(); true }
+                2 -> { openAddHabit(); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun openAddHabit() {
+        startActivity(Intent(this, OnboardingActivity::class.java)
+            .putExtra(OnboardingActivity.EXTRA_ADD_HABIT, true))
     }
 
     private val notifPermLauncher = registerForActivityResult(

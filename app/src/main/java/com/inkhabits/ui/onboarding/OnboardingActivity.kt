@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -39,9 +40,10 @@ class OnboardingActivity : WritingHostActivity() {
     private lateinit var binding: ActivityOnboardingBinding
     private lateinit var db: AppDatabase
 
-    private enum class Step { WELCOME, IDENTITY, HABITS, REVIEW, ANOTHER }
+    private enum class Step { WELCOME, IDENTITY_PICKER, IDENTITY, HABITS, REVIEW, ANOTHER }
     private var step = Step.WELCOME
     private var addMode = false
+    private var addHabitMode = false
 
     // Minimal Lucide line icons, by key (see HabitIcons).
     private val icons = com.inkhabits.ui.widget.HabitIcons.keys
@@ -72,6 +74,8 @@ class OnboardingActivity : WritingHostActivity() {
     // Editing an existing identity (0 = creating a new one).
     private var editIdentityId: Long = 0L
     private val originalHabitIds = mutableSetOf<Long>()
+    // For add-habit mode: which identity to attach the new habit to.
+    private var selectedIdentityId: Long = 0L
 
     private val interRegular by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_regular)!! }
     private val interSemiBold by lazy { androidx.core.content.res.ResourcesCompat.getFont(this, com.inkhabits.R.font.inter_semibold)!! }
@@ -95,6 +99,8 @@ class OnboardingActivity : WritingHostActivity() {
 
         addMode = intent.getBooleanExtra(EXTRA_ADD_IDENTITY, false)
         if (addMode) step = Step.IDENTITY
+        addHabitMode = intent.getBooleanExtra(EXTRA_ADD_HABIT, false)
+        if (addHabitMode) step = Step.IDENTITY_PICKER
         editIdentityId = intent.getLongExtra(EXTRA_EDIT_IDENTITY, 0L)
 
         // Warm up handwriting recognition (anchor OCR) so the model is ready when needed.
@@ -144,12 +150,13 @@ class OnboardingActivity : WritingHostActivity() {
             habitInput = null; habitSchedule = null; habitAnchor = null; timeRefresh = null
         }
         // Top bar: back hidden on first screen; skip hidden on the final loop screen.
-        val onFirst = step == Step.WELCOME || (step == Step.IDENTITY && addMode)
+        val onFirst = step == Step.WELCOME || (step == Step.IDENTITY && addMode) || (step == Step.IDENTITY_PICKER && addHabitMode)
         binding.backButton.visibility = if (onFirst) View.INVISIBLE else View.VISIBLE
         binding.skipButton.visibility =
-            if (step == Step.ANOTHER || editIdentityId != 0L) View.GONE else View.VISIBLE
+            if (step == Step.ANOTHER || editIdentityId != 0L || addHabitMode) View.GONE else View.VISIBLE
         when (step) {
             Step.WELCOME -> renderWelcome()
+            Step.IDENTITY_PICKER -> renderIdentityPicker()
             Step.IDENTITY -> renderIdentity()
             Step.HABITS -> renderHabits()
             Step.REVIEW -> renderReview()
@@ -214,6 +221,66 @@ class OnboardingActivity : WritingHostActivity() {
             typeface = interRegular
         })
         primaryCta("Get started →") { step = Step.IDENTITY; render() }
+    }
+
+    private fun renderIdentityPicker() {
+        header("ADD HABIT", "Which identity?", "Choose the identity to add a new habit to.")
+        lifecycleScope.launch {
+            val allIdentities = db.identityGoalDao().getAll()
+            if (allIdentities.isEmpty()) {
+                binding.contentArea.addView(TextView(this@OnboardingActivity).apply {
+                    text = "No identities yet. Create one first."
+                    setTextColor(Color.parseColor("#6B6B6B"))
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    typeface = interRegular
+                })
+                return@launch
+            }
+            for (identity in allIdentities) {
+                binding.contentArea.addView(LinearLayout(this@OnboardingActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    val lp = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    lp.topMargin = dp(8); layoutParams = lp
+                    isClickable = true
+                    setOnClickListener {
+                        selectedIdentityId = identity.id
+                        loadIdentityForAddHabit(identity.id)
+                    }
+                    addView(ImageView(this@OnboardingActivity).apply {
+                        setImageResource(com.inkhabits.ui.widget.HabitIcons.resFor(identity.icon))
+                        setColorFilter(Color.parseColor("#1A1A1A"))
+                        layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(12) }
+                    })
+                    addView(TextView(this@OnboardingActivity).apply {
+                        text = identity.name.ifBlank { "Identity ${identity.id}" }
+                        setTextColor(Color.parseColor("#1A1A1A"))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+                        typeface = interSemiBold
+                    })
+                })
+            }
+        }
+    }
+
+    /** Load an existing identity into the habit-add flow (skips identity creation, goes straight to HABITS). */
+    private fun loadIdentityForAddHabit(identityId: Long) {
+        lifecycleScope.launch {
+            val goal = db.identityGoalDao().getAll().firstOrNull { it.id == identityId }
+            if (goal == null) { render(); return@launch }
+            pendingName = goal.name
+            pendingStrokes = goal.nameStrokes
+            pendingIcon = goal.icon
+            pendingIdentityGoal = goal.goalDays
+            pendingHabits.clear()
+            originalHabitIds.clear()
+            editIdentityId = identityId
+            step = Step.HABITS
+            render()
+        }
     }
 
     private fun renderIdentity() {
@@ -610,14 +677,15 @@ class OnboardingActivity : WritingHostActivity() {
     private fun onBack() {
         when (step) {
             Step.WELCOME -> finish()
+            Step.IDENTITY_PICKER -> finish()
             Step.IDENTITY -> when {
                 editIdentityId != 0L -> { step = Step.REVIEW; render() }
                 addMode -> finish()
                 else -> { step = Step.WELCOME; render() }
             }
             Step.HABITS -> {
-                step = if (pendingHabits.isNotEmpty() || editIdentityId != 0L) Step.REVIEW else Step.IDENTITY
-                render()
+                if (addHabitMode) { step = Step.IDENTITY_PICKER; render() }
+                else { step = if (pendingHabits.isNotEmpty() || editIdentityId != 0L) Step.REVIEW else Step.IDENTITY; render() }
             }
             Step.REVIEW -> if (editIdentityId != 0L) finish() else { step = Step.IDENTITY; render() }
             Step.ANOTHER -> {}
@@ -718,6 +786,11 @@ class OnboardingActivity : WritingHostActivity() {
             }
             createdIdentities.add(IdentityGoal(id = goalId, name = idName, nameStrokes = strokes, icon = icon, sortOrder = order))
             pendingHabits.clear()
+            if (addHabitMode) {
+                com.inkhabits.widget.WidgetCommon.updateAll(this@OnboardingActivity)
+                finish()
+                return@launch
+            }
             step = Step.ANOTHER
             render()
         }
@@ -735,6 +808,7 @@ class OnboardingActivity : WritingHostActivity() {
     companion object {
         const val EXTRA_ADD_IDENTITY = "add_identity"
         const val EXTRA_EDIT_IDENTITY = "edit_identity"  // Long identity id to edit
+        const val EXTRA_ADD_HABIT = "add_habit"
     }
 
     // ── helpers ──
