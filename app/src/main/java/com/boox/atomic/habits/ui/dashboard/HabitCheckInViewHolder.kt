@@ -175,11 +175,9 @@ class HabitCheckInViewHolder(
                 calendarView = calView
 
                 // Add calendar below the existing content in the itemView
-                // itemView is a LinearLayout — add calendar as a child
-                if (itemView is LinearLayout) {
-                    itemView.addView(calView)
-                } else if (itemView is ViewGroup) {
-                    itemView.addView(calView)
+                val parent = itemView
+                if (parent is ViewGroup) {
+                    parent.addView(calView)
                 }
             }
 

@@ -92,7 +92,7 @@ public final class EInkUtils {
      */
     public static void setWindowMode(Activity activity, UpdateMode updateMode) {
         try {
-            EpdController.setDefaultUpdateMode(activity, updateMode);
+            EpdController.setViewDefaultUpdateMode(activity.getWindow().getDecorView(), updateMode);
         } catch (Exception e) {
             // Non-Boox device or SDK not available
         }
@@ -121,7 +121,7 @@ public final class EInkUtils {
      */
     public static void enterFastMode() {
         try {
-            EpdController.applyApplicationFastMode(true);
+            EpdController.applySystemFastMode(true);
         } catch (Exception e) {
             // Non-Boox device or SDK not available
         }
@@ -133,7 +133,7 @@ public final class EInkUtils {
      */
     public static void leaveFastMode() {
         try {
-            EpdController.applyApplicationFastMode(false);
+            EpdController.applySystemFastMode(false);
         } catch (Exception e) {
             // Non-Boox device or SDK not available
         }
@@ -147,7 +147,7 @@ public final class EInkUtils {
      */
     public static void runInFastMode(Runnable action) {
         try {
-            EpdController.applyApplicationFastMode(true);
+            EpdController.applySystemFastMode(true);
         } catch (Exception e) {
             // Non-Boox device — proceed without fast mode
         }
@@ -155,7 +155,7 @@ public final class EInkUtils {
             action.run();
         } finally {
             try {
-                EpdController.applyApplicationFastMode(false);
+                EpdController.applySystemFastMode(false);
             } catch (Exception e) {
                 // Non-Boox device or SDK not available
             }

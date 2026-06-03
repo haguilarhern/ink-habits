@@ -26,7 +26,9 @@ interface HabitDao {
     fun getHabitsForGoal(goalId: Long): Flow<List<Habit>>
 
     @Query("""
-        SELECT g.*, h.id as habitId, h.name as habitName,
+        SELECT g.id, g.name, g.identityStatement, g.icon,
+               g.sortOrder as goalSortOrder,
+               h.id as habitId, h.name as habitName,
                h.strokeData as habitStrokeData,
                h.frequencyType, h.intervalDays, h.daysOfWeek,
                h.sortOrder as habitSortOrder,

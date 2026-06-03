@@ -1,0 +1,232 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.boox.atomic.habits"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="28"
+9        android:targetSdkVersion="31" />
+10
+11    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+11-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:4:5-81
+11-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:4:22-78
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:12:5-79
+12-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:12:22-76
+13    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+13-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:13:5-76
+13-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:13:22-73
+14    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+14-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:14:5-76
+14-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:14:22-73
+15    <uses-permission android:name="android.permission.BLUETOOTH" />
+15-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:15:5-68
+15-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:15:22-65
+16    <uses-permission android:name="android.permission.DUMP" />
+16-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:16:5-63
+16-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:16:22-60
+17    <uses-permission android:name="android.permission.WAKE_LOCK" />
+17-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:17:5-68
+17-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:17:22-65
+18    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+18-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:18:5-77
+18-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:18:22-74
+19    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+19-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:19:5-78
+19-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:19:22-75
+20    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+20-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:20:5-81
+20-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:20:22-78
+21    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+21-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:21:5-80
+21-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:21:22-77
+22
+23    <permission
+23-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:22:5-24:47
+24        android:name="com.boox.atomic.habits.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+24-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:23:9-81
+25        android:protectionLevel="signature" />
+25-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:24:9-44
+26
+27    <uses-permission android:name="com.boox.atomic.habits.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+27-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:26:5-97
+27-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:26:22-94
+28
+29    <application
+29-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:5:5-36:19
+30        android:allowBackup="true"
+30-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:6:9-35
+31        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+31-->[androidx.core:core:1.9.0] /Users/hector/.gradle/caches/8.14.3/transforms/1a27b3bc76af6e3242b963a1dc9b88b6/transformed/core-1.9.0/AndroidManifest.xml:28:18-86
+32        android:debuggable="true"
+33        android:extractNativeLibs="false"
+34        android:icon="@mipmap/ic_launcher"
+34-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:7:9-43
+35        android:label="Ink Habits"
+35-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:8:9-35
+36        android:supportsRtl="true"
+36-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:10:9-35
+37        android:theme="@style/Theme.BooxEInk" >
+37-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:9:9-46
+38        <activity
+38-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:13:9-20:20
+39            android:name="com.boox.atomic.habits.MainActivity"
+39-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:13:19-47
+40            android:configChanges="orientation|screenSize"
+40-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:14:13-59
+41            android:exported="true"
+41-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:13:48-71
+42            android:theme="@style/Theme.BooxEInk" >
+42-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:15:13-50
+43            <intent-filter>
+43-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:16:13-19:29
+44                <action android:name="android.intent.action.MAIN" />
+44-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:17:17-69
+44-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:17:25-66
+45
+46                <category android:name="android.intent.category.LAUNCHER" />
+46-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:18:17-77
+46-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:18:27-74
+47            </intent-filter>
+48        </activity>
+49        <activity
+49-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:22:9-85
+50            android:name="com.boox.atomic.habits.ui.setup.SetupActivity"
+50-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:22:19-57
+51            android:exported="false" />
+51-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:22:58-82
+52        <activity
+52-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:23:9-24:53
+53            android:name="com.boox.atomic.habits.ui.dashboard.DashboardActivity"
+53-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:23:19-65
+54            android:exported="false"
+54-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:23:66-90
+55            android:theme="@style/Theme.BooxEInk" />
+55-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:24:13-50
+56
+57        <receiver
+57-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:26:9-29:20
+58            android:name="com.boox.atomic.habits.widget.HabitsWidgetProvider"
+58-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:26:19-62
+59            android:exported="true" >
+59-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:26:63-86
+60            <intent-filter>
+60-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:13-111
+61                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+61-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:28-95
+61-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:36-92
+62            </intent-filter>
+63
+64            <meta-data
+64-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:13-111
+65                android:name="android.appwidget.provider"
+65-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:24-65
+66                android:resource="@xml/habits_widget_info" />
+66-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:66-108
+67        </receiver>
+68        <receiver
+68-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:31:9-34:20
+69            android:name="com.boox.atomic.habits.widget.TodoWidgetProvider"
+69-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:31:19-60
+70            android:exported="true" >
+70-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:31:61-84
+71            <intent-filter>
+71-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:13-111
+72                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+72-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:28-95
+72-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:27:36-92
+73            </intent-filter>
+74
+75            <meta-data
+75-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:13-111
+76                android:name="android.appwidget.provider"
+76-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:24-65
+77                android:resource="@xml/todo_widget_info" />
+77-->/Users/hector/Documents/Development/boox-ink-habits/app/src/main/AndroidManifest.xml:28:66-108
+78        </receiver>
+79
+80        <uses-library
+80-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:26:9-28:40
+81            android:name="org.apache.http.legacy"
+81-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:27:13-50
+82            android:required="false" />
+82-->[com.onyx.android.sdk:onyxsdk-base:1.7.1.1] /Users/hector/.gradle/caches/8.14.3/transforms/b1bef25e9b95c7d37b4c81ad3915e80d/transformed/jetified-onyxsdk-base-1.7.1.1/AndroidManifest.xml:28:13-37
+83
+84        <service
+84-->[androidx.room:room-runtime:2.6.1] /Users/hector/.gradle/caches/8.14.3/transforms/d6b869a1d3fd545f29de8e7a0337bbcc/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+85            android:name="androidx.room.MultiInstanceInvalidationService"
+85-->[androidx.room:room-runtime:2.6.1] /Users/hector/.gradle/caches/8.14.3/transforms/d6b869a1d3fd545f29de8e7a0337bbcc/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+86            android:directBootAware="true"
+86-->[androidx.room:room-runtime:2.6.1] /Users/hector/.gradle/caches/8.14.3/transforms/d6b869a1d3fd545f29de8e7a0337bbcc/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+87            android:exported="false" />
+87-->[androidx.room:room-runtime:2.6.1] /Users/hector/.gradle/caches/8.14.3/transforms/d6b869a1d3fd545f29de8e7a0337bbcc/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+88
+89        <provider
+89-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+90            android:name="androidx.startup.InitializationProvider"
+90-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:25:13-67
+91            android:authorities="com.boox.atomic.habits.androidx-startup"
+91-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:26:13-68
+92            android:exported="false" >
+92-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:27:13-37
+93            <meta-data
+93-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+94                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+94-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:30:17-75
+95                android:value="androidx.startup" />
+95-->[androidx.emoji2:emoji2:1.2.0] /Users/hector/.gradle/caches/8.14.3/transforms/14a936c71ebc71212295749bc0ae9d34/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:31:17-49
+96            <meta-data
+96-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/hector/.gradle/caches/8.14.3/transforms/a87623cd378514abbd504b4d833f7679/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+97                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+97-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/hector/.gradle/caches/8.14.3/transforms/a87623cd378514abbd504b4d833f7679/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+98                android:value="androidx.startup" />
+98-->[androidx.lifecycle:lifecycle-process:2.7.0] /Users/hector/.gradle/caches/8.14.3/transforms/a87623cd378514abbd504b4d833f7679/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+99            <meta-data
+99-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+100                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+100-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+101                android:value="androidx.startup" />
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+102        </provider>
+103
+104        <receiver
+104-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+105            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+105-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+106            android:directBootAware="false"
+106-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+107            android:enabled="true"
+107-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+108            android:exported="true"
+108-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+109            android:permission="android.permission.DUMP" >
+109-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+110            <intent-filter>
+110-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+111                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+111-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+111-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+112            </intent-filter>
+113            <intent-filter>
+113-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+114                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+114-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+114-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+115            </intent-filter>
+116            <intent-filter>
+116-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+117                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+117-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+117-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+118            </intent-filter>
+119            <intent-filter>
+119-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+120                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+120-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+120-->[androidx.profileinstaller:profileinstaller:1.3.0] /Users/hector/.gradle/caches/8.14.3/transforms/da3fdf6645a57dbedb3c32a566b0ea8d/transformed/jetified-profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+121            </intent-filter>
+122        </receiver>
+123    </application>
+124
+125</manifest>

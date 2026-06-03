@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_todo">+ Add todo</string>
+    <string name="app_name">Ink Habits</string>
+    <string name="cancel">Cancel</string>
+    <string name="habits_section">My Identity Goals</string>
+    <string name="save">Save</string>
+    <string name="setup_title">Who do you want to become?</string>
+    <string name="todos_section">To-Do\'s</string>
+    <style name="Theme.BooxEInk" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="colorPrimary">#FF1A1A1A</item>
+        <item name="colorPrimaryDark">#FF000000</item>
+        <item name="colorAccent">#FF333333</item>
+        <item name="android:textColorPrimary">#FF1A1A1A</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

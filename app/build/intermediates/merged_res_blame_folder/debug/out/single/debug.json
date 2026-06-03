@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_item_identity_goal.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/item_identity_goal.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/xml_habits_widget_info.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/xml/habits_widget_info.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_widget_habits.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/widget_habits.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/drawable_bg_stylus_checkbox.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/drawable/bg_stylus_checkbox.xml"
+    },
+    {
+        "merged": "com.boox.atomic.habits.app-merged_res-40:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.boox.atomic.habits.app-main-42:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_item_todo.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/item_todo.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/xml_todo_widget_info.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/xml/todo_widget_info.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_activity_dashboard.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/activity_dashboard.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_widget_todo.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/widget_todo.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_activity_setup.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/activity_setup.xml"
+    },
+    {
+        "merged": "com.boox.atomic.habits.app-merged_res-40:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.boox.atomic.habits.app-main-42:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_item_habit_checkin.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/item_habit_checkin.xml"
+    },
+    {
+        "merged": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-merged_res-40:/layout_activity_main.xml.flat",
+        "source": "/Users/hector/.gradle/daemon/8.14.3/com.boox.atomic.habits.app-main-42:/layout/activity_main.xml"
+    }
+]

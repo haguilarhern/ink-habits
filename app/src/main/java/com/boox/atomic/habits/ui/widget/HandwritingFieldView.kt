@@ -126,10 +126,7 @@ class HandwritingFieldView @JvmOverloads constructor(
             // Store all points as a single flat stroke
             strokes.clear()
             strokes.add(allPoints)
-            // Redraw
-            strokes.forEach { stroke ->
-                drawStrokeOnBitmap(stroke)
-            }
+            redrawAllStrokes()
             invalidate()
         } catch (_: Exception) {
         }
@@ -291,7 +288,7 @@ class HandwritingFieldView @JvmOverloads constructor(
 
                 // Draw incrementally onto the backing bitmap for performance
                 drawStrokeSegment(
-                    canvas = canvas,
+                    targetCanvas = canvas,
                     x1 = lastTouchX,
                     y1 = lastTouchY,
                     x2 = x,

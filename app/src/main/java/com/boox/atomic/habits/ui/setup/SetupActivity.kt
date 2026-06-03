@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.boox.atomic.habits.R
 import com.boox.atomic.habits.data.AppDatabase
@@ -98,11 +100,11 @@ class SetupActivity : EInkActivity() {
         setHeader("Step 1/5", "Who do you want to become?", "Write your identity name with the stylus, then confirm.")
 
         val scroll = ScrollView(this)
-        val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 8, 0, 8) }
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 8, 0, 8) }
 
         ll.addView(TextView(this).apply { text = "Write your identity name:"; textSize = 14f })
         goalNameField = HandwritingFieldView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 120)
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 120)
             setOnConfirmListener { /* auto-confirm on user action */ }
         }
         ll.addView(goalNameField!!)
@@ -126,7 +128,7 @@ class SetupActivity : EInkActivity() {
         ll.addView(TextView(this).apply {
             text = "Pick an icon:"; textSize = 14f; setPadding(0, 12, 0, 4)
         })
-        val iconRow = LinearLayout(this).apply { orientation = HORIZONTAL }
+        val iconRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         for (icon in ICONS) {
             iconRow.addView(Button(this).apply {
                 text = icon; textSize = 22f; setPadding(4, 2, 4, 2)
@@ -146,13 +148,13 @@ class SetupActivity : EInkActivity() {
         setHeader("Step 2/5", "What would $currentGoalName do?", "Write each habit with the stylus, confirm, then pick frequency.")
 
         val scroll = ScrollView(this)
-        val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 8, 0, 8) }
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 8, 0, 8) }
         ll.addView(TextView(this).apply {
             text = "Habits for $currentGoalName:"; textSize = 14f
-            textStyle = android.graphics.Typeface.BOLD
+            setTypeface(null, android.graphics.Typeface.BOLD)
         })
 
-        val container = LinearLayout(this).apply { orientation = VERTICAL }
+        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ll.addView(container)
 
         ll.addView(Button(this).apply {
@@ -167,20 +169,19 @@ class SetupActivity : EInkActivity() {
     }
 
     private fun addHabitRow(container: LinearLayout) {
-        val root = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 8, 0, 8) }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 8, 0, 8) }
 
         val hw = HandwritingFieldView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 100)
-            hint = "Write habit name..."
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 100)
         }
         root.addView(hw)
 
-        val btnRow = LinearLayout(this).apply { orientation = HORIZONTAL }
+        val btnRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         btnRow.addView(Button(this).apply {
             text = "✓ Confirm"; setOnClickListener { hw.setConfirmed(true) }
         })
 
-        val freqGroup = RadioGroup(this).apply { orientation = HORIZONTAL; setPadding(16, 0, 0, 0) }
+        val freqGroup = RadioGroup(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(16, 0, 0, 0) }
         freqGroup.addView(RadioButton(this).apply { text = "Daily"; isChecked = true })
         freqGroup.addView(RadioButton(this).apply { text = "Weekly" })
         btnRow.addView(freqGroup)
@@ -202,9 +203,9 @@ class SetupActivity : EInkActivity() {
     private fun renderStep2() {
         setHeader("Step 3/5", "Another identity goal?", "You can add more identities. Each one gets its own habits.")
 
-        val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 16, 0, 0) }
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 16, 0, 0) }
         ll.addView(TextView(this).apply {
-            text = "Your identities:"; textSize = 14f; textStyle = android.graphics.Typeface.BOLD
+            text = "Your identities:"; textSize = 14f; setTypeface(null, android.graphics.Typeface.BOLD)
         })
         for (g in createdGoals) {
             ll.addView(TextView(this).apply {
@@ -221,15 +222,15 @@ class SetupActivity : EInkActivity() {
     private fun renderStep3() {
         setHeader("Step 4/5", "Any to-do's?", "Write each task with the stylus.")
         val scroll = ScrollView(this)
-        val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 8, 0, 8) }
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 8, 0, 8) }
 
-        val container = LinearLayout(this).apply { orientation = VERTICAL }
+        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         ll.addView(container)
 
         ll.addView(Button(this).apply {
             text = "+ Add todo"
             setOnClickListener {
-                val root = LinearLayout(this@SetupActivity).apply { orientation = HORIZONTAL; setPadding(0, 8, 0, 8) }
+                val root = LinearLayout(this@SetupActivity).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 8, 0, 8) }
                 val hw = HandwritingFieldView(this@SetupActivity).apply {
                     layoutParams = LinearLayout.LayoutParams(0, 80, 1f)
                 }
@@ -254,11 +255,11 @@ class SetupActivity : EInkActivity() {
 
     private fun renderStep4() {
         setHeader("Step 5/5", "You're all set!", "Your Ink Habits are ready.")
-        val ll = LinearLayout(this).apply { orientation = VERTICAL; setPadding(0, 16, 0, 0) }
+        val ll = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 16, 0, 0) }
         for (g in createdGoals) {
             ll.addView(TextView(this).apply {
                 text = "${g.icon ?: "📖"} ${g.name}"; textSize = 18f
-                textStyle = android.graphics.Typeface.BOLD; setPadding(16, 8, 0, 8)
+                setTypeface(null, android.graphics.Typeface.BOLD); setPadding(16, 8, 0, 8)
             })
         }
         ll.addView(TextView(this).apply {
@@ -290,7 +291,7 @@ class SetupActivity : EInkActivity() {
                         identityStatement = statement.ifEmpty { "I am becoming who I choose to be" },
                         icon = selectedIcon, strokeData = strokeData, sortOrder = createdGoals.size))
                     currentGoalId = id
-                    createdGoals.add(IdentityGoal(id, name, statement.ifEmpty { "I am becoming who I choose to be" }, selectedIcon, strokeData, createdGoals.size))
+                    createdGoals.add(IdentityGoal(id = id, name = name, identityStatement = statement.ifEmpty { "I am becoming who I choose to be" }, icon = selectedIcon, sortOrder = createdGoals.size, strokeData = strokeData))
                     val goalNameFromIcon = when (selectedIcon) {
                         "📖" -> "READER"; "🏃" -> "ATHLETE"; "✍️" -> "WRITER"; "🎨" -> "ARTIST"
                         "🧘" -> "YOGI"; "💻" -> "CODER"; "🎵" -> "MUSICIAN"; "💪" -> "FITNESS"
@@ -361,14 +362,14 @@ class SetupActivity : EInkActivity() {
                 contentArea.removeAllViews()
                 for (goal in goals) {
                     val card = LinearLayout(this@SetupActivity).apply {
-                        orientation = VERTICAL; setPadding(12, 12, 12, 12); setBackgroundColor(0xFFF5F5F5.toInt())
+                        orientation = LinearLayout.VERTICAL; setPadding(12, 12, 12, 12); setBackgroundColor(0xFFF5F5F5.toInt())
                     }
                     // Goal header
-                    val header = LinearLayout(this@SetupActivity).apply { orientation = HORIZONTAL }
+                    val header = LinearLayout(this@SetupActivity).apply { orientation = LinearLayout.HORIZONTAL }
                     header.addView(TextView(this@SetupActivity).apply {
                         text = "${goal.icon ?: "📖"} ${goal.name.ifEmpty { "Identity" }}"
-                        textSize = 16f; textStyle = android.graphics.Typeface.BOLD
-                        layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                        textSize = 16f; setTypeface(null, android.graphics.Typeface.BOLD)
+                        layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                     })
                     header.addView(Button(this@SetupActivity).apply {
                         text = "✕ Delete"; setTextColor(0xFFE17055.toInt()); textSize = 12f
@@ -381,10 +382,10 @@ class SetupActivity : EInkActivity() {
                         // Remove old habit items (keep header)
                         while (card.childCount > 1) card.removeViewAt(1)
                         for (habit in habits) {
-                            val hr = LinearLayout(this@SetupActivity).apply { orientation = HORIZONTAL; setPadding(24, 6, 0, 6) }
+                            val hr = LinearLayout(this@SetupActivity).apply { orientation = LinearLayout.HORIZONTAL; setPadding(24, 6, 0, 6) }
                             hr.addView(TextView(this@SetupActivity).apply {
                                 text = if (habit.strokeData.isNotEmpty()) "✎ Handwriting" else habit.name.ifEmpty { "Habit" }
-                                textSize = 14f; layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                                textSize = 14f; layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                             })
                             hr.addView(Button(this@SetupActivity).apply {
                                 text = "✕"; textSize = 10f
@@ -407,7 +408,7 @@ class SetupActivity : EInkActivity() {
                     })
                     contentArea.addView(card)
                     contentArea.addView(View(this@SetupActivity).apply {
-                        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 2)
+                        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 2)
                         setBackgroundColor(0xFFEEEEEE.toInt()); minimumHeight = 2
                     })
                 }
@@ -419,7 +420,7 @@ class SetupActivity : EInkActivity() {
                             .setPositiveButton("Add") { _, _ ->
                                 val n = input.text.toString().trim()
                                 if (n.isNotEmpty()) lifecycleScope.launch {
-                                    db.identityGoalDao().insert(IdentityGoal(name = n.uppercase()))
+                                    db.identityGoalDao().insert(IdentityGoal(name = n.uppercase(), identityStatement = "I am becoming who I choose to be"))
                                 }
                             }.setNegativeButton("Cancel", null).show()
                     }

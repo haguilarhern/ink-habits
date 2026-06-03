@@ -1,6 +1,6 @@
 package com.boox.atomic.habits.boox
 
-import com.onyx.android.sdk.pen.data.TouchPoint
+import com.onyx.android.sdk.data.note.TouchPoint
 
 enum class StylusGesture {
     CHECKMARK,

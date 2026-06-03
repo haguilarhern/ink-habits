@@ -6,12 +6,13 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.view.SurfaceView;
 
-import com.onyx.android.sdk.api.device.Device;
+import com.onyx.android.sdk.device.Device;
 import com.onyx.android.sdk.api.device.epd.EpdController;
 import com.onyx.android.sdk.api.device.epd.UpdateMode;
 import com.onyx.android.sdk.pen.RawInputCallback;
 import com.onyx.android.sdk.pen.TouchHelper;
-import com.onyx.android.sdk.pen.data.TouchPoint;
+import com.onyx.android.sdk.data.note.TouchPoint;
+import com.onyx.android.sdk.pen.data.TouchPointList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -177,7 +178,7 @@ public class ScribbleEngine {
 
         try {
             if (touchHelper != null) {
-                touchHelper.close();
+                touchHelper.closeRawDrawing();
                 touchHelper = null;
             }
             Device.currentDevice().leaveScribbleMode(surfaceView);
@@ -281,7 +282,7 @@ public class ScribbleEngine {
 
     private final RawInputCallback rawInputCallback = new RawInputCallback() {
         @Override
-        public void onBeginRawDrawing(boolean stylusUsed, Object rawObject) {
+        public void onBeginRawDrawing(boolean stylusUsed, TouchPoint point) {
             // Enter scribble mode and start a new stroke
             try {
                 Device.currentDevice().enterScribbleMode(surfaceView);
@@ -290,12 +291,18 @@ public class ScribbleEngine {
             }
 
             currentStroke = new Stroke(strokeWidth, strokeColor, System.currentTimeMillis());
+            if (currentStroke != null && point != null) {
+                currentStroke.addPoint(point);
+            }
         }
 
         @Override
-        public void onEndRawDrawing(boolean stylusUsed, Object rawObject) {
+        public void onEndRawDrawing(boolean stylusUsed, TouchPoint point) {
             // Finalize the current stroke
             if (currentStroke != null) {
+                if (point != null) {
+                    currentStroke.addPoint(point);
+                }
                 strokes.add(currentStroke);
                 currentStroke = null;
             }
@@ -326,10 +333,30 @@ public class ScribbleEngine {
         }
 
         @Override
-        public void onBeginRawErasing(boolean stylusUsed, Object rawObject) {
-            // Eraser pressed — switch to eraser mode or mark for handling upstream
-            // A clean refresh helps clear residual pixels from the eraser region
+        public void onRawDrawingTouchPointListReceived(TouchPointList touchPointList) {
+            // Full point list delivered at end of stroke; per-point moves already
+            // accumulate into currentStroke, so no extra handling needed here.
+        }
+
+        @Override
+        public void onBeginRawErasing(boolean stylusUsed, TouchPoint point) {
+            // Eraser pressed — a clean refresh helps clear residual pixels.
             cleanRefresh();
+        }
+
+        @Override
+        public void onEndRawErasing(boolean stylusUsed, TouchPoint point) {
+            cleanRefresh();
+        }
+
+        @Override
+        public void onRawErasingTouchPointMoveReceived(TouchPoint touchPoint) {
+            // Erasing handled by the system overlay; nothing to accumulate.
+        }
+
+        @Override
+        public void onRawErasingTouchPointListReceived(TouchPointList touchPointList) {
+            // No-op: erasing point list not used by this engine.
         }
     };
 }

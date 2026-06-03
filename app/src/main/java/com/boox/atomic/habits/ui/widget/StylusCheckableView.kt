@@ -9,7 +9,6 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.boox.atomic.habits.boox.EInkUtils
-import com.onyx.android.sdk.pen.data.TouchPoint
 
 class StylusCheckableView @JvmOverloads constructor(
     context: Context,
