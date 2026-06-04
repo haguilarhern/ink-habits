@@ -201,8 +201,8 @@ class HistoryActivity : EInkActivity() {
             return
         }
 
-        // --- Goal health overview at the top ---
         pane.addView(goalHealthOverview())
+        pane.addView(streakMomentum())
 
         for (identity in identities) {
             val idHabits = habits.filter { it.identityGoalId == identity.id }
@@ -212,8 +212,7 @@ class HistoryActivity : EInkActivity() {
     }
 
     /**
-     * At-a-glance section: habits that are falling behind vs habits on track
-     * toward their goal streak. Sorted by progress % ascending.
+     * Goal health: habits falling behind vs on track toward their goal streak.
      */
     private fun goalHealthOverview(): View {
         val card = LinearLayout(this).apply {
@@ -261,6 +260,109 @@ class HistoryActivity : EInkActivity() {
         }
 
         return card
+    }
+
+    /**
+     * Streak momentum: habits actively building a streak vs stale habits
+     * that have been due many times but have zero streak.
+     */
+    private fun streakMomentum(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(14); layoutParams = lp
+        }
+
+        card.addView(TextView(this).apply {
+            text = "STREAK MOMENTUM"
+            setTextColor(INK)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setLetterSpacing(0.08f)
+            typeface = font()
+        })
+
+        val momentumData = habits.map { h ->
+            val completed = completedByHabit[h.id] ?: emptySet()
+            val streak = Streaks.computeStreak(h, completed, today)
+            val dueCount = countOccurrencesSinceStart(h, today)
+            h to Pair(streak, dueCount)
+        }
+
+        val progressing = momentumData.filter { it.second.first > 0 }
+            .sortedByDescending { it.second.first }
+        val stale = momentumData.filter { it.second.first == 0 && it.second.second > 0 }
+            .sortedByDescending { it.second.second }
+
+        if (progressing.isNotEmpty()) {
+            card.addView(sectionLabel("Progressing", Color.parseColor("#2E7D32")))
+            progressing.forEach { (h, data) ->
+                card.addView(momentumRow(h, data.first, progressing = true))
+            }
+        }
+
+        if (stale.isNotEmpty()) {
+            card.addView(sectionLabel("Stale", Color.parseColor("#8C1D1D")))
+            stale.forEach { (h, data) ->
+                card.addView(momentumRow(h, data.first, progressing = false))
+            }
+        }
+
+        if (progressing.isEmpty() && stale.isEmpty()) {
+            card.addView(infoText("No streak data yet."))
+        }
+
+        return card
+    }
+
+    /** Count scheduled occurrences since the habit's start date. */
+    private fun countOccurrencesSinceStart(h: Habit, today: LocalDate): Int {
+        val startDate = LocalDate.ofEpochDay(h.startEpochDay)
+        var d = startDate
+        var count = 0
+        var guard = 0
+        while (!d.isAfter(today) && guard < 730) {
+            if (Schedule.isDueOn(h, d)) count++
+            d = d.plusDays(1)
+            guard++
+        }
+        return count
+    }
+
+    private fun momentumRow(h: Habit, streak: Int, progressing: Boolean): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(4), 0, dp(4))
+        }
+
+        val nameView: View = if (StrokeRenderer.hasInk(h.nameStrokes)) {
+            ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                layoutParams = LinearLayout.LayoutParams(0, dp(20), 1f)
+                post { setImageBitmap(StrokeRenderer.renderToBitmap(
+                    h.nameStrokes, width.coerceAtLeast(1), dp(20), maxScale = 1f)) }
+            }
+        } else {
+            TextView(this).apply {
+                text = h.name.ifBlank { "Habit" }
+                setTextColor(INK)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+        }
+        row.addView(nameView)
+
+        row.addView(TextView(this).apply {
+            text = if (progressing) "🔥 $streak" else "stale"
+            setTextColor(if (progressing) Color.parseColor("#2E7D32") else ACCENT)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = font()
+        })
+
+        return row
     }
 
     private fun sectionLabel(text: String, color: Int): View = TextView(this).apply {
@@ -316,7 +418,6 @@ class HistoryActivity : EInkActivity() {
             lp.bottomMargin = dp(14); layoutParams = lp
         }
 
-        // Header: icon + name
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         }
@@ -335,7 +436,6 @@ class HistoryActivity : EInkActivity() {
         })
         card.addView(header)
 
-        // Goal progress (perfect days toward the identity's goal). Tap to change.
         val perfect = Streaks.totalPerfectDays(idHabits, completedByHabit, today)
         val goal = Goals.identityGoal(identity)
         val goalRow = LinearLayout(this).apply {
@@ -357,7 +457,6 @@ class HistoryActivity : EInkActivity() {
         })
         card.addView(goalRow)
 
-        // Divider
         card.addView(View(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
                 topMargin = dp(12); bottomMargin = dp(4)
@@ -365,7 +464,6 @@ class HistoryActivity : EInkActivity() {
             setBackgroundColor(Color.parseColor("#E4E1D8"))
         })
 
-        // Per-habit stats (streak toward each habit's effective goal)
         for (h in idHabits) card.addView(habitStat(h, goal))
         return card
     }
@@ -383,7 +481,6 @@ class HistoryActivity : EInkActivity() {
             isClickable = true
             setOnClickListener { promptHabitGoal(h, identityGoal) }
         }
-        // Name + percent
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         }
@@ -424,7 +521,6 @@ class HistoryActivity : EInkActivity() {
             setPadding(0, dp(5), 0, 0)
         })
 
-        // Weekly histogram: completions per week over the last 12 weeks.
         box.addView(BarChartView(this).apply {
             setData(weeklyCounts(completed, 12), weeklyMax(h))
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40))
@@ -446,7 +542,6 @@ class HistoryActivity : EInkActivity() {
             .show()
     }
 
-    /** Completions in each of the last [weeks] calendar weeks, oldest first. */
     private fun weeklyCounts(completed: Set<String>, weeks: Int): IntArray {
         val out = IntArray(weeks)
         for (i in 0 until weeks) {
@@ -456,7 +551,6 @@ class HistoryActivity : EInkActivity() {
         return out
     }
 
-    /** A sensible top of the histogram scale for this habit's schedule. */
     private fun weeklyMax(h: Habit): Int = when (h.frequencyType) {
         com.inkhabits.data.entity.Frequency.WEEKLY_COUNT -> h.weeklyTarget.coerceAtLeast(1)
         com.inkhabits.data.entity.Frequency.DAYS_OF_WEEK ->
@@ -476,7 +570,6 @@ class HistoryActivity : EInkActivity() {
                 val newGoal = if (which < presets.size) presets[which] else 0
                 lifecycleScope.launch {
                     db.identityGoalDao().update(identity.copy(goalDays = newGoal))
-                    // Flow will re-emit and re-render.
                 }
             }
             .show()
