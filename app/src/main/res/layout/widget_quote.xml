@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:id="@+id/widgetHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widgetTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Quote"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:textSize="16sp"
+            tools:ignore="HardcodedText" />
+
+        <!-- Edit the quote from the home screen via the handwriting pad -->
+        <TextView
+            android:id="@+id/widgetEdit"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:gravity="center"
+            android:text="✎"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="@drawable/widget_add_bg"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
+    <!-- Divider: a 1dp LinearLayout (RemoteViews disallows the base <View> class). -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:orientation="horizontal"
+        android:background="#E4E1D8" />
+
+    <FrameLayout
+        android:id="@+id/quoteBody"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/quoteText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textStyle="italic"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp"
+            tools:text="You do not rise to the level of your goals." />
+
+        <ImageView
+            android:id="@+id/quoteInk"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/app_name" />
+    </FrameLayout>
+</LinearLayout>

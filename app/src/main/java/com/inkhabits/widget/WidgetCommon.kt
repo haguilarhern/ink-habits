@@ -15,6 +15,7 @@ object WidgetCommon {
         val mgr = AppWidgetManager.getInstance(context)
         refresh(context, mgr, HabitsWidgetProvider(), HabitsWidgetProvider::class.java)
         refresh(context, mgr, ToDoWidgetProvider(), ToDoWidgetProvider::class.java)
+        refresh(context, mgr, QuoteWidgetProvider(), QuoteWidgetProvider::class.java)
     }
 
     // Apps can't send the protected ACTION_APPWIDGET_UPDATE broadcast, so call the
