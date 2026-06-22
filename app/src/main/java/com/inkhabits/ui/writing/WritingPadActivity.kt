@@ -10,7 +10,6 @@ import android.view.SurfaceHolder
 import com.inkhabits.databinding.ActivityWritingPadBinding
 import com.inkhabits.eink.EInkActivity
 import com.inkhabits.util.InkPoint
-import com.inkhabits.util.QuotePrefs
 import com.inkhabits.util.StrokeSerializer
 import com.onyx.android.sdk.data.note.TouchPoint
 import com.onyx.android.sdk.pen.RawInputCallback
@@ -53,8 +52,6 @@ class WritingPadActivity : EInkActivity() {
         setContentView(binding.root)
 
         intent.getStringExtra(EXTRA_TITLE)?.let { binding.padTitle.text = it }
-        // Warm up handwriting recognition so transcribing the quote on Done is quick.
-        if (intent.getBooleanExtra(EXTRA_SAVE_QUOTE, false)) com.inkhabits.util.InkRecognizer.preload()
 
         binding.cancelButton.setOnClickListener { setResult(RESULT_CANCELED); finish() }
         binding.clearButton.setOnClickListener { clearAll() }
@@ -94,11 +91,7 @@ class WritingPadActivity : EInkActivity() {
     }
 
     private fun loadExisting() {
-        // Quote quick-edit (from the widget) pre-loads the saved quote ink so you
-        // edit it rather than starting blank.
-        val data = intent.getStringExtra(EXTRA_STROKES).takeUnless { it.isNullOrBlank() }
-            ?: QuotePrefs.strokes(this).takeIf { intent.getBooleanExtra(EXTRA_SAVE_QUOTE, false) }
-            ?: return
+        val data = intent.getStringExtra(EXTRA_STROKES) ?: return
         if (data.isBlank()) return
         val ink = StrokeSerializer.deserialize(data)
         if (ink.isEmpty) return
@@ -182,26 +175,6 @@ class WritingPadActivity : EInkActivity() {
             finish()
             return
         }
-        // Quick-edit mode (from the quote widget): save the handwritten quote straight
-        // to QuotePrefs and refresh widgets, without opening the app. An empty pad
-        // clears the custom quote, reverting to the rotating daily one.
-        if (intent.getBooleanExtra(EXTRA_SAVE_QUOTE, false)) {
-            if (strokes.any { it.isNotEmpty() }) {
-                // Transcribe the handwriting so both a typed and a handwritten form
-                // exist — that's what enables the typed<->handwritten toggle (on the
-                // widget and the dashboard). Default view: typed when we got text.
-                val text = kotlinx.coroutines.runBlocking {
-                    com.inkhabits.util.InkRecognizer.recognize(data).orEmpty()
-                }
-                QuotePrefs.save(applicationContext, text = text, strokes = data,
-                    preferHandwritten = text.isBlank())
-            } else {
-                QuotePrefs.clear(applicationContext)
-            }
-            com.inkhabits.widget.WidgetCommon.updateAll(applicationContext)
-            finish()
-            return
-        }
         setResult(RESULT_OK, intent.putExtra(EXTRA_RESULT, data))
         finish()
     }
@@ -248,6 +221,5 @@ class WritingPadActivity : EInkActivity() {
         const val EXTRA_RESULT = "extra_strokes_out"
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_SAVE_TODO = "extra_save_todo"  // widget quick-add: save a new to-do on Done
-        const val EXTRA_SAVE_QUOTE = "extra_save_quote"  // quote widget: save the dashboard quote on Done
     }
 }

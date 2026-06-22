@@ -24,11 +24,13 @@ class InkHabitsApp : Application() {
         }
         NotificationHelper.ensureChannel(this)
         ReminderScheduler.schedule(this)
-        // Re-arm per-habit reminder alarms (they don't survive process death / reboot).
-        appScope.launch { HabitReminderScheduler.rescheduleAll(this@InkHabitsApp) }
-        // Refresh widgets so their tap targets (e.g. the to-do "+" quick-add pad)
-        // always reflect the current build's PendingIntents.
-        com.inkhabits.widget.WidgetCommon.updateAll(this)
+        // Off the main thread (these do blocking DB reads) so app start stays snappy:
+        //  - re-arm per-habit reminder alarms (they don't survive process death/reboot)
+        //  - refresh widgets so their tap targets reflect the current build.
+        appScope.launch {
+            HabitReminderScheduler.rescheduleAll(this@InkHabitsApp)
+            com.inkhabits.widget.WidgetCommon.updateAll(this@InkHabitsApp)
+        }
     }
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

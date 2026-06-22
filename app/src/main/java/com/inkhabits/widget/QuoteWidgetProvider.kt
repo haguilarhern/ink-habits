@@ -16,10 +16,11 @@ import com.inkhabits.util.StrokeRenderer
 import java.time.LocalDate
 
 /**
- * Home-screen widget that shows the current inspirational quote — the user's custom
- * one (typed or handwritten) or the rotating daily quote when none is set. The "✎"
- * button opens the writing pad straight over the home screen to edit it, mirroring
- * the to-do widget's quick-add. Tapping the body opens the full in-app editor.
+ * Home-screen widget that mirrors the app's current inspirational quote — the user's
+ * custom one (typed or handwritten) or the rotating daily quote when none is set.
+ * A toggle switches between the transcribed and handwritten form (when both exist);
+ * tapping the body opens the full in-app editor. (Quotes are edited in the app, not
+ * from the launcher.)
  */
 class QuoteWidgetProvider : AppWidgetProvider() {
 
@@ -88,21 +89,6 @@ class QuoteWidgetProvider : AppWidgetProvider() {
         )
         views.setOnClickPendingIntent(R.id.widgetTitle, openEditor)
         views.setOnClickPendingIntent(R.id.quoteBody, openEditor)
-
-        // "✎" -> writing pad over the home screen, saving the quote on Done without
-        // ever entering the app (own task via WritingPadActivity's empty taskAffinity).
-        val quickEdit = PendingIntent.getActivity(
-            context, widgetId + 30_000,
-            Intent(context, com.inkhabits.ui.writing.WritingPadActivity::class.java)
-                // Distinct data URI so this never collides with the to-do widget's
-                // quick-add PendingIntent (both target WritingPadActivity).
-                .setData(android.net.Uri.parse("inkhabits://write/quote"))
-                .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_SAVE_QUOTE, true)
-                .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_TITLE, "Your quote")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widgetEdit, quickEdit)
 
         mgr.updateAppWidget(widgetId, views)
     }

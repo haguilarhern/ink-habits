@@ -31,23 +31,10 @@
             android:id="@+id/widgetToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
             android:visibility="gone"
             android:textColor="#8C1D1D"
             android:textSize="13sp"
             tools:text="Aa typed"
-            tools:ignore="HardcodedText" />
-
-        <!-- Edit the quote from the home screen via the handwriting pad -->
-        <TextView
-            android:id="@+id/widgetEdit"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:gravity="center"
-            android:text="✎"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:background="@drawable/widget_add_bg"
             tools:ignore="HardcodedText" />
     </LinearLayout>
 

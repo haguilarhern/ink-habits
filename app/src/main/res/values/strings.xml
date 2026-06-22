@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ink Habits</string>
+
+    <!-- Home-screen widget labels / descriptions (shown in the widget picker) -->
+    <string name="widget_habits_label">Habits</string>
+    <string name="widget_habits_desc">Today\'s habits with streaks and times — tap to check off.</string>
+    <string name="widget_todo_label">To-Do</string>
+    <string name="widget_todo_desc">Your to-do list — write new ones with the pen.</string>
+    <string name="widget_quote_label">Quote</string>
+    <string name="widget_quote_desc">Your inspirational quote from the app.</string>
 </resources>

@@ -68,6 +68,7 @@
         <!-- Habits widget -->
         <receiver
             android:name=".widget.HabitsWidgetProvider"
+            android:label="@string/widget_habits_label"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -85,6 +86,7 @@
         <!-- To-do widget -->
         <receiver
             android:name=".widget.ToDoWidgetProvider"
+            android:label="@string/widget_todo_label"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -102,6 +104,7 @@
         <!-- Quote widget -->
         <receiver
             android:name=".widget.QuoteWidgetProvider"
+            android:label="@string/widget_quote_label"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

@@ -6,5 +6,7 @@
     android:targetCellHeight="3"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_habits"
+    android:previewLayout="@layout/widget_habits"
+    android:description="@string/widget_habits_desc"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
