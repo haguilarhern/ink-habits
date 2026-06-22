@@ -8,6 +8,7 @@ import com.inkhabits.R
 object WidgetCommon {
     const val ACTION_TOGGLE_HABIT = "com.inkhabits.action.TOGGLE_HABIT"
     const val ACTION_TOGGLE_TODO = "com.inkhabits.action.TOGGLE_TODO"
+    const val ACTION_TOGGLE_QUOTE_HW = "com.inkhabits.action.TOGGLE_QUOTE_HW"
     const val EXTRA_ID = "com.inkhabits.extra.ID"
 
     /** Rebuilds and refreshes all of the app's home-screen widgets. */

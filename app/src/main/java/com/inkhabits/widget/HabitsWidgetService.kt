@@ -22,7 +22,8 @@ private data class WidgetHabit(
     val name: String,
     val strokes: String,
     val completed: Boolean,
-    val streak: Int
+    val streak: Int,
+    val time: String
 )
 
 class HabitsRemoteViewsFactory(
@@ -52,7 +53,8 @@ class HabitsRemoteViewsFactory(
                     name = h.name,
                     strokes = h.nameStrokes,
                     completed = todayStr in completed,
-                    streak = Streaks.computeStreak(h, completed, today)
+                    streak = Streaks.computeStreak(h, completed, today),
+                    time = Schedule.formatTime(h.reminderMinutes)
                 )
             }
         }
@@ -75,6 +77,12 @@ class HabitsRemoteViewsFactory(
             rv.setViewVisibility(R.id.itemNameInk, android.view.View.GONE)
             rv.setViewVisibility(R.id.itemName, android.view.View.VISIBLE)
             rv.setTextViewText(R.id.itemName, row.name.ifBlank { "Habit" })
+        }
+        if (row.time.isNotBlank()) {
+            rv.setViewVisibility(R.id.itemTime, android.view.View.VISIBLE)
+            rv.setTextViewText(R.id.itemTime, row.time)
+        } else {
+            rv.setViewVisibility(R.id.itemTime, android.view.View.GONE)
         }
         rv.setTextViewText(R.id.itemStreak, if (row.streak > 0) "🔥${row.streak}" else "")
 

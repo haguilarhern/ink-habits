@@ -25,6 +25,19 @@
             android:textSize="16sp"
             tools:ignore="HardcodedText" />
 
+        <!-- Switch between the transcribed and handwritten form (shown only when both
+             exist). Mirrors the dashboard's typed<->handwritten toggle. -->
+        <TextView
+            android:id="@+id/widgetToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:visibility="gone"
+            android:textColor="#8C1D1D"
+            android:textSize="13sp"
+            tools:text="Aa typed"
+            tools:ignore="HardcodedText" />
+
         <!-- Edit the quote from the home screen via the handwriting pad -->
         <TextView
             android:id="@+id/widgetEdit"

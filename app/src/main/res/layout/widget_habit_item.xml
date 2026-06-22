@@ -36,6 +36,14 @@
         android:contentDescription="habit" />
 
     <TextView
+        android:id="@+id/itemTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:textColor="#6B6B6B"
+        android:textSize="12sp" />
+
+    <TextView
         android:id="@+id/itemStreak"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

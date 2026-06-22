@@ -53,6 +53,8 @@ class WritingPadActivity : EInkActivity() {
         setContentView(binding.root)
 
         intent.getStringExtra(EXTRA_TITLE)?.let { binding.padTitle.text = it }
+        // Warm up handwriting recognition so transcribing the quote on Done is quick.
+        if (intent.getBooleanExtra(EXTRA_SAVE_QUOTE, false)) com.inkhabits.util.InkRecognizer.preload()
 
         binding.cancelButton.setOnClickListener { setResult(RESULT_CANCELED); finish() }
         binding.clearButton.setOnClickListener { clearAll() }
@@ -185,7 +187,14 @@ class WritingPadActivity : EInkActivity() {
         // clears the custom quote, reverting to the rotating daily one.
         if (intent.getBooleanExtra(EXTRA_SAVE_QUOTE, false)) {
             if (strokes.any { it.isNotEmpty() }) {
-                QuotePrefs.save(applicationContext, text = "", strokes = data, preferHandwritten = true)
+                // Transcribe the handwriting so both a typed and a handwritten form
+                // exist — that's what enables the typed<->handwritten toggle (on the
+                // widget and the dashboard). Default view: typed when we got text.
+                val text = kotlinx.coroutines.runBlocking {
+                    com.inkhabits.util.InkRecognizer.recognize(data).orEmpty()
+                }
+                QuotePrefs.save(applicationContext, text = text, strokes = data,
+                    preferHandwritten = text.isBlank())
             } else {
                 QuotePrefs.clear(applicationContext)
             }

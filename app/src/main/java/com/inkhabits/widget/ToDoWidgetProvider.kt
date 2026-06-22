@@ -87,6 +87,10 @@ class ToDoWidgetProvider : AppWidgetProvider() {
         val quickAdd = PendingIntent.getActivity(
             context, widgetId + 20_000,
             Intent(context, com.inkhabits.ui.writing.WritingPadActivity::class.java)
+                // Distinct data URI so this PendingIntent never collides with another
+                // WritingPadActivity launcher (e.g. the quote widget's edit button) —
+                // without it the two intents are filterEquals-identical and interfere.
+                .setData(Uri.parse("inkhabits://write/todo"))
                 .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_SAVE_TODO, true)
                 .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_TITLE, "New to-do")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
