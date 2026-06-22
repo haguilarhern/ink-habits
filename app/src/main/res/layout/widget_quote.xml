@@ -1,18 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Quote-only widget: mirrors the app's current quote (typed text or handwriting).
-     Tapping it opens the in-app quote editor. -->
+<!-- Quote-only widget: a pull-quote with a left accent stripe and a decorative
+     quotation mark. Mirrors the app's current quote; tapping it opens the editor. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/quoteBody"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
-    android:padding="12dp">
+    android:background="@drawable/widget_bg_accent_left"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="10dp">
+
+    <!-- Decorative opening quotation mark -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:text="“"
+        android:textColor="#8C1D1D"
+        android:textSize="40sp"
+        android:includeFontPadding="false"
+        tools:ignore="HardcodedText" />
 
     <TextView
         android:id="@+id/quoteText"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:paddingStart="6dp"
+        android:paddingEnd="2dp"
+        android:paddingTop="16dp"
         android:gravity="center"
         android:textStyle="italic"
         android:textColor="#1A1A1A"
@@ -24,6 +42,8 @@
         android:id="@+id/quoteInk"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:paddingTop="14dp"
         android:visibility="gone"
         android:scaleType="fitCenter"
         android:contentDescription="@string/app_name" />
