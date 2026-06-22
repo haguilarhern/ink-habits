@@ -65,7 +65,7 @@ class HabitsRemoteViewsFactory(
         val rv = RemoteViews(context.packageName, R.layout.widget_habit_item)
         rv.setImageViewResource(
             R.id.itemCheck,
-            if (row.completed) R.drawable.ic_widget_check_on else R.drawable.ic_widget_check_off
+            if (row.completed) R.drawable.ic_widget_check_on_habit else R.drawable.ic_widget_check_off
         )
 
         if (StrokeRenderer.hasInk(row.strokes)) {

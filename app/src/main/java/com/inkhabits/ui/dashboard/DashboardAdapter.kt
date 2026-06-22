@@ -121,6 +121,8 @@ class DashboardAdapter(
 
             b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
 
+            b.checkBox.fillColor = androidx.core.content.ContextCompat.getColor(
+                b.root.context, com.inkhabits.R.color.ink_teal)
             b.checkBox.onToggle = null
             b.checkBox.checked = item.completedToday
             b.checkBox.onToggle = { makeComplete -> onToggle(h.id, makeComplete) }

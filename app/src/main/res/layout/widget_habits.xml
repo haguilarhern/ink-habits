@@ -24,7 +24,7 @@
             android:layout_weight="1"
             android:text="TODAY'S HABITS"
             android:textStyle="bold"
-            android:textColor="#8C1D1D"
+            android:textColor="#0F6E6E"
             android:textSize="13sp"
             android:letterSpacing="0.08"
             tools:ignore="HardcodedText" />

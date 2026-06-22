@@ -12,13 +12,23 @@
     android:paddingTop="6dp"
     android:paddingBottom="10dp">
 
-    <!-- Decorative opening quotation mark -->
+    <!-- Decorative quotation marks framing the quote -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
         android:text="“"
-        android:textColor="#8C1D1D"
+        android:textColor="#C8860B"
+        android:textSize="40sp"
+        android:includeFontPadding="false"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:text="”"
+        android:textColor="#C8860B"
         android:textSize="40sp"
         android:includeFontPadding="false"
         tools:ignore="HardcodedText" />
@@ -29,8 +39,9 @@
         android:layout_height="match_parent"
         android:layout_gravity="center"
         android:paddingStart="6dp"
-        android:paddingEnd="2dp"
-        android:paddingTop="16dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
         android:gravity="center"
         android:textStyle="italic"
         android:textColor="#1A1A1A"

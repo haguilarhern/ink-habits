@@ -3,9 +3,10 @@
     android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- Rounded filled checkbox (brick red) + white check -->
     <path
         android:fillColor="#8C1D1D"
-        android:pathData="M4,4 L20,4 L20,20 L4,20 Z" />
+        android:pathData="M4,7.5 Q4,4 7.5,4 L16.5,4 Q20,4 20,7.5 L20,16.5 Q20,20 16.5,20 L7.5,20 Q4,20 4,16.5 Z" />
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.4"

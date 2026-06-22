@@ -21,6 +21,10 @@ class CheckBoxView @JvmOverloads constructor(
     var checked: Boolean = false
         set(value) { field = value; invalidate() }
 
+    /** Filled-state color. Defaults to the brick-red accent (to-do); habits use teal. */
+    var fillColor: Int = Color.parseColor("#8C1D1D")
+        set(value) { field = value; fill.color = value; invalidate() }
+
     var onToggle: ((Boolean) -> Unit)? = null
 
     private val density = resources.displayMetrics.density

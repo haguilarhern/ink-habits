@@ -14,6 +14,11 @@
     <color name="ink_accent">#8C1D1D</color>
     <color name="ink_accent_dim">#B56B6B</color>
 
+    <!-- Per-surface accents chosen to survive Kaleido 3 (deep/saturated, not pastel) -->
+    <color name="ink_teal">#0F6E6E</color>   <!-- habits -->
+    <color name="ink_gold">#C8860B</color>   <!-- quote -->
+
+
     <color name="ink_black">#1A1A1A</color>
     <color name="ink_white">#FFFFFF</color>
 
