@@ -1,74 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Quote-only widget: mirrors the app's current quote (typed text or handwriting).
+     Tapping it opens the in-app quote editor. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/quoteBody"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@drawable/widget_bg"
-    android:padding="14dp">
+    android:padding="12dp">
 
-    <LinearLayout
-        android:id="@+id/widgetHeader"
+    <TextView
+        android:id="@+id/quoteText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textStyle="italic"
+        android:textColor="#1A1A1A"
+        android:textSize="15sp"
+        android:ellipsize="end"
+        tools:text="You do not rise to the level of your goals." />
 
-        <TextView
-            android:id="@+id/widgetTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Quote"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:textSize="16sp"
-            tools:ignore="HardcodedText" />
-
-        <!-- Switch between the transcribed and handwritten form (shown only when both
-             exist). Mirrors the dashboard's typed<->handwritten toggle. -->
-        <TextView
-            android:id="@+id/widgetToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textColor="#8C1D1D"
-            android:textSize="13sp"
-            tools:text="Aa typed"
-            tools:ignore="HardcodedText" />
-    </LinearLayout>
-
-    <!-- Divider: a 1dp LinearLayout (RemoteViews disallows the base <View> class). -->
-    <LinearLayout
+    <ImageView
+        android:id="@+id/quoteInk"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="4dp"
-        android:orientation="horizontal"
-        android:background="#E4E1D8" />
-
-    <FrameLayout
-        android:id="@+id/quoteBody"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/quoteText"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textStyle="italic"
-            android:textColor="#1A1A1A"
-            android:textSize="15sp"
-            tools:text="You do not rise to the level of your goals." />
-
-        <ImageView
-            android:id="@+id/quoteInk"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"
-            android:scaleType="fitCenter"
-            android:contentDescription="@string/app_name" />
-    </FrameLayout>
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/app_name" />
+</FrameLayout>
