@@ -1,6 +1,5 @@
 package com.inkhabits.ui.history
 
-import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.util.TypedValue
@@ -418,8 +417,12 @@ class HistoryActivity : EInkActivity() {
             lp.bottomMargin = dp(14); layoutParams = lp
         }
 
+        // Tapping the header opens the full identity editor (name, icon, goal, and
+        // its habits) — lets you change the identity as a whole, not just its streak.
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            isClickable = true
+            setOnClickListener { openEditIdentity(identity.id) }
         }
         header.addView(ImageView(this).apply {
             setImageResource(HabitIcons.resFor(identity.icon))
@@ -433,6 +436,11 @@ class HistoryActivity : EInkActivity() {
             setLetterSpacing(0.08f)
             typeface = font()
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        header.addView(TextView(this).apply {
+            text = "✎ edit"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         })
         card.addView(header)
 
@@ -529,17 +537,19 @@ class HistoryActivity : EInkActivity() {
         return box
     }
 
+    private fun openEditIdentity(identityId: Long) {
+        startActivity(android.content.Intent(this, com.inkhabits.ui.onboarding.OnboardingActivity::class.java)
+            .putExtra(com.inkhabits.ui.onboarding.OnboardingActivity.EXTRA_EDIT_IDENTITY, identityId))
+    }
+
     private fun promptHabitGoal(h: Habit, identityGoal: Int) {
-        val presets = Goals.PRESETS
-        val labels = mutableListOf("Inherit identity goal ($identityGoal)")
-        labels.addAll(presets.map { "$it-day streak" })
-        AlertDialog.Builder(this)
-            .setTitle("Goal for ${h.name.ifBlank { "this habit" }}")
-            .setItems(labels.toTypedArray()) { _, which ->
-                val newGoal = if (which == 0) 0 else presets[which - 1]
-                lifecycleScope.launch { db.habitDao().update(h.copy(goalDays = newGoal)) }
-            }
-            .show()
+        promptGoalNumber(
+            title = "Goal for ${h.name.ifBlank { "this habit" }}",
+            hint = "e.g. 30",
+            suffix = "completions = 100%",
+            resetLabel = "Inherit ($identityGoal)",
+            current = h.goalDays
+        ) { newGoal -> lifecycleScope.launch { db.habitDao().update(h.copy(goalDays = newGoal)) } }
     }
 
     private fun weeklyCounts(completed: Set<String>, weeks: Int): IntArray {
@@ -561,17 +571,54 @@ class HistoryActivity : EInkActivity() {
     }
 
     private fun promptGoal(identity: IdentityGoal) {
-        val presets = Goals.PRESETS
-        val labels = presets.map { "$it perfect days" }.toMutableList()
-        labels.add("Use default (${Goals.DEFAULT})")
-        AlertDialog.Builder(this)
-            .setTitle("Goal for ${identity.name.ifBlank { "this identity" }}")
-            .setItems(labels.toTypedArray()) { _, which ->
-                val newGoal = if (which < presets.size) presets[which] else 0
-                lifecycleScope.launch {
-                    db.identityGoalDao().update(identity.copy(goalDays = newGoal))
-                }
+        promptGoalNumber(
+            title = "Goal for ${identity.name.ifBlank { "this identity" }}",
+            hint = "e.g. ${Goals.DEFAULT}",
+            suffix = "perfect days = 100%",
+            resetLabel = "Use default (${Goals.DEFAULT})",
+            current = identity.goalDays
+        ) { newGoal -> lifecycleScope.launch { db.identityGoalDao().update(identity.copy(goalDays = newGoal)) } }
+    }
+
+    /**
+     * Dialog with an open number box: the user types how many repetitions equal 100%.
+     * Blank / 0 (or the [resetLabel] button) clears the goal back to inherit/default.
+     */
+    private fun promptGoalNumber(
+        title: String, hint: String, suffix: String, resetLabel: String,
+        current: Int, onSave: (Int) -> Unit
+    ) {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(20), dp(8), dp(20), 0)
+        }
+        val box = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+            this.hint = hint
+            if (current > 0) setText(current.toString())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            layoutParams = LinearLayout.LayoutParams(dp(100), LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+        container.addView(box)
+        container.addView(TextView(this).apply {
+            text = suffix
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.marginStart = dp(10); layoutParams = lp
+        })
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle(title)
+            .setView(container)
+            .setPositiveButton("Save") { _, _ ->
+                onSave((box.text?.toString()?.trim()?.toIntOrNull() ?: 0).coerceAtLeast(0))
             }
+            .setNeutralButton(resetLabel) { _, _ -> onSave(0) }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 

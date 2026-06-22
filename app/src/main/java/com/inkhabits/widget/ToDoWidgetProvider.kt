@@ -66,23 +66,30 @@ class ToDoWidgetProvider : AppWidgetProvider() {
         )
         views.setPendingIntentTemplate(R.id.widgetList, togglePi)
 
-        // Header opens the To-Do screen (view / manage).
+        // Title opens the To-Do screen (view / manage). NOTE: this handler must live
+        // on the title TextView, NOT the whole header row — the "+" button is a child
+        // of the header, and a clickable RemoteViews parent swallows taps meant for its
+        // clickable children, so a header-level handler would hijack the "+" tap and
+        // open the app instead of the quick-add writing pad.
         val openTodo = PendingIntent.getActivity(
             context, widgetId + 10_000,
             Intent(context, com.inkhabits.ui.todo.ToDoActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        views.setOnClickPendingIntent(R.id.widgetHeader, openTodo)
+        views.setOnClickPendingIntent(R.id.widgetTitle, openTodo)
 
         // "+" opens the quick writing pad straight from the home screen — write a
-        // to-do and it saves on Done without ever entering the full app.
+        // to-do and it saves on Done without ever entering the full app. NEW_TASK +
+        // CLEAR_TASK with WritingPadActivity's empty taskAffinity makes the translucent
+        // pad pop over the launcher in its own task, instead of merging into the app's
+        // task (which would surface the dashboard — what looked like "opening the app").
         val quickAdd = PendingIntent.getActivity(
             context, widgetId + 20_000,
             Intent(context, com.inkhabits.ui.writing.WritingPadActivity::class.java)
                 .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_SAVE_TODO, true)
                 .putExtra(com.inkhabits.ui.writing.WritingPadActivity.EXTRA_TITLE, "New to-do")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widgetAdd, quickAdd)

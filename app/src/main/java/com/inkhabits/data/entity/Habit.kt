@@ -48,6 +48,12 @@ data class Habit(
     /** Preferred time of day in minutes after midnight; -1 = any time. */
     val reminderMinutes: Int = -1,
     /**
+     * When true (and [reminderMinutes] is a real time/daypart, not "any time"), the
+     * app fires a notification at that time on days the habit is due, nudging you to
+     * do it. Opt-in per habit via the "Remind me" switch in the editor.
+     */
+    val reminderEnabled: Boolean = false,
+    /**
      * Optional habit-stacking anchor cue (e.g. "my morning coffee"). Not tracked;
      * shown as a small reminder of when/after-what to do the habit. May be typed
      * ([anchor]) or handwritten ([anchorStrokes]).

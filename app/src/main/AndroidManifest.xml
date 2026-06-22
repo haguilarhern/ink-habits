@@ -4,6 +4,10 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Exact daily alarms for per-habit reminders. SCHEDULE_EXACT_ALARM is default-
+         granted on API 31-32; USE_EXACT_ALARM covers API 33+ (reminder-app use). -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:name=".InkHabitsApp"
@@ -54,13 +58,11 @@
             android:exported="false" />
 
         <activity
-            android:name=".ui.rewards.AddRewardActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".ui.writing.WritingPadActivity"
             android:exported="false"
             android:theme="@style/Theme.InkHabits.Translucent"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <!-- Habits widget -->
@@ -96,6 +98,15 @@
             android:name=".widget.ToDoWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
+
+        <!-- Per-habit reminder alarms + reschedule on boot -->
+        <receiver
+            android:name=".notify.HabitReminderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 </manifest>

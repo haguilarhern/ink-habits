@@ -30,6 +30,35 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
+    <!-- Dialog styling: charcoal ink buttons (not the brick-red accent), rounded,
+         Inter font — keeps pop-ups consistent with the rest of the flat e-ink UI. -->
+    <style name="ThemeOverlay.InkHabits.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/ink_text</item>
+        <item name="colorSecondary">@color/ink_text</item>
+        <item name="colorSurface">@color/ink_surface</item>
+        <item name="colorOnSurface">@color/ink_text</item>
+        <item name="android:textColorPrimary">@color/ink_text</item>
+        <item name="android:textColorSecondary">@color/ink_text_muted</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="fontFamily">@font/inter_regular</item>
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.InkHabits.Dialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/InkDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/InkDialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/InkDialogButton</item>
+    </style>
+
+    <style name="ShapeAppearance.InkHabits.Dialog" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="InkDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/ink_text</item>
+        <item name="rippleColor">@color/ink_divider</item>
+    </style>
+
     <style name="InkButton" parent="Widget.Material3.Button">
         <item name="android:textAllCaps">false</item>
         <item name="android:textSize">16sp</item>

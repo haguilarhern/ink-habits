@@ -62,7 +62,9 @@ class OnboardingActivity : WritingHostActivity() {
     private var habitSchedule: SchedulePicker? = null
     private var habitAnchor: InputField? = null
     private var habitReminder: Int = -1
+    private var habitReminderOn: Boolean = false
     private var timeRefresh: (() -> Unit)? = null
+    private var reminderToggleRefresh: (() -> Unit)? = null
     // Goal streaks (0 = default / inherit). Identity goal + the in-progress habit goal.
     private var pendingIdentityGoal: Int = 0
     private var pendingHabitGoal: Int = 0
@@ -85,6 +87,7 @@ class OnboardingActivity : WritingHostActivity() {
         val strokes: String,
         val cfg: ScheduleConfig,
         val reminderMinutes: Int,
+        val reminderEnabled: Boolean,
         val anchor: String,
         val anchorStrokes: String,
         val goalDays: Int = 0,  // 0 = inherit the identity's goal
@@ -133,7 +136,7 @@ class OnboardingActivity : WritingHostActivity() {
                 pendingHabits.add(PendingHabit(
                     name = h.name, strokes = h.nameStrokes,
                     cfg = ScheduleConfig(h.frequencyType, h.daysOfWeek, h.intervalDays, h.weeklyTarget),
-                    reminderMinutes = h.reminderMinutes,
+                    reminderMinutes = h.reminderMinutes, reminderEnabled = h.reminderEnabled,
                     anchor = h.anchor, anchorStrokes = h.anchorStrokes,
                     goalDays = h.goalDays, habitId = h.id))
             }
@@ -326,15 +329,14 @@ class OnboardingActivity : WritingHostActivity() {
             addView(row)
         })
 
-        binding.contentArea.addView(label("Goal streak (perfect days)").apply {
+        binding.contentArea.addView(label("Progress goal").apply {
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(16); layoutParams = lp
         })
-        binding.contentArea.addView(goalChooser(
-            labels = listOf("Default (${com.inkhabits.util.Goals.DEFAULT})") +
-                com.inkhabits.util.Goals.PRESETS.map { "$it days" },
-            values = listOf(0) + com.inkhabits.util.Goals.PRESETS,
+        binding.contentArea.addView(goalNumberInput(
+            hint = "Default (${com.inkhabits.util.Goals.DEFAULT})",
+            suffix = "perfect days = 100%",
             currentValue = { pendingIdentityGoal },
             onPick = { pendingIdentityGoal = it }))
 
@@ -369,6 +371,7 @@ class OnboardingActivity : WritingHostActivity() {
             lp.topMargin = dp(10); layoutParams = lp
         })
         binding.contentArea.addView(timeSelector())
+        binding.contentArea.addView(reminderToggle())
 
         binding.contentArea.addView(label("Anchor — after what? (optional)").apply {
             val lp = LinearLayout.LayoutParams(
@@ -379,15 +382,14 @@ class OnboardingActivity : WritingHostActivity() {
         habitAnchor = anchor
         binding.contentArea.addView(anchor)
 
-        binding.contentArea.addView(label("Goal streak").apply {
+        binding.contentArea.addView(label("Progress goal").apply {
             val lp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(10); layoutParams = lp
         })
-        binding.contentArea.addView(goalChooser(
-            labels = listOf("Inherit identity") +
-                com.inkhabits.util.Goals.PRESETS.map { "$it-day streak" },
-            values = listOf(0) + com.inkhabits.util.Goals.PRESETS,
+        binding.contentArea.addView(goalNumberInput(
+            hint = "Inherit identity",
+            suffix = "completions = 100%",
             currentValue = { pendingHabitGoal },
             onPick = { pendingHabitGoal = it },
             registerRefresh = { habitGoalRefresh = it }))
@@ -421,7 +423,9 @@ class OnboardingActivity : WritingHostActivity() {
             anchor.prefill(h.anchor, h.anchorStrokes)
             picker.setConfig(h.cfg)
             habitReminder = h.reminderMinutes
+            habitReminderOn = h.reminderEnabled
             timeRefresh?.invoke()
+            reminderToggleRefresh?.invoke()
             editingHabit = null
         }
     }
@@ -489,8 +493,9 @@ class OnboardingActivity : WritingHostActivity() {
                 daysOfWeek = h.cfg.daysOfWeek, intervalDays = h.cfg.intervalDays,
                 weeklyTarget = h.cfg.weeklyTarget))
         val time = com.inkhabits.util.Schedule.formatTime(h.reminderMinutes)
+        val bell = if (h.reminderEnabled && h.reminderMinutes != com.inkhabits.util.Schedule.TIME_ANY) " · 🔔" else ""
         texts.addView(TextView(this).apply {
-            text = if (time.isEmpty()) sched else "$sched · $time"
+            text = (if (time.isEmpty()) sched else "$sched · $time") + bell
             setTextColor(Color.parseColor("#6B6B6B"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         })
@@ -521,6 +526,8 @@ class OnboardingActivity : WritingHostActivity() {
         if (input == null || !input.hasContent()) { then(); return }
         val name = input.getText(); val strokes = input.getStrokes()
         val cfg = habitSchedule!!.getConfig(); val reminder = habitReminder
+        // A reminder needs a real time; "Any time" can't fire a scheduled notification.
+        val reminderOn = habitReminderOn && reminder != com.inkhabits.util.Schedule.TIME_ANY
         val anchorText = habitAnchor?.getText().orEmpty()
         val anchorStrokes = habitAnchor?.getStrokes().orEmpty()
         val goalSnap = pendingHabitGoal
@@ -528,8 +535,10 @@ class OnboardingActivity : WritingHostActivity() {
             input.prepareForNext()
             habitAnchor?.prepareForNext()
             habitReminder = -1
+            habitReminderOn = false
             pendingHabitGoal = 0
             timeRefresh?.invoke()
+            reminderToggleRefresh?.invoke()
             habitGoalRefresh?.invoke()
             input.focusInk()
             binding.scroll.post { cleanRefresh(binding.root) }
@@ -539,7 +548,7 @@ class OnboardingActivity : WritingHostActivity() {
         lifecycleScope.launch {
             val (aText, aStrokes) = resolveAnchor(anchorText, anchorStrokes)
             val resolvedName = resolveName(name, strokes)
-            pendingHabits.add(PendingHabit(resolvedName, strokes, cfg, reminder, aText, aStrokes, goalSnap, carryId))
+            pendingHabits.add(PendingHabit(resolvedName, strokes, cfg, reminder, reminderOn, aText, aStrokes, goalSnap, carryId))
             then()
         }
     }
@@ -578,6 +587,46 @@ class OnboardingActivity : WritingHostActivity() {
         timeRefresh = { refresh() }
         refresh()
         return scroll
+    }
+
+    /** "Remind me" opt-in switch: fires a notification at the time set above on due days. */
+    private fun reminderToggle(): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.topMargin = dp(8); layoutParams = lp
+        }
+        val labels = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        labels.addView(TextView(this).apply {
+            text = "Remind me"
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            typeface = interSemiBold
+        })
+        labels.addView(TextView(this).apply {
+            text = "Notify me at this time on days it's due (pick a time above)"
+            setTextColor(Color.parseColor("#6B6B6B"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+        })
+        row.addView(labels)
+
+        val sw = com.google.android.material.materialswitch.MaterialSwitch(this).apply {
+            isChecked = habitReminderOn
+            setOnCheckedChangeListener { _, checked ->
+                habitReminderOn = checked
+                if (checked && habitReminder == com.inkhabits.util.Schedule.TIME_ANY) {
+                    toast("Pick a time above so the reminder knows when to fire")
+                }
+            }
+        }
+        row.addView(sw)
+        reminderToggleRefresh = { sw.isChecked = habitReminderOn }
+        return row
     }
 
     private fun timeChip(text: String): TextView = TextView(this).apply {
@@ -701,6 +750,7 @@ class OnboardingActivity : WritingHostActivity() {
         pendingName = ""; pendingStrokes = ""; pendingIcon = com.inkhabits.ui.widget.HabitIcons.DEFAULT
         pendingHabits.clear()
         habitReminder = -1
+        habitReminderOn = false
         step = Step.IDENTITY; render()
     }
 
@@ -737,7 +787,8 @@ class OnboardingActivity : WritingHostActivity() {
                             id = h.habitId, identityGoalId = editingId, name = h.name, nameStrokes = h.strokes,
                             frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
                             intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
-                            reminderMinutes = h.reminderMinutes, anchor = h.anchor, anchorStrokes = h.anchorStrokes,
+                            reminderMinutes = h.reminderMinutes, reminderEnabled = h.reminderEnabled,
+                            anchor = h.anchor, anchorStrokes = h.anchorStrokes,
                             goalDays = h.goalDays, sortOrder = idx, isActive = true))
                         keptIds.add(h.habitId)
                     } else {
@@ -746,6 +797,7 @@ class OnboardingActivity : WritingHostActivity() {
                             frequencyType = h.cfg.frequencyType, daysOfWeek = h.cfg.daysOfWeek,
                             intervalDays = h.cfg.intervalDays, weeklyTarget = h.cfg.weeklyTarget,
                             startEpochDay = today, reminderMinutes = h.reminderMinutes,
+                            reminderEnabled = h.reminderEnabled,
                             anchor = h.anchor, anchorStrokes = h.anchorStrokes,
                             goalDays = h.goalDays, sortOrder = idx))
                     }
@@ -754,6 +806,7 @@ class OnboardingActivity : WritingHostActivity() {
                 (originalHabitIds - keptIds).forEach { id ->
                     db.habitDao().getById(id)?.let { db.habitDao().update(it.copy(isActive = false)) }
                 }
+                com.inkhabits.notify.HabitReminderScheduler.rescheduleAll(applicationContext)
                 com.inkhabits.widget.WidgetCommon.updateAll(this@OnboardingActivity)
                 finish()
                 return@launch
@@ -777,6 +830,7 @@ class OnboardingActivity : WritingHostActivity() {
                         weeklyTarget = h.cfg.weeklyTarget,
                         startEpochDay = today,
                         reminderMinutes = h.reminderMinutes,
+                        reminderEnabled = h.reminderEnabled,
                         anchor = h.anchor,
                         anchorStrokes = h.anchorStrokes,
                         goalDays = h.goalDays,
@@ -785,6 +839,7 @@ class OnboardingActivity : WritingHostActivity() {
                 )
             }
             createdIdentities.add(IdentityGoal(id = goalId, name = idName, nameStrokes = strokes, icon = icon, sortOrder = order))
+            com.inkhabits.notify.HabitReminderScheduler.rescheduleAll(applicationContext)
             pendingHabits.clear()
             if (addHabitMode) {
                 com.inkhabits.widget.WidgetCommon.updateAll(this@OnboardingActivity)
@@ -843,19 +898,14 @@ class OnboardingActivity : WritingHostActivity() {
         b.stateListAnimator = null
     }
 
-    private fun stepBtn(s: String, onClick: () -> Unit): MaterialButton = MaterialButton(
-        this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
-    ).apply {
-        text = s; isAllCaps = false
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
-        minWidth = 0; minimumWidth = dp(48)
-        layoutParams = LinearLayout.LayoutParams(dp(54), dp(48))
-        setOnClickListener { onClick() }
-    }
-
-    /** A −/+ stepper over [labels]/[values]; reports the picked value via [onPick]. */
-    private fun goalChooser(
-        labels: List<String>, values: List<Int>,
+    /**
+     * Editable number box for a progress goal: the user types how many repetitions
+     * (perfect days for an identity, completions for a habit) equal 100%. A blank /
+     * 0 entry means unset — [hint] shows what that falls back to (default or inherit),
+     * and [onPick] receives 0. [suffix] labels the unit beside the box.
+     */
+    private fun goalNumberInput(
+        hint: String, suffix: String,
         currentValue: () -> Int, onPick: (Int) -> Unit,
         registerRefresh: ((() -> Unit) -> Unit)? = null
     ): View {
@@ -866,19 +916,50 @@ class OnboardingActivity : WritingHostActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.topMargin = dp(4); layoutParams = lp
         }
-        val tv = TextView(this).apply {
+        val box = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+            this.hint = hint
             gravity = android.view.Gravity.CENTER
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             typeface = interSemiBold
-            layoutParams = LinearLayout.LayoutParams(dp(170), LinearLayout.LayoutParams.WRAP_CONTENT)
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setHintTextColor(Color.parseColor("#9A9A9A"))
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.WHITE)
+                setStroke(dp(1), Color.parseColor("#CFCBC0"))
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(120), LinearLayout.LayoutParams.WRAP_CONTENT)
         }
-        var idx = values.indexOf(currentValue()).coerceAtLeast(0)
-        fun show() { tv.text = labels[idx] }
-        row.addView(stepBtn("−") { if (idx > 0) { idx--; show(); onPick(values[idx]) } })
-        row.addView(tv)
-        row.addView(stepBtn("+") { if (idx < values.size - 1) { idx++; show(); onPick(values[idx]) } })
-        show()
-        registerRefresh?.invoke { idx = values.indexOf(currentValue()).coerceAtLeast(0); show() }
+        currentValue().takeIf { it > 0 }?.let { box.setText(it.toString()) }
+
+        var suppress = false
+        box.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (suppress) return
+                onPick((s?.toString()?.trim()?.toIntOrNull() ?: 0).coerceAtLeast(0))
+            }
+        })
+
+        row.addView(box)
+        row.addView(TextView(this).apply {
+            text = suffix
+            setTextColor(Color.parseColor("#5A5A5A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = interRegular
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.marginStart = dp(10); layoutParams = lp
+        })
+        registerRefresh?.invoke {
+            suppress = true
+            box.setText(currentValue().takeIf { it > 0 }?.toString() ?: "")
+            suppress = false
+        }
         return row
     }
 

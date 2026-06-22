@@ -4,11 +4,11 @@ apply plugin: 'org.jetbrains.kotlin.kapt'
 
 android {
     namespace 'com.inkhabits'
-    compileSdk 34
+    compileSdk 36
     defaultConfig {
         applicationId 'com.inkhabits'
         minSdk 28
-        targetSdk 34
+        targetSdk 36
         versionCode 1
         versionName '1.0.0'
     }

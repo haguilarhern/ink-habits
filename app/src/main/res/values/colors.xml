@@ -16,4 +16,7 @@
 
     <color name="ink_black">#1A1A1A</color>
     <color name="ink_white">#FFFFFF</color>
+
+    <!-- Launcher icon background: the cream from the "ih" mark -->
+    <color name="ic_launcher_background">#F8F6F3</color>
 </resources>

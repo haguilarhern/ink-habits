@@ -37,7 +37,7 @@ Pre-built APKs are available in the [`apk/`](apk/) directory:
 
 | File | Version | Type |
 |---|---|---|
-| [ink-habits-v1.0.0-debug.apk](apk/ink-habits-v1.0.0-debug.apk) | 1.0.0 | Debug |
+| [ink-habits-v1.0.1-debug.apk](apk/ink-habits-v1.0.1-debug.apk) | 1.0.1 | Debug |
 
 Install directly on your Boox device:
 

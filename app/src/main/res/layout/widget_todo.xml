@@ -15,6 +15,7 @@
         android:gravity="center_vertical">
 
         <TextView
+            android:id="@+id/widgetTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -43,7 +44,7 @@
             android:textSize="11sp"
             tools:ignore="HardcodedText" />
 
-        <!-- Add a new to-do (opens the To-Do screen) -->
+        <!-- Add a new to-do (opens the handwriting pad straight from the home screen) -->
         <TextView
             android:id="@+id/widgetAdd"
             android:layout_width="30dp"
