@@ -720,26 +720,38 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
         root.addView(divider())
 
-        // Classification (list).
-        val listBtn = settingRow(root, "Classification") { chooseList(working.listId) { id ->
-            working = working.copy(listId = id); it.text = listLabel(id) } }
-        listBtn.text = listLabel(working.listId)
-        // Due date.
-        val dueBtn = settingRow(root, "Due date") { chooseDate(working.dueEpochDay) { ep ->
-            working = working.copy(dueEpochDay = ep); it.text = dueLabel(ep) } }
-        dueBtn.text = dueLabel(working.dueEpochDay)
-        // Recurrence.
-        val repeatBtn = settingRow(root, "Repeat") { chooseRecurrence(working) { upd ->
-            working = upd; it.text = recurLabel(upd) } }
-        repeatBtn.text = recurLabel(working)
-        // Importance (Eisenhower urgency/importance).
-        val prioBtn = settingRow(root, "Importance") { choosePriority(working.priority) { p ->
-            working = working.copy(priority = p); it.text = prioLabel(p) } }
-        prioBtn.text = prioLabel(working.priority)
-        // Kanban stage.
-        val stageBtn = settingRow(root, "Stage") { chooseStage(working.stageId) { sid ->
-            working = working.copy(stageId = sid); it.text = stageLabel(sid) } }
-        stageBtn.text = stageLabel(working.stageId)
+        // Show only the fields relevant to the current view, so the editor stays focused.
+        // Completed is a review view and shows everything.
+        val listFields = view == TaskView.LIST || view == TaskView.COMPLETED
+        val showImportance = view == TaskView.MATRIX || view == TaskView.COMPLETED
+        val showStage = view == TaskView.KANBAN || view == TaskView.COMPLETED
+
+        if (listFields) {
+            // Classification (list).
+            val listBtn = settingRow(root, "Classification") { chooseList(working.listId) { id ->
+                working = working.copy(listId = id); it.text = listLabel(id) } }
+            listBtn.text = listLabel(working.listId)
+            // Due date.
+            val dueBtn = settingRow(root, "Due date") { chooseDate(working.dueEpochDay) { ep ->
+                working = working.copy(dueEpochDay = ep); it.text = dueLabel(ep) } }
+            dueBtn.text = dueLabel(working.dueEpochDay)
+            // Recurrence.
+            val repeatBtn = settingRow(root, "Repeat") { chooseRecurrence(working) { upd ->
+                working = upd; it.text = recurLabel(upd) } }
+            repeatBtn.text = recurLabel(working)
+        }
+        if (showImportance) {
+            // Importance (Eisenhower urgency/importance) — the Matrix dimension.
+            val prioBtn = settingRow(root, "Importance") { choosePriority(working.priority) { p ->
+                working = working.copy(priority = p); it.text = prioLabel(p) } }
+            prioBtn.text = prioLabel(working.priority)
+        }
+        if (showStage) {
+            // Kanban stage.
+            val stageBtn = settingRow(root, "Stage") { chooseStage(working.stageId) { sid ->
+                working = working.copy(stageId = sid); it.text = stageLabel(sid) } }
+            stageBtn.text = stageLabel(working.stageId)
+        }
 
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
