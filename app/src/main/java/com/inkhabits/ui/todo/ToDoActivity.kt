@@ -13,6 +13,7 @@ import com.inkhabits.data.AppDatabase
 import com.inkhabits.data.entity.Priority
 import com.inkhabits.data.entity.Recur
 import com.inkhabits.data.entity.TaskList
+import com.inkhabits.data.entity.TaskStage
 import com.inkhabits.data.entity.ToDo
 import com.inkhabits.databinding.ActivityTodoBinding
 import com.inkhabits.ui.writing.WritingHostActivity
@@ -39,10 +40,11 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private val todos = mutableListOf<ToDo>()
     private var lists = listOf<TaskList>()
+    private var stages = listOf<TaskStage>()
     private var nextOrder = 0
 
-    private enum class Tab { ACTIVE, MATRIX, COMPLETED }
-    private var tab = Tab.ACTIVE
+    private enum class TaskView { LIST, KANBAN, MATRIX, COMPLETED }
+    private var view = TaskView.LIST
 
     /** Selected list filter: -1 = All, 0 = Inbox (unlisted), >0 = a specific list. */
     private var filterListId = -1L
@@ -68,9 +70,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         binding.pomodoroButton.setOnClickListener {
             startActivity(android.content.Intent(this, com.inkhabits.ui.pomodoro.PomodoroActivity::class.java))
         }
-        binding.tabActive.setOnClickListener { switchTab(Tab.ACTIVE) }
-        binding.tabMatrix.setOnClickListener { switchTab(Tab.MATRIX) }
-        binding.tabCompleted.setOnClickListener { switchTab(Tab.COMPLETED) }
+        binding.viewSelector.setOnClickListener { showViewMenu() }
         binding.fabAddTask.setOnClickListener { createTask() }
 
         refreshCounter()
@@ -89,6 +89,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     private fun load() {
         lifecycleScope.launch {
             lists = db.taskListDao().getAll()
+            stages = db.taskStageDao().getAll()
             todos.clear()
             todos.addAll(db.toDoDao().getAll())
             nextOrder = todos.size
@@ -99,25 +100,29 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun listById(id: Long): TaskList? = lists.find { it.id == id }
 
-    // ── tabs / chips ──
+    // ── view selector / chips ──
 
-    private fun switchTab(t: Tab) {
-        if (tab == t) return
-        tab = t
-        render()
+    private fun viewName(v: TaskView) = when (v) {
+        TaskView.LIST -> "List"
+        TaskView.KANBAN -> "Kanban"
+        TaskView.MATRIX -> "Matrix"
+        TaskView.COMPLETED -> "Completed"
     }
 
-    private fun styleTabs() {
-        styleTab(binding.tabActive, tab == Tab.ACTIVE)
-        styleTab(binding.tabMatrix, tab == Tab.MATRIX)
-        val doneCount = todos.count { it.isDone }
-        binding.tabCompleted.text = if (doneCount > 0) "Completed ($doneCount)" else "Completed"
-        styleTab(binding.tabCompleted, tab == Tab.COMPLETED)
+    private fun showViewMenu() {
+        val menu = android.widget.PopupMenu(this, binding.viewSelector)
+        TaskView.values().forEachIndexed { i, v -> menu.menu.add(0, i, i, viewName(v)) }
+        menu.setOnMenuItemClickListener { item ->
+            view = TaskView.values()[item.itemId]; render(); true
+        }
+        menu.show()
     }
 
-    private fun styleTab(tv: TextView, selected: Boolean) {
-        tv.background = pill(if (selected) ACCENT else Color.WHITE, !selected)
-        tv.setTextColor(if (selected) Color.WHITE else INK)
+    private fun updateViewLabel() {
+        val done = todos.count { it.isDone }
+        val suffix = if (view == TaskView.COMPLETED && done > 0) " ($done)" else ""
+        binding.viewSelector.text = "${viewName(view)}$suffix  ▾"
+        binding.viewSelector.background = pill(Color.WHITE, true)
     }
 
     private fun pill(fill: Int, stroke: Boolean) = android.graphics.drawable.GradientDrawable().apply {
@@ -174,13 +179,14 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun render() {
         clearPendingRemovals()
-        styleTabs()
+        updateViewLabel()
         renderChips()
         binding.lineContainer.removeAllViews()
-        when (tab) {
-            Tab.ACTIVE -> renderActive()
-            Tab.MATRIX -> renderMatrix()
-            Tab.COMPLETED -> renderCompleted()
+        when (view) {
+            TaskView.LIST -> renderActive()
+            TaskView.KANBAN -> renderKanban()
+            TaskView.MATRIX -> renderMatrix()
+            TaskView.COMPLETED -> renderCompleted()
         }
     }
 
@@ -317,6 +323,188 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         return row
     }
 
+    // ── kanban ──
+
+    private fun renderKanban() {
+        if (stages.isEmpty()) {
+            binding.lineContainer.addView(infoText("Create stages to organize tasks into a board."))
+            binding.lineContainer.addView(textButton("+ Create default stages (To Do · In Progress · Done)") {
+                seedDefaultStages()
+            })
+            binding.lineContainer.addView(textButton("+ Create a custom stage") { editStage(null) })
+            return
+        }
+        val active = todos.filter { !it.isDone && inFilter(it) }
+        val firstId = stages.first().id
+        fun stageOf(t: ToDo): Long = if (stages.any { it.id == t.stageId }) t.stageId else firstId
+
+        val columns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        stages.forEachIndexed { i, st ->
+            val items = active.filter { stageOf(it) == st.id }.sortedBy { it.sortOrder }
+            columns.addView(kanbanColumn(st, items, isLast = i == stages.lastIndex))
+        }
+        columns.addView(addStageColumn())
+
+        val hs = android.widget.HorizontalScrollView(this).apply { isFillViewport = false }
+        hs.addView(columns)
+        binding.lineContainer.addView(hs, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, screenGridHeight()))
+    }
+
+    private fun kanbanColumn(stage: TaskStage, items: List<ToDo>, isLast: Boolean): View {
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.WHITE)
+                setStroke(dp(1).coerceAtLeast(1), HAIRLINE)
+            }
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            layoutParams = LinearLayout.LayoutParams(dp(228), LinearLayout.LayoutParams.MATCH_PARENT)
+                .apply { marginEnd = dp(8) }
+        }
+        // Header (tap to rename/delete the stage).
+        col.addView(TextView(this).apply {
+            text = "${stage.name.ifBlank { "Stage" }}  ·  ${items.size}"
+            setTextColor(INK)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setLetterSpacing(0.03f)
+            typeface = font()
+            setPadding(0, 0, 0, dp(6))
+            setOnClickListener { editStage(stage) }
+        })
+        val scroll = android.widget.ScrollView(this).apply { isVerticalScrollBarEnabled = false }
+        val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        if (items.isEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = "—"; setTextColor(MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f); setPadding(0, dp(6), 0, 0)
+            })
+        } else items.forEach { inner.addView(kanbanCard(it, isLast)) }
+        scroll.addView(inner)
+        col.addView(scroll, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(4) })
+        return col
+    }
+
+    private fun kanbanCard(todo: ToDo, lastStage: Boolean): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(10).toFloat()
+                setColor(Color.parseColor("#F6F4EF"))
+            }
+            setPadding(dp(10), dp(8), dp(6), dp(8))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(8); layoutParams = lp
+            isClickable = true
+            setOnClickListener { showTaskEditor(todo, isNew = false) }
+        }
+        // Name (ink or text).
+        if (StrokeRenderer.hasInk(todo.titleStrokes)) {
+            card.addView(ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                layoutParams = LinearLayout.LayoutParams(0, dp(20), 1f)
+                post {
+                    setImageBitmap(StrokeRenderer.renderToBitmap(
+                        todo.titleStrokes, width.coerceAtLeast(1), dp(20), maxScale = 1f))
+                }
+            })
+        } else {
+            card.addView(TextView(this).apply {
+                text = todo.title.ifBlank { "Task" }
+                setTextColor(INK)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        // Move to the next stage.
+        if (!lastStage) {
+            card.addView(TextView(this).apply {
+                text = "→"
+                setTextColor(ACCENT)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                setPadding(dp(6), 0, dp(6), 0)
+                setOnClickListener { moveToNextStage(todo) }
+            })
+        }
+        return card
+    }
+
+    private fun addStageColumn(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = dp(12).toFloat()
+            setColor(Color.WHITE)
+            setStroke(dp(1).coerceAtLeast(1), HAIRLINE)
+        }
+        layoutParams = LinearLayout.LayoutParams(dp(140), LinearLayout.LayoutParams.MATCH_PARENT)
+        addView(TextView(this@ToDoActivity).apply {
+            text = "+ Stage"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        })
+        setOnClickListener { editStage(null) }
+    }
+
+    private fun moveToNextStage(todo: ToDo) {
+        val idx = stages.indexOfFirst { it.id == todo.stageId }
+            .let { if (it < 0) 0 else it }
+        val next = stages.getOrNull(idx + 1) ?: return
+        val updated = todo.copy(stageId = next.id)
+        todos.indexOfFirst { it.id == todo.id }.takeIf { it >= 0 }?.let { todos[it] = updated }
+        lifecycleScope.launch {
+            db.toDoDao().update(updated)
+            com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
+            render()
+        }
+    }
+
+    private fun seedDefaultStages() {
+        lifecycleScope.launch {
+            listOf("To Do", "In Progress", "Done").forEachIndexed { i, n ->
+                db.taskStageDao().insert(TaskStage(name = n, sortOrder = i))
+            }
+            load()
+        }
+    }
+
+    private fun editStage(existing: TaskStage?) {
+        val name = android.widget.EditText(this).apply {
+            hint = "Stage name"
+            setText(existing?.name ?: "")
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setPadding(dp(20), dp(12), dp(20), 0)
+        }
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle(if (existing == null) "New stage" else "Edit stage")
+            .setView(name)
+            .setPositiveButton("Save") { _, _ ->
+                val nm = name.text?.toString()?.trim().orEmpty()
+                if (nm.isEmpty()) return@setPositiveButton
+                lifecycleScope.launch {
+                    if (existing == null) db.taskStageDao().insert(TaskStage(name = nm, sortOrder = stages.size))
+                    else db.taskStageDao().update(existing.copy(name = nm))
+                    load()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+        if (existing != null) builder.setNeutralButton("Delete") { _, _ ->
+            lifecycleScope.launch {
+                db.toDoDao().clearStage(existing.id) // tasks fall back to the first stage
+                db.taskStageDao().delete(existing)
+                load()
+            }
+        }
+        builder.show()
+    }
+
     private fun addLine(todo: ToDo, editable: Boolean) {
         val line = ToDoLineView(this, this)
         line.editable = editable
@@ -386,9 +574,9 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             }
             com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
         }
-        val leavesTab = (tab != Tab.COMPLETED && done) || (tab == Tab.COMPLETED && !done)
-        if (leavesTab) scheduleRemoval(line) else cancelRemoval(line)
-        styleTabs()
+        val leavesView = (view != TaskView.COMPLETED && done) || (view == TaskView.COMPLETED && !done)
+        if (leavesView) scheduleRemoval(line) else cancelRemoval(line)
+        updateViewLabel()
     }
 
     /** Create a fresh, unchecked instance of a recurring task at its next due date. */
@@ -400,7 +588,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         )
         val id = db.toDoDao().insert(fresh)
         todos.add(fresh.copy(id = id))
-        if (tab != Tab.COMPLETED) runOnUiThread { render() }
+        if (view != TaskView.COMPLETED) runOnUiThread { render() }
     }
 
     override fun onLineOptions(line: ToDoLineView) {
@@ -460,6 +648,10 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         val prioBtn = settingRow(root, "Importance") { choosePriority(working.priority) { p ->
             working = working.copy(priority = p); it.text = prioLabel(p) } }
         prioBtn.text = prioLabel(working.priority)
+        // Kanban stage.
+        val stageBtn = settingRow(root, "Stage") { chooseStage(working.stageId) { sid ->
+            working = working.copy(stageId = sid); it.text = stageLabel(sid) } }
+        stageBtn.text = stageLabel(working.stageId)
 
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
@@ -538,6 +730,24 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun recurLabel(t: ToDo): String =
         if (t.recurType == Recur.NONE) "Never" else TaskRecurrence.recurLabel(t)
+
+    private fun stageLabel(id: Long): String =
+        if (id <= 0) "None" else stages.find { it.id == id }?.name?.ifBlank { "Stage" } ?: "None"
+
+    private fun chooseStage(current: Long, onPick: (Long) -> Unit) {
+        val labels = (listOf("No stage") + stages.map { it.name.ifBlank { "Stage" } } + "New stage…").toTypedArray()
+        val ids = listOf(0L) + stages.map { it.id }
+        val checked = ids.indexOf(current).coerceAtLeast(0)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle("Stage")
+            .setSingleChoiceItems(labels, checked) { d, which ->
+                if (which == labels.size - 1) editStage(null) else onPick(ids[which])
+                d.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     private fun chooseList(current: Long, onPick: (Long) -> Unit) {
         val labels = (listOf("Inbox (none)") + lists.map { it.name.ifBlank { "List" } } + "New list…").toTypedArray()

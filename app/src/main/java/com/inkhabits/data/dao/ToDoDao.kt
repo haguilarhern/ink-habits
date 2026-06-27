@@ -24,6 +24,10 @@ interface ToDoDao {
     @Query("UPDATE todos SET listId = 0 WHERE listId = :listId")
     suspend fun clearList(listId: Long)
 
+    /** Clear a stage reference from its tasks (used before deleting the stage). */
+    @Query("UPDATE todos SET stageId = 0 WHERE stageId = :stageId")
+    suspend fun clearStage(stageId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(todo: ToDo): Long
 

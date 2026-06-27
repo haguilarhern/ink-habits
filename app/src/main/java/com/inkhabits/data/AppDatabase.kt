@@ -13,6 +13,7 @@ import com.inkhabits.data.dao.IdentityGoalDao
 import com.inkhabits.data.dao.RewardDao
 import com.inkhabits.data.dao.StreakFreezeDao
 import com.inkhabits.data.dao.TaskListDao
+import com.inkhabits.data.dao.TaskStageDao
 import com.inkhabits.data.dao.ToDoDao
 import com.inkhabits.data.entity.EconomyState
 import com.inkhabits.data.entity.Habit
@@ -21,14 +22,15 @@ import com.inkhabits.data.entity.IdentityGoal
 import com.inkhabits.data.entity.Reward
 import com.inkhabits.data.entity.StreakFreeze
 import com.inkhabits.data.entity.TaskList
+import com.inkhabits.data.entity.TaskStage
 import com.inkhabits.data.entity.ToDo
 
 @Database(
     entities = [
         IdentityGoal::class, Habit::class, HabitCompletion::class, ToDo::class, Reward::class,
-        TaskList::class, StreakFreeze::class, EconomyState::class
+        TaskList::class, StreakFreeze::class, EconomyState::class, TaskStage::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,6 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskListDao(): TaskListDao
     abstract fun streakFreezeDao(): StreakFreezeDao
     abstract fun economyDao(): EconomyDao
+    abstract fun taskStageDao(): TaskStageDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null
@@ -119,13 +122,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v8→v9: Kanban stages + per-task stage assignment. */
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """CREATE TABLE IF NOT EXISTS task_stages (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL DEFAULT '',
+                        sortOrder INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL DEFAULT 0
+                    )"""
+                )
+                db.execSQL("ALTER TABLE todos ADD COLUMN stageId INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "ink_habits.db"
-                ).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                ).addMigrations(
+                    MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration()
                     .build().also { instance = it }
             }

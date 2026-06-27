@@ -43,6 +43,8 @@ data class ToDo(
     val isDone: Boolean = false,
     /** Owning list; 0 = the unlisted "Inbox". */
     val listId: Long = 0,
+    /** Kanban stage; 0 (or an unknown id) falls into the first stage. */
+    val stageId: Long = 0,
     /** Due date as an epoch day; 0 = no due date. */
     val dueEpochDay: Long = 0,
     /** Eisenhower importance 0..4 (see [Priority]); 0 = unset. */
