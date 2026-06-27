@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.inkhabits.data.AppDatabase
 import com.inkhabits.data.entity.Habit
+import com.inkhabits.data.entity.HabitCompletion
 import com.inkhabits.data.entity.IdentityGoal
 import com.inkhabits.databinding.ActivityHistoryBinding
 import com.inkhabits.eink.EInkActivity
@@ -142,18 +143,28 @@ class HistoryActivity : EInkActivity() {
                 else "Nothing scheduled this day."))
             return
         }
+        // Past/today rows are tappable so you can check off (or un-check) a habit
+        // you forgot to log; future days stay read-only.
+        if (!date.isAfter(today)) {
+            box.addView(infoText("Tap a habit to mark it done or undone."))
+        }
         val ds = date.toString()
         for (h in due) {
             val done = completedByHabit[h.id]?.contains(ds) == true
-            box.addView(detailRow(h, done, date.isAfter(today)))
+            box.addView(detailRow(h, done, date))
         }
     }
 
-    private fun detailRow(h: Habit, done: Boolean, future: Boolean): View {
+    private fun detailRow(h: Habit, done: Boolean, date: LocalDate): View {
+        val future = date.isAfter(today)
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, dp(7), 0, dp(7))
+            if (!future) {
+                isClickable = true
+                setOnClickListener { toggleCompletion(h, date, done) }
+            }
         }
         val mark = TextView(this).apply {
             text = if (done) "✓" else if (future) "·" else "○"
@@ -188,6 +199,24 @@ class HistoryActivity : EInkActivity() {
             })
         }
         return row
+    }
+
+    /**
+     * Toggle a habit's completion for [date] (today or any past day). The combine()
+     * flow observing completions re-renders the day detail and recolors the calendar
+     * automatically, so we only persist the change and refresh widgets/rewards here.
+     */
+    private fun toggleCompletion(h: Habit, date: LocalDate, currentlyDone: Boolean) {
+        val ds = date.toString()
+        lifecycleScope.launch {
+            if (currentlyDone) {
+                db.habitCompletionDao().delete(h.id, ds)
+            } else {
+                db.habitCompletionDao().insert(HabitCompletion(habitId = h.id, date = ds))
+                com.inkhabits.util.Rewards.checkAndUnlock(this@HistoryActivity)
+            }
+            com.inkhabits.widget.WidgetCommon.updateAll(this@HistoryActivity)
+        }
     }
 
     // ---- Progress view ----

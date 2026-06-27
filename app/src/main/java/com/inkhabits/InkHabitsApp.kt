@@ -24,6 +24,8 @@ class InkHabitsApp : Application() {
         }
         NotificationHelper.ensureChannel(this)
         ReminderScheduler.schedule(this)
+        // Roll the widgets over to the new day automatically at midnight.
+        com.inkhabits.notify.DayRolloverScheduler.schedule(this)
         // Off the main thread (these do blocking DB reads) so app start stays snappy:
         //  - re-arm per-habit reminder alarms (they don't survive process death/reboot)
         //  - refresh widgets so their tap targets reflect the current build.
