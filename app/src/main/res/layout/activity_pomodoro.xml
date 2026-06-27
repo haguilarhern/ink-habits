@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/ink_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingTop="@dimen/screen_margin"
+        android:paddingBottom="10dp">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back"
+            app:tint="@color/ink_text" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="Focus"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="@color/ink_text"
+            android:textSize="@dimen/text_title"
+            tools:ignore="HardcodedText" />
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="Timer settings"
+            app:tint="@color/ink_text" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/ink_divider" />
+
+    <!-- Mode tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingTop="16dp">
+
+        <TextView
+            android:id="@+id/tabFocus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="7dp"
+            android:text="Focus"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/tabShort"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="7dp"
+            android:text="Short Break"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/tabLong"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="7dp"
+            android:text="Long Break"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
+    <!-- Timer ring + remaining minutes -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.inkhabits.ui.widget.ProgressRingView
+            android:id="@+id/ring"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:layout_gravity="center" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/minutesText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="25"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/ink_text"
+                android:textSize="96sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/minutesLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-8dp"
+                android:text="minutes left"
+                android:textColor="@color/ink_text_muted"
+                android:textSize="14sp"
+                android:letterSpacing="0.05"
+                tools:ignore="HardcodedText" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/phaseHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingBottom="6dp"
+        android:text="Time to focus"
+        android:textColor="@color/ink_text_muted"
+        android:textSize="14sp"
+        tools:ignore="HardcodedText" />
+
+    <!-- Controls -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingBottom="10dp">
+
+        <Button
+            android:id="@+id/startButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
+            android:text="START"
+            android:textColor="@color/ink_white"
+            android:fontFamily="@font/inter_semibold"
+            android:backgroundTint="@color/ink_accent"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/resetButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginStart="10dp"
+            android:text="Reset"
+            android:textColor="@color/ink_text"
+            android:backgroundTint="@color/ink_white"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/roundText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingBottom="20dp"
+        android:text="Round 1 of 4"
+        android:textColor="@color/ink_text_muted"
+        android:textSize="13sp"
+        tools:ignore="HardcodedText" />
+
+</LinearLayout>

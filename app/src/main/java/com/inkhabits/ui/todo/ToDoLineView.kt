@@ -42,6 +42,7 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
     private val nameView: HabitNameView
     private val hint: TextView
     private val metaRow: LinearLayout
+    private val editButton: android.widget.ImageView
     val checkBox: CheckBoxView
 
     private val rowH = dp(72)
@@ -59,6 +60,19 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
+
+        // Left-side edit affordance: reliably opens the task options popup (replaces the
+        // long-press, which conflicts with the writing-pad tap handling).
+        editButton = android.widget.ImageView(context).apply {
+            setImageResource(R.drawable.ic_edit)
+            setColorFilter(Color.parseColor("#8C1D1D"))
+            val pad = dp(8)
+            setPadding(pad, pad, pad, pad)
+            isClickable = true
+            visibility = GONE // shown once the line is bound to a saved task
+            setOnClickListener { if (todoId != 0L) host.onLineOptions(this@ToDoLineView) }
+        }
+        topRow.addView(editButton, LayoutParams(dp(40), dp(40)))
 
         val content = FrameLayout(context)
         nameView = HabitNameView(context).apply {
@@ -102,6 +116,7 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
     fun bind(todoId: Long, strokes: String, done: Boolean) {
         this.todoId = todoId
         savedStrokes = strokes
+        editButton.visibility = if (todoId != 0L) VISIBLE else GONE
         nameView.setContent("", strokes)
         nameView.completed = done
         checkBox.onToggle = null

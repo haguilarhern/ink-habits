@@ -46,6 +46,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.pomodoro.PomodoroActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.quote.QuoteEditActivity"
             android:exported="false" />
 

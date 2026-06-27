@@ -74,19 +74,21 @@ object TaskRecurrence {
 
     // ---- Eisenhower priority ----
 
+    /** Compact tag for a task's metadata row. */
     fun priorityShort(p: Int): String = when (p) {
-        Priority.DO -> "P1"
-        Priority.SCHEDULE -> "P2"
-        Priority.DELEGATE -> "P3"
-        Priority.DROP -> "P4"
+        Priority.DO -> "Urgent + Important"
+        Priority.SCHEDULE -> "Important"
+        Priority.DELEGATE -> "Urgent"
+        Priority.DROP -> "Low priority"
         else -> ""
     }
 
+    /** Full urgency/importance label (Eisenhower quadrant). */
     fun priorityTitle(p: Int): String = when (p) {
-        Priority.DO -> "Do — urgent & important"
-        Priority.SCHEDULE -> "Schedule — important, not urgent"
-        Priority.DELEGATE -> "Delegate — urgent, not important"
-        Priority.DROP -> "Drop — neither"
+        Priority.DO -> "Urgent & important"
+        Priority.SCHEDULE -> "Important, not urgent"
+        Priority.DELEGATE -> "Urgent, not important"
+        Priority.DROP -> "Not urgent, not important"
         else -> "No priority"
     }
 

@@ -65,6 +65,9 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         db = AppDatabase.get(this)
 
         binding.backButton.setOnClickListener { finish() }
+        binding.pomodoroButton.setOnClickListener {
+            startActivity(android.content.Intent(this, com.inkhabits.ui.pomodoro.PomodoroActivity::class.java))
+        }
         binding.tabActive.setOnClickListener { switchTab(Tab.ACTIVE) }
         binding.tabMatrix.setOnClickListener { switchTab(Tab.MATRIX) }
         binding.tabCompleted.setOnClickListener { switchTab(Tab.COMPLETED) }
@@ -188,7 +191,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             binding.lineContainer.addView(infoText("No tasks here yet. Tap + to add one."))
             return
         }
-        binding.lineContainer.addView(infoText("Tap a task to rewrite · long-press for options"))
+        binding.lineContainer.addView(infoText("Tap a task to rewrite · ✎ to edit details"))
         items.forEach { addLine(it, editable = true) }
     }
 
@@ -203,16 +206,17 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         val active = todos.filter { !it.isDone && inFilter(it) }
         val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
+        // Columns = urgency, rows = importance.
         grid.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            addView(quadrantCell("Do first", Priority.DO, active), cellLp())
-            addView(quadrantCell("Schedule", Priority.SCHEDULE, active), cellLp())
+            addView(quadrantCell(Priority.DO, active), cellLp())       // urgent & important
+            addView(quadrantCell(Priority.SCHEDULE, active), cellLp()) // important, not urgent
         }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
         grid.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            addView(quadrantCell("Delegate", Priority.DELEGATE, active), cellLp())
-            addView(quadrantCell("Drop", Priority.DROP, active), cellLp())
+            addView(quadrantCell(Priority.DELEGATE, active), cellLp()) // urgent, not important
+            addView(quadrantCell(Priority.DROP, active), cellLp())     // neither
         }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
 
         // Make the grid fill the visible area so the four quadrants read as a matrix.
@@ -236,7 +240,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun screenGridHeight(): Int = (resources.displayMetrics.heightPixels * 0.62f).toInt()
 
-    private fun quadrantCell(title: String, priority: Int, active: List<ToDo>): View {
+    private fun quadrantCell(priority: Int, active: List<ToDo>): View {
         val color = TaskRecurrence.priorityColor(priority)
         val cell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -248,7 +252,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             setPadding(dp(10), dp(8), dp(10), dp(8))
         }
         cell.addView(TextView(this).apply {
-            text = "${TaskRecurrence.priorityShort(priority)} · ${title.uppercase()}"
+            text = TaskRecurrence.priorityTitle(priority).uppercase()
             setTextColor(color)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
             setLetterSpacing(0.04f)
@@ -452,10 +456,10 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         val repeatBtn = settingRow(root, "Repeat") { chooseRecurrence(working) { upd ->
             working = upd; it.text = recurLabel(upd) } }
         repeatBtn.text = recurLabel(working)
-
-        // Importance (inline chips).
-        root.addView(label("Importance"))
-        root.addView(importanceChips(working.priority) { p -> working = working.copy(priority = p) })
+        // Importance (Eisenhower urgency/importance).
+        val prioBtn = settingRow(root, "Importance") { choosePriority(working.priority) { p ->
+            working = working.copy(priority = p); it.text = prioLabel(p) } }
+        prioBtn.text = prioLabel(working.priority)
 
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
@@ -510,40 +514,20 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         return value
     }
 
-    private fun importanceChips(current: Int, onPick: (Int) -> Unit): View {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(4), 0, dp(4))
-        }
-        val opts = listOf(
-            Priority.NONE to "None", Priority.DO to "P1", Priority.SCHEDULE to "P2",
-            Priority.DELEGATE to "P3", Priority.DROP to "P4"
-        )
-        var selected = current
-        val chips = mutableListOf<TextView>()
-        fun restyle() {
-            chips.forEachIndexed { i, c ->
-                val p = opts[i].first
-                val on = p == selected
-                val color = if (p == Priority.NONE) MUTED else TaskRecurrence.priorityColor(p)
-                c.background = pill(if (on) color else Color.WHITE, !on)
-                c.setTextColor(if (on) Color.WHITE else color)
-            }
-        }
-        opts.forEach { (p, lbl) ->
-            val chip = TextView(this).apply {
-                text = lbl
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-                setPadding(dp(12), dp(6), dp(12), dp(6))
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-                lp.marginEnd = dp(6); layoutParams = lp
-                setOnClickListener { selected = p; restyle(); onPick(p) }
-            }
-            chips.add(chip); row.addView(chip)
-        }
-        restyle()
-        return row
+    private fun prioLabel(p: Int): String =
+        if (p == Priority.NONE) "None" else TaskRecurrence.priorityTitle(p)
+
+    private fun choosePriority(current: Int, onPick: (Int) -> Unit) {
+        val values = listOf(Priority.DO, Priority.SCHEDULE, Priority.DELEGATE, Priority.DROP, Priority.NONE)
+        val labels = values.map { if (it == Priority.NONE) "None" else TaskRecurrence.priorityTitle(it) }
+            .toTypedArray()
+        val checked = values.indexOf(current).coerceAtLeast(0)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle("Importance")
+            .setSingleChoiceItems(labels, checked) { d, which -> onPick(values[which]); d.dismiss() }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun listLabel(id: Long): String =
