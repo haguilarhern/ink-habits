@@ -47,13 +47,15 @@ class HabitsRemoteViewsFactory(
         rows = runBlocking {
             val habits = db.habitDao().getActive().filter { Schedule.isDueOn(it, today) }
             habits.map { h ->
-                val completed = db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+                val real = db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+                // Frozen days count toward the streak, but never as "done today".
+                val effective = real + db.streakFreezeDao().getForHabit(h.id).map { it.date }.toSet()
                 WidgetHabit(
                     id = h.id,
                     name = h.name,
                     strokes = h.nameStrokes,
-                    completed = todayStr in completed,
-                    streak = Streaks.computeStreak(h, completed, today),
+                    completed = todayStr in real,
+                    streak = Streaks.computeStreak(h, effective, today),
                     time = Schedule.formatTime(h.reminderMinutes)
                 )
             }

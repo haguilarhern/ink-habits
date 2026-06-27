@@ -12,6 +12,9 @@ interface HabitCompletionDao {
     @Query("SELECT * FROM habit_completions")
     fun observeAll(): Flow<List<HabitCompletion>>
 
+    @Query("SELECT COUNT(*) FROM habit_completions")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM habit_completions WHERE habitId = :habitId ORDER BY date")
     suspend fun getForHabit(habitId: Long): List<HabitCompletion>
 

@@ -58,7 +58,8 @@ class HabitsWidgetProvider : AppWidgetProvider() {
             val today = LocalDate.now()
             val habits = db.habitDao().getActive()
             val byHabit = habits.associate { h ->
-                h.id to db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+                h.id to (db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet() +
+                    db.streakFreezeDao().getForHabit(h.id).map { it.date }.toSet())
             }
             com.inkhabits.util.Streaks.perfectDayStreak(habits, byHabit, today)
         }

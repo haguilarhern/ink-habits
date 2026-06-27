@@ -31,6 +31,8 @@ class InkHabitsApp : Application() {
         //  - refresh widgets so their tap targets reflect the current build.
         appScope.launch {
             HabitReminderScheduler.rescheduleAll(this@InkHabitsApp)
+            // Catch up any missed-day freezes since the app last ran, then refresh widgets.
+            com.inkhabits.util.Freezes.reconcile(this@InkHabitsApp)
             com.inkhabits.widget.WidgetCommon.updateAll(this@InkHabitsApp)
         }
     }

@@ -32,9 +32,12 @@ class RewardsActivity : WritingHostActivity() {
     private var rewards: List<Reward> = emptyList()
     private var identities: List<IdentityGoal> = emptyList()
     private var habits: List<Habit> = emptyList()
+    private var auraBalance: Long = 0
+    private var econ = com.inkhabits.data.entity.EconomyState()
 
     private val accent = Color.parseColor("#8C1D1D")
     private val muted = Color.parseColor("#6B6B6B")
+    private val frozen = Color.parseColor("#2E5E8C")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +65,8 @@ class RewardsActivity : WritingHostActivity() {
             habits = db.habitDao().getActive()
             rewards = db.rewardDao().getAll()
                 .sortedWith(compareBy({ it.unlocked }, { it.targetStreak }))
+            econ = com.inkhabits.util.Economy.state(db)
+            auraBalance = com.inkhabits.util.Economy.balance(db)
             render()
         }
     }
@@ -79,6 +84,9 @@ class RewardsActivity : WritingHostActivity() {
     private fun render() {
         val c = binding.content
         c.removeAllViews()
+
+        // --- Aura wallet + totem shop ---
+        c.addView(shopCard())
 
         // --- Saved rewards, stacked under identity headers (like home) ---
         if (rewards.isEmpty()) {
@@ -154,6 +162,103 @@ class RewardsActivity : WritingHostActivity() {
 
     private fun deleteReward(r: Reward) {
         lifecycleScope.launch { db.rewardDao().delete(r); load() }
+    }
+
+    // ---- Aura wallet + totem shop ----
+
+    /**
+     * Wallet header (current aura + owned totems) and a small shop to buy protective
+     * totems. A totem is auto-consumed to freeze a streak the day after a miss.
+     */
+    private fun shopCard(): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(6); layoutParams = lp
+        }
+
+        card.addView(TextView(this).apply {
+            text = "✦  $auraBalance AURA"
+            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(
+                this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+        })
+        card.addView(TextView(this).apply {
+            text = "Earn ${com.inkhabits.util.Economy.AURA_PER_COMPLETION} per check-off · " +
+                "${com.inkhabits.util.Economy.AURA_PER_PERFECT_DAY} per perfect day"
+            setTextColor(muted)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setPadding(0, dp(2), 0, dp(10))
+        })
+
+        card.addView(shopRow(
+            "❄ Habit totem",
+            "Protects one missed day of a single habit · owned: ${econ.habitTotems}",
+            com.inkhabits.util.Economy.COST_HABIT_TOTEM
+        ) { buy(habit = true) })
+
+        card.addView(shopRow(
+            "❄ Identity totem",
+            "Protects one missed perfect-day of an identity · owned: ${econ.identityTotems}",
+            com.inkhabits.util.Economy.COST_IDENTITY_TOTEM
+        ) { buy(habit = false) })
+
+        return card
+    }
+
+    private fun shopRow(title: String, sub: String, cost: Int, onBuy: () -> Unit): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, dp(2))
+        }
+        row.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            addView(TextView(this@RewardsActivity).apply {
+                text = title
+                setTextColor(frozen)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            })
+            addView(TextView(this@RewardsActivity).apply {
+                text = sub
+                setTextColor(muted)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            })
+        })
+        val affordable = auraBalance >= cost
+        row.addView(android.widget.Button(this).apply {
+            text = "$cost ✦"
+            isAllCaps = false
+            isEnabled = affordable
+            setTextColor(if (affordable) Color.WHITE else muted)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(14).toFloat()
+                setColor(if (affordable) accent else Color.parseColor("#E4E1D8"))
+            }
+            setOnClickListener { onBuy() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                .apply { marginStart = dp(10) }
+        })
+        return row
+    }
+
+    private fun buy(habit: Boolean) {
+        lifecycleScope.launch {
+            val ok = if (habit) com.inkhabits.util.Economy.buyHabitTotem(db)
+                     else com.inkhabits.util.Economy.buyIdentityTotem(db)
+            android.widget.Toast.makeText(
+                this@RewardsActivity,
+                if (ok) "Totem acquired ❄" else "Not enough aura",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            if (ok) load()
+        }
     }
 
     private fun sectionHeader(text: String): TextView = TextView(this).apply {

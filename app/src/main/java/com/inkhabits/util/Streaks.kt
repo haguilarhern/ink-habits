@@ -108,10 +108,12 @@ object Streaks {
     fun perfectDayStreak(
         habits: List<Habit>,
         completedByHabit: Map<Long, Set<String>>,
-        today: LocalDate
+        today: LocalDate,
+        forcedPerfect: Set<String> = emptySet()
     ): Int {
         if (habits.isEmpty()) return 0
         fun allDoneOn(day: LocalDate): Boolean? {
+            if (day.toString() in forcedPerfect) return true // identity totem
             val due = habits.filter { Schedule.isDueOn(it, day) }
             if (due.isEmpty()) return null // nothing due
             return due.all { (completedByHabit[it.id] ?: emptySet()).contains(day.toString()) }
@@ -141,7 +143,8 @@ object Streaks {
     fun totalPerfectDays(
         habits: List<Habit>,
         completedByHabit: Map<Long, Set<String>>,
-        today: LocalDate
+        today: LocalDate,
+        forcedPerfect: Set<String> = emptySet()
     ): Int {
         if (habits.isEmpty()) return 0
         val earliest = completedByHabit.values
@@ -152,9 +155,10 @@ object Streaks {
         var count = 0
         var guard = 0
         while (!day.isAfter(today) && guard < 5000) {
+            val ds = day.toString()
             val due = habits.filter { Schedule.isDueOn(it, day) }
-            if (due.isNotEmpty() &&
-                due.all { (completedByHabit[it.id] ?: emptySet()).contains(day.toString()) }) {
+            if (ds in forcedPerfect ||
+                (due.isNotEmpty() && due.all { (completedByHabit[it.id] ?: emptySet()).contains(ds) })) {
                 count++
             }
             day = day.plusDays(1)

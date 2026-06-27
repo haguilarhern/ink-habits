@@ -177,10 +177,18 @@ class DashboardActivity : EInkActivity() {
             combine(
                 db.identityGoalDao().observeAll(),
                 db.habitDao().observeActive(),
-                db.habitCompletionDao().observeAll()
-            ) { identities, habits, completions ->
+                db.habitCompletionDao().observeAll(),
+                db.streakFreezeDao().observeAll()
+            ) { identities, habits, completions, freezes ->
+                // Merge habit-totem freezes into completions so a frozen day counts as done
+                // for streaks (today is never frozen, so checkbox state stays accurate).
+                val frozenByHabit = freezes.filter { it.habitId > 0 }
+                    .groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() }
                 val completedByHabit = completions.groupBy { it.habitId }
                     .mapValues { e -> e.value.map { it.date }.toSet() }
+                    .toMutableMap().apply {
+                        frozenByHabit.forEach { (id, dates) -> this[id] = (this[id] ?: emptySet()) + dates }
+                    }
                 val perfect = Streaks.perfectDayStreak(habits, completedByHabit, LocalDate.now())
                 Snapshot(identities, habits, completedByHabit, perfect)
             }.collect { snap ->

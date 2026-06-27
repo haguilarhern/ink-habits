@@ -44,6 +44,8 @@ class HistoryActivity : EInkActivity() {
     private var identities: List<IdentityGoal> = emptyList()
     private var habits: List<Habit> = emptyList()
     private var completedByHabit: Map<Long, Set<String>> = emptyMap()
+    private var frozenByHabit: Map<Long, Set<String>> = emptyMap()
+    private var identityFrozen: Map<Long, Set<String>> = emptyMap()
 
     private var showingProgress = false
 
@@ -76,21 +78,42 @@ class HistoryActivity : EInkActivity() {
             combine(
                 db.identityGoalDao().observeAll(),
                 db.habitDao().observeActive(),
-                db.habitCompletionDao().observeAll()
-            ) { ids, hs, completions ->
-                Triple(ids, hs, completions.groupBy { it.habitId }
-                    .mapValues { e -> e.value.map { it.date }.toSet() })
-            }.collect { (ids, hs, byHabit) ->
-                identities = ids
-                habits = hs
-                completedByHabit = byHabit
-                binding.emptyState.visibility = if (hs.isEmpty()) View.VISIBLE else View.GONE
+                db.habitCompletionDao().observeAll(),
+                db.streakFreezeDao().observeAll()
+            ) { ids, hs, completions, freezes ->
+                Snapshot(
+                    ids, hs,
+                    completions.groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() },
+                    freezes.filter { it.habitId > 0 }.groupBy { it.habitId }
+                        .mapValues { e -> e.value.map { it.date }.toSet() },
+                    freezes.filter { it.identityId > 0 }.groupBy { it.identityId }
+                        .mapValues { e -> e.value.map { it.date }.toSet() }
+                )
+            }.collect { snap ->
+                identities = snap.identities
+                habits = snap.habits
+                completedByHabit = snap.completedByHabit
+                frozenByHabit = snap.frozenByHabit
+                identityFrozen = snap.identityFrozen
+                binding.emptyState.visibility = if (snap.habits.isEmpty()) View.VISIBLE else View.GONE
                 binding.calendar.invalidate()
                 renderDetail(binding.calendar.selected ?: today)
                 if (showingProgress) renderProgress()
             }
         }
     }
+
+    private data class Snapshot(
+        val identities: List<IdentityGoal>,
+        val habits: List<Habit>,
+        val completedByHabit: Map<Long, Set<String>>,
+        val frozenByHabit: Map<Long, Set<String>>,
+        val identityFrozen: Map<Long, Set<String>>
+    )
+
+    /** A habit's real completions plus its frozen days (frozen counts as done for streaks). */
+    private fun effective(habitId: Long): Set<String> =
+        (completedByHabit[habitId] ?: emptySet()) + (frozenByHabit[habitId] ?: emptySet())
 
     private fun switchTo(progress: Boolean) {
         showingProgress = progress
@@ -124,7 +147,8 @@ class HistoryActivity : EInkActivity() {
         val due = dueOn(date)
         if (due.isEmpty()) return CalendarView.NONE_DUE
         val ds = date.toString()
-        val done = due.count { completedByHabit[it.id]?.contains(ds) == true }
+        // Frozen days count as done so a protected streak stays visually intact.
+        val done = due.count { effective(it.id).contains(ds) }
         return when {
             done == due.size -> CalendarView.ALL_DONE
             done > 0 -> CalendarView.PARTIAL
@@ -151,11 +175,12 @@ class HistoryActivity : EInkActivity() {
         val ds = date.toString()
         for (h in due) {
             val done = completedByHabit[h.id]?.contains(ds) == true
-            box.addView(detailRow(h, done, date))
+            val frozen = !done && frozenByHabit[h.id]?.contains(ds) == true
+            box.addView(detailRow(h, done, frozen, date))
         }
     }
 
-    private fun detailRow(h: Habit, done: Boolean, date: LocalDate): View {
+    private fun detailRow(h: Habit, done: Boolean, frozen: Boolean, date: LocalDate): View {
         val future = date.isAfter(today)
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -167,8 +192,17 @@ class HistoryActivity : EInkActivity() {
             }
         }
         val mark = TextView(this).apply {
-            text = if (done) "✓" else if (future) "·" else "○"
-            setTextColor(if (done) ACCENT else MUTED)
+            text = when {
+                done -> "✓"
+                frozen -> "❄"
+                future -> "·"
+                else -> "○"
+            }
+            setTextColor(when {
+                done -> ACCENT
+                frozen -> FROZEN
+                else -> MUTED
+            })
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             width = dp(28)
             gravity = Gravity.CENTER
@@ -264,8 +298,7 @@ class HistoryActivity : EInkActivity() {
             val identity = identities.find { it.id == h.identityGoalId }
             val identityGoalVal = identity?.let { Goals.identityGoal(it) } ?: Goals.DEFAULT
             val goal = Goals.habitGoal(h, identityGoalVal)
-            val completed = completedByHabit[h.id] ?: emptySet()
-            val streak = Streaks.computeStreak(h, completed, today)
+            val streak = Streaks.computeStreak(h, effective(h.id), today)
             val pct = if (goal > 0) (streak * 100f / goal).coerceAtMost(100f) else 0f
             h to pct
         }.sortedBy { it.second }
@@ -313,8 +346,7 @@ class HistoryActivity : EInkActivity() {
         })
 
         val momentumData = habits.map { h ->
-            val completed = completedByHabit[h.id] ?: emptySet()
-            val streak = Streaks.computeStreak(h, completed, today)
+            val streak = Streaks.computeStreak(h, effective(h.id), today)
             val dueCount = countOccurrencesSinceStart(h, today)
             h to Pair(streak, dueCount)
         }
@@ -473,7 +505,9 @@ class HistoryActivity : EInkActivity() {
         })
         card.addView(header)
 
-        val perfect = Streaks.totalPerfectDays(idHabits, completedByHabit, today)
+        val effByHabit = idHabits.associate { it.id to effective(it.id) }
+        val perfect = Streaks.totalPerfectDays(
+            idHabits, effByHabit, today, identityFrozen[identity.id] ?: emptySet())
         val goal = Goals.identityGoal(identity)
         val goalRow = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -506,9 +540,10 @@ class HistoryActivity : EInkActivity() {
     }
 
     private fun habitStat(h: Habit, identityGoal: Int): View {
-        val completed = completedByHabit[h.id] ?: emptySet()
-        val streak = Streaks.computeStreak(h, completed, today)
-        val best = Streaks.bestStreak(h, completed, today)
+        val completed = completedByHabit[h.id] ?: emptySet() // real, for the weekly bar chart
+        val eff = effective(h.id)                            // freeze-aware, for streaks
+        val streak = Streaks.computeStreak(h, eff, today)
+        val best = Streaks.bestStreak(h, eff, today)
         val goal = Goals.habitGoal(h, identityGoal)
         val frac = (streak / goal.toFloat()).coerceIn(0f, 1f)
 
@@ -667,5 +702,6 @@ class HistoryActivity : EInkActivity() {
         private val ACCENT = Color.parseColor("#8C1D1D")
         private val MUTED = Color.parseColor("#6B6B6B")
         private val INK = Color.parseColor("#1A1A1A")
+        private val FROZEN = Color.parseColor("#2E5E8C")
     }
 }

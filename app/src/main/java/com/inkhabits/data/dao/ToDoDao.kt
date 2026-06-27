@@ -17,6 +17,13 @@ interface ToDoDao {
     @Query("SELECT * FROM todos ORDER BY isDone, sortOrder, createdAt")
     suspend fun getAll(): List<ToDo>
 
+    @Query("SELECT * FROM todos WHERE id = :id")
+    suspend fun getById(id: Long): ToDo?
+
+    /** Clear a list reference from its tasks (used before deleting the list). */
+    @Query("UPDATE todos SET listId = 0 WHERE listId = :listId")
+    suspend fun clearList(listId: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(todo: ToDo): Long
 

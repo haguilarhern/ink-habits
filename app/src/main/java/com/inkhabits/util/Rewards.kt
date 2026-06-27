@@ -17,21 +17,21 @@ import java.time.LocalDate
  */
 object Rewards {
 
-    /** Longest current streak across all active habits. */
+    /** Longest current streak across all active habits (freezes count as completed). */
     suspend fun maxHabitStreak(db: AppDatabase, today: LocalDate = LocalDate.now()): Int {
         var max = 0
         for (h in db.habitDao().getActive()) {
-            val completed = db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+            val completed = Freezes.effectiveCompletionsFor(db, h.id)
             val s = Streaks.computeStreak(h, completed, today)
             if (s > max) max = s
         }
         return max
     }
 
-    /** Current streak for a single habit. */
+    /** Current streak for a single habit (freezes count as completed). */
     suspend fun habitStreak(db: AppDatabase, habitId: Long, today: LocalDate = LocalDate.now()): Int {
         val habit = db.habitDao().getById(habitId) ?: return 0
-        val completed = db.habitCompletionDao().getForHabit(habitId).map { it.date }.toSet()
+        val completed = Freezes.effectiveCompletionsFor(db, habitId)
         return Streaks.computeStreak(habit, completed, today)
     }
 
@@ -40,9 +40,10 @@ object Rewards {
         val habits = db.habitDao().getActive().filter { it.identityGoalId == identityId }
         if (habits.isEmpty()) return 0
         val byHabit = habits.associate { h ->
-            h.id to db.habitCompletionDao().getForHabit(h.id).map { it.date }.toSet()
+            h.id to Freezes.effectiveCompletionsFor(db, h.id)
         }
-        return Streaks.perfectDayStreak(habits, byHabit, today)
+        val forcedPerfect = Freezes.identityForcedPerfect(db, identityId)
+        return Streaks.perfectDayStreak(habits, byHabit, today, forcedPerfect)
     }
 
     /** The current streak value that [reward] is measured against. */
