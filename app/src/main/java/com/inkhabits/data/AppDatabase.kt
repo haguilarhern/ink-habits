@@ -30,7 +30,7 @@ import com.inkhabits.data.entity.ToDo
         IdentityGoal::class, Habit::class, HabitCompletion::class, ToDo::class, Reward::class,
         TaskList::class, StreakFreeze::class, EconomyState::class, TaskStage::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -137,6 +137,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v9→v10: fixed/custom roles for Kanban stages. */
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE task_stages ADD COLUMN role TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -144,7 +151,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ink_habits.db"
                 ).addMigrations(
-                    MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+                    MIGRATION_9_10)
                     .fallbackToDestructiveMigration()
                     .build().also { instance = it }
             }

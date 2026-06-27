@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.inkhabits.data.AppDatabase
 import com.inkhabits.data.entity.Priority
 import com.inkhabits.data.entity.Recur
+import com.inkhabits.data.entity.StageRole
 import com.inkhabits.data.entity.TaskList
 import com.inkhabits.data.entity.TaskStage
 import com.inkhabits.data.entity.ToDo
@@ -325,23 +326,36 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     // ── kanban ──
 
+    /** Stages in display order: To Do first, custom stages by sortOrder, Done last. */
+    private fun orderedStages(): List<TaskStage> = stages.sortedBy { it.sortOrder }
+    private fun todoStage(): TaskStage? = stages.firstOrNull { it.role == StageRole.TODO }
+    private fun doneStage(): TaskStage? = stages.firstOrNull { it.role == StageRole.DONE }
+
+    /** The column a task belongs in: Done if completed, else its stage (default To Do). */
+    private fun columnIdFor(t: ToDo, todoId: Long, doneId: Long): Long = when {
+        t.isDone -> doneId
+        stages.any { it.id == t.stageId && it.role != StageRole.DONE } -> t.stageId
+        else -> todoId
+    }
+
     private fun renderKanban() {
-        if (stages.isEmpty()) {
-            binding.lineContainer.addView(infoText("Create stages to organize tasks into a board."))
-            binding.lineContainer.addView(textButton("+ Create default stages (To Do · In Progress · Done)") {
-                seedDefaultStages()
-            })
-            binding.lineContainer.addView(textButton("+ Create a custom stage") { editStage(null) })
+        // Ensure the two fixed stages exist before drawing the board.
+        if (todoStage() == null || doneStage() == null) {
+            binding.lineContainer.addView(infoText("Setting up board…"))
+            ensureFixedStages()
             return
         }
-        val active = todos.filter { !it.isDone && inFilter(it) }
-        val firstId = stages.first().id
-        fun stageOf(t: ToDo): Long = if (stages.any { it.id == t.stageId }) t.stageId else firstId
+        val ordered = orderedStages()
+        val todoId = todoStage()!!.id
+        val doneId = doneStage()!!.id
+        val visible = todos.filter { inFilter(it) }
+        val customs = ordered.filter { it.role == StageRole.NONE }
 
         val columns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        stages.forEachIndexed { i, st ->
-            val items = active.filter { stageOf(it) == st.id }.sortedBy { it.sortOrder }
-            columns.addView(kanbanColumn(st, items, isLast = i == stages.lastIndex))
+        ordered.forEach { st ->
+            val items = visible.filter { columnIdFor(it, todoId, doneId) == st.id }
+                .sortedWith(compareBy({ it.isDone }, { it.sortOrder }))
+            columns.addView(kanbanColumn(st, items, customs))
         }
         columns.addView(addStageColumn())
 
@@ -351,7 +365,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             LinearLayout.LayoutParams.MATCH_PARENT, screenGridHeight()))
     }
 
-    private fun kanbanColumn(stage: TaskStage, items: List<ToDo>, isLast: Boolean): View {
+    private fun kanbanColumn(stage: TaskStage, items: List<ToDo>, customs: List<TaskStage>): View {
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -363,16 +377,26 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             layoutParams = LinearLayout.LayoutParams(dp(228), LinearLayout.LayoutParams.MATCH_PARENT)
                 .apply { marginEnd = dp(8) }
         }
-        // Header (tap to rename/delete the stage).
-        col.addView(TextView(this).apply {
+        // Header row: [← reorder] name·count (tap to rename/delete) [→ reorder].
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, dp(6))
+        }
+        val isCustom = stage.role == StageRole.NONE
+        val customIdx = customs.indexOfFirst { it.id == stage.id }
+        if (isCustom && customIdx > 0) header.addView(reorderArrow("‹") { moveStage(stage, -1, customs) })
+        header.addView(TextView(this).apply {
             text = "${stage.name.ifBlank { "Stage" }}  ·  ${items.size}"
             setTextColor(INK)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             setLetterSpacing(0.03f)
             typeface = font()
-            setPadding(0, 0, 0, dp(6))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener { editStage(stage) }
         })
+        if (isCustom && customIdx < customs.lastIndex) header.addView(reorderArrow("›") { moveStage(stage, 1, customs) })
+        col.addView(header)
+
         val scroll = android.widget.ScrollView(this).apply { isVerticalScrollBarEnabled = false }
         val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         if (items.isEmpty()) {
@@ -380,14 +404,22 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
                 text = "—"; setTextColor(MUTED)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f); setPadding(0, dp(6), 0, 0)
             })
-        } else items.forEach { inner.addView(kanbanCard(it, isLast)) }
+        } else items.forEach { inner.addView(kanbanCard(it)) }
         scroll.addView(inner)
         col.addView(scroll, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(4) })
         return col
     }
 
-    private fun kanbanCard(todo: ToDo, lastStage: Boolean): View {
+    private fun reorderArrow(glyph: String, onClick: () -> Unit) = TextView(this).apply {
+        text = glyph
+        setTextColor(MUTED)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+        setPadding(dp(4), 0, dp(4), 0)
+        setOnClickListener { onClick() }
+    }
+
+    private fun kanbanCard(todo: ToDo): View {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -406,6 +438,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         if (StrokeRenderer.hasInk(todo.titleStrokes)) {
             card.addView(ImageView(this).apply {
                 scaleType = ImageView.ScaleType.FIT_START
+                alpha = if (todo.isDone) 0.5f else 1f
                 layoutParams = LinearLayout.LayoutParams(0, dp(20), 1f)
                 post {
                     setImageBitmap(StrokeRenderer.renderToBitmap(
@@ -415,21 +448,30 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         } else {
             card.addView(TextView(this).apply {
                 text = todo.title.ifBlank { "Task" }
-                setTextColor(INK)
+                setTextColor(if (todo.isDone) MUTED else INK)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
                 maxLines = 2
                 ellipsize = android.text.TextUtils.TruncateAt.END
+                if (todo.isDone) paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
         }
-        // Move to the next stage.
-        if (!lastStage) {
+        // Done tasks: a reopen control; others: advance to the next stage.
+        if (todo.isDone) {
+            card.addView(TextView(this).apply {
+                text = "↺"
+                setTextColor(MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                setPadding(dp(6), 0, dp(6), 0)
+                setOnClickListener { setTaskDone(todo, false) }
+            })
+        } else {
             card.addView(TextView(this).apply {
                 text = "→"
                 setTextColor(ACCENT)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
                 setPadding(dp(6), 0, dp(6), 0)
-                setOnClickListener { moveToNextStage(todo) }
+                setOnClickListener { moveForward(todo) }
             })
         }
         return card
@@ -452,24 +494,61 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         setOnClickListener { editStage(null) }
     }
 
-    private fun moveToNextStage(todo: ToDo) {
-        val idx = stages.indexOfFirst { it.id == todo.stageId }
-            .let { if (it < 0) 0 else it }
-        val next = stages.getOrNull(idx + 1) ?: return
-        val updated = todo.copy(stageId = next.id)
+    /** Advance a task one column. Landing on Done marks it done (feeds the counter). */
+    private fun moveForward(todo: ToDo) {
+        val ordered = orderedStages()
+        val todoId = todoStage()?.id ?: return
+        val doneId = doneStage()?.id ?: return
+        val curId = columnIdFor(todo, todoId, doneId)
+        val idx = ordered.indexOfFirst { it.id == curId }
+        val next = ordered.getOrNull(idx + 1) ?: return
+        if (next.role == StageRole.DONE) {
+            setTaskDone(todo, true)
+        } else {
+            val updated = todo.copy(stageId = next.id)
+            todos.indexOfFirst { it.id == todo.id }.takeIf { it >= 0 }?.let { todos[it] = updated }
+            lifecycleScope.launch {
+                db.toDoDao().update(updated)
+                com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
+                render()
+            }
+        }
+    }
+
+    /** Single source of truth for completion: updates the year counter, widgets, and
+     *  regenerates recurring tasks. Used by the list, the matrix, the Kanban board,
+     *  and (mirrored) the Pomodoro screen. */
+    private fun setTaskDone(todo: ToDo, done: Boolean) {
+        if (todo.isDone == done) return
+        YearTally.add(this, if (done) 1 else -1)
+        refreshCounter()
+        val updated = todo.copy(isDone = done)
         todos.indexOfFirst { it.id == todo.id }.takeIf { it >= 0 }?.let { todos[it] = updated }
         lifecycleScope.launch {
             db.toDoDao().update(updated)
+            if (done && TaskRecurrence.isRecurring(todo)) regenerate(todo)
             com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
             render()
         }
     }
 
-    private fun seedDefaultStages() {
+    private fun moveStage(stage: TaskStage, dir: Int, customs: List<TaskStage>) {
+        val idx = customs.indexOfFirst { it.id == stage.id }
+        val other = customs.getOrNull(idx + dir) ?: return
         lifecycleScope.launch {
-            listOf("To Do", "In Progress", "Done").forEachIndexed { i, n ->
-                db.taskStageDao().insert(TaskStage(name = n, sortOrder = i))
-            }
+            db.taskStageDao().update(stage.copy(sortOrder = other.sortOrder))
+            db.taskStageDao().update(other.copy(sortOrder = stage.sortOrder))
+            load()
+        }
+    }
+
+    private fun ensureFixedStages() {
+        lifecycleScope.launch {
+            val cur = db.taskStageDao().getAll()
+            if (cur.none { it.role == StageRole.TODO })
+                db.taskStageDao().insert(TaskStage(name = "To Do", role = StageRole.TODO, sortOrder = 0))
+            if (cur.none { it.role == StageRole.DONE })
+                db.taskStageDao().insert(TaskStage(name = "Done", role = StageRole.DONE, sortOrder = 1_000_000))
             load()
         }
     }
@@ -489,17 +568,26 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
                 val nm = name.text?.toString()?.trim().orEmpty()
                 if (nm.isEmpty()) return@setPositiveButton
                 lifecycleScope.launch {
-                    if (existing == null) db.taskStageDao().insert(TaskStage(name = nm, sortOrder = stages.size))
-                    else db.taskStageDao().update(existing.copy(name = nm))
+                    if (existing == null) {
+                        // New custom stage slots just before Done.
+                        val maxCustom = stages.filter { it.role == StageRole.NONE }
+                            .maxOfOrNull { it.sortOrder } ?: 0
+                        db.taskStageDao().insert(TaskStage(name = nm, sortOrder = maxCustom + 1))
+                    } else {
+                        db.taskStageDao().update(existing.copy(name = nm))
+                    }
                     load()
                 }
             }
             .setNegativeButton("Cancel", null)
-        if (existing != null) builder.setNeutralButton("Delete") { _, _ ->
-            lifecycleScope.launch {
-                db.toDoDao().clearStage(existing.id) // tasks fall back to the first stage
-                db.taskStageDao().delete(existing)
-                load()
+        // Only custom stages can be deleted; To Do / Done are fixed.
+        if (existing != null && existing.role == StageRole.NONE) {
+            builder.setNeutralButton("Delete") { _, _ ->
+                lifecycleScope.launch {
+                    db.toDoDao().clearStage(existing.id) // tasks fall back to To Do
+                    db.taskStageDao().delete(existing)
+                    load()
+                }
             }
         }
         builder.show()
@@ -735,8 +823,10 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         if (id <= 0) "None" else stages.find { it.id == id }?.name?.ifBlank { "Stage" } ?: "None"
 
     private fun chooseStage(current: Long, onPick: (Long) -> Unit) {
-        val labels = (listOf("No stage") + stages.map { it.name.ifBlank { "Stage" } } + "New stage…").toTypedArray()
-        val ids = listOf(0L) + stages.map { it.id }
+        // Done is set by completing a task, not by manual assignment, so it's excluded here.
+        val selectable = stages.filter { it.role != StageRole.DONE }.sortedBy { it.sortOrder }
+        val labels = (listOf("No stage") + selectable.map { it.name.ifBlank { "Stage" } } + "New stage…").toTypedArray()
+        val ids = listOf(0L) + selectable.map { it.id }
         val checked = ids.indexOf(current).coerceAtLeast(0)
         com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
