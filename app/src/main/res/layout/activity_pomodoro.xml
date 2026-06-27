@@ -98,13 +98,12 @@
     <!-- Timer ring + remaining minutes -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="240dp">
 
         <com.inkhabits.ui.widget.ProgressRingView
             android:id="@+id/ring"
-            android:layout_width="280dp"
-            android:layout_height="280dp"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
             android:layout_gravity="center" />
 
         <LinearLayout
@@ -121,7 +120,7 @@
                 android:text="25"
                 android:fontFamily="@font/inter_semibold"
                 android:textColor="@color/ink_text"
-                android:textSize="96sp"
+                android:textSize="80sp"
                 tools:ignore="HardcodedText" />
 
             <TextView
@@ -184,10 +183,65 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingBottom="20dp"
+        android:paddingBottom="12dp"
         android:text="Round 1 of 4"
         android:textColor="@color/ink_text_muted"
         android:textSize="13sp"
         tools:ignore="HardcodedText" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/ink_divider" />
+
+    <!-- Session tasks -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="2dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Working on"
+            android:fontFamily="@font/inter_semibold"
+            android:textColor="@color/ink_text"
+            android:textSize="14sp"
+            android:letterSpacing="0.04"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/addTaskButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="6dp"
+            android:text="+ Choose tasks"
+            android:textColor="@color/ink_accent"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="13sp"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/taskScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:paddingBottom="16dp">
+
+        <LinearLayout
+            android:id="@+id/taskList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_margin" />
+    </ScrollView>
 
 </LinearLayout>

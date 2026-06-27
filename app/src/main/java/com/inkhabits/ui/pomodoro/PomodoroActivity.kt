@@ -5,10 +5,21 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
+import android.view.Gravity
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
+import com.inkhabits.data.AppDatabase
+import com.inkhabits.data.entity.ToDo
 import com.inkhabits.databinding.ActivityPomodoroBinding
 import com.inkhabits.eink.EInk
 import com.inkhabits.eink.EInkActivity
+import com.inkhabits.ui.widget.CheckBoxView
+import com.inkhabits.util.StrokeRenderer
+import com.inkhabits.util.TaskRecurrence
+import com.inkhabits.util.YearTally
+import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
 /**
@@ -36,6 +47,11 @@ class PomodoroActivity : EInkActivity() {
     private val tick = Runnable { onTick() }
 
     private val prefs by lazy { getSharedPreferences("pomodoro", MODE_PRIVATE) }
+    private val db by lazy { AppDatabase.get(this) }
+
+    private var todos = listOf<ToDo>()
+    /** Task ids chosen to work on this session. */
+    private val sessionIds = linkedSetOf<Long>()
 
     private val FOCUS_COLOR = Color.parseColor("#8C1D1D")
     private val SHORT_COLOR = Color.parseColor("#2E7D32")
@@ -56,9 +72,20 @@ class PomodoroActivity : EInkActivity() {
         binding.tabFocus.setOnClickListener { switchMode(Mode.FOCUS) }
         binding.tabShort.setOnClickListener { switchMode(Mode.SHORT) }
         binding.tabLong.setOnClickListener { switchMode(Mode.LONG) }
+        binding.addTaskButton.setOnClickListener { chooseTasks() }
+
+        // Restore the previously chosen session tasks.
+        prefs.getString("session", "")?.split(",")
+            ?.mapNotNull { it.trim().toLongOrNull() }?.let { sessionIds.addAll(it) }
 
         remainingMin = durationFor(mode)
         updateUi()
+        loadTasks()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadTasks()
     }
 
     override fun onDestroy() {
@@ -200,6 +227,147 @@ class PomodoroActivity : EInkActivity() {
                     400, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
             } else @Suppress("DEPRECATION") v.vibrate(400)
         } catch (_: Throwable) {}
+    }
+
+    // ── session tasks ──
+
+    private fun loadTasks() {
+        lifecycleScope.launch {
+            todos = db.toDoDao().getAll()
+            // Forget any chosen ids whose task no longer exists.
+            val existing = todos.map { it.id }.toSet()
+            if (sessionIds.retainAll(existing)) saveSession()
+            renderTasks()
+        }
+    }
+
+    private fun saveSession() {
+        prefs.edit().putString("session", sessionIds.joinToString(",")).apply()
+    }
+
+    private fun renderTasks() {
+        val box = binding.taskList
+        box.removeAllViews()
+        val session = sessionIds.mapNotNull { id -> todos.find { it.id == id } }
+        if (session.isEmpty()) {
+            box.addView(TextView(this).apply {
+                text = "No tasks selected. Tap “+ Choose tasks” to pick what to work on."
+                setTextColor(MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                setPadding(0, dp(8), 0, 0)
+            })
+            return
+        }
+        session.sortedBy { it.isDone }.forEach { box.addView(taskRow(it)) }
+    }
+
+    private fun taskRow(todo: ToDo): android.view.View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = getDrawable(com.inkhabits.R.drawable.pill_bg)
+            setPadding(dp(14), dp(8), dp(6), dp(8))
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(10); layoutParams = lp
+        }
+        row.addView(taskLabel(todo))
+        // Remove from this session (does not delete the task).
+        row.addView(TextView(this).apply {
+            text = "✕"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+            setOnClickListener {
+                sessionIds.remove(todo.id); saveSession(); renderTasks(); EInk.clean(binding.root)
+            }
+        })
+        val cb = CheckBoxView(this).apply {
+            checked = todo.isDone
+            onToggle = { done -> toggleTaskDone(todo, done) }
+        }
+        row.addView(cb, LinearLayout.LayoutParams(dp(40), dp(40)))
+        return row
+    }
+
+    /** Rendered task name (handwriting if present, else text), weighted to fill the row. */
+    private fun taskLabel(todo: ToDo): android.view.View =
+        if (StrokeRenderer.hasInk(todo.titleStrokes)) {
+            ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                alpha = if (todo.isDone) 0.45f else 1f
+                layoutParams = LinearLayout.LayoutParams(0, dp(26), 1f)
+                post {
+                    setImageBitmap(StrokeRenderer.renderToBitmap(
+                        todo.titleStrokes, width.coerceAtLeast(1), dp(26), maxScale = 1f))
+                }
+            }
+        } else {
+            TextView(this).apply {
+                text = todo.title.ifBlank { "Task" }
+                setTextColor(if (todo.isDone) MUTED else INK)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                if (todo.isDone) paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+        }
+
+    private fun toggleTaskDone(todo: ToDo, done: Boolean) {
+        YearTally.add(this, if (done) 1 else -1)
+        lifecycleScope.launch {
+            db.toDoDao().update(todo.copy(isDone = done))
+            // Completing a recurring task spawns its next occurrence (mirrors the To-Do screen).
+            if (done && TaskRecurrence.isRecurring(todo)) {
+                TaskRecurrence.nextDue(todo)?.let { next ->
+                    db.toDoDao().insert(todo.copy(
+                        id = 0, isDone = false, dueEpochDay = next.toEpochDay(),
+                        createdAt = System.currentTimeMillis()))
+                }
+            }
+            com.inkhabits.widget.WidgetCommon.updateAll(this@PomodoroActivity)
+            loadTasks()
+        }
+    }
+
+    /** Pick which active to-dos to work on this session. */
+    private fun chooseTasks() {
+        val active = todos.filter { !it.isDone }
+        if (active.isEmpty()) {
+            android.widget.Toast.makeText(
+                this, "No active tasks — add some in the To-Do screen.",
+                android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(8), dp(16), 0)
+        }
+        val checks = HashMap<Long, CheckBoxView>()
+        active.forEach { t ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(6), 0, dp(6))
+            }
+            row.addView(taskLabel(t))
+            val cb = CheckBoxView(this).apply { checked = sessionIds.contains(t.id) }
+            checks[t.id] = cb
+            row.addView(cb, LinearLayout.LayoutParams(dp(36), dp(36)))
+            row.setOnClickListener { cb.checked = !cb.checked }
+            container.addView(row)
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle("Choose tasks")
+            .setView(android.widget.ScrollView(this).apply { addView(container) })
+            .setPositiveButton("Done") { _, _ ->
+                val activeIds = active.map { it.id }.toSet()
+                sessionIds.removeAll(activeIds)
+                active.forEach { if (checks[it.id]?.checked == true) sessionIds.add(it.id) }
+                saveSession(); renderTasks(); EInk.clean(binding.root)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     // ── rendering ──
