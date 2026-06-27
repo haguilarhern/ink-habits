@@ -1,153 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/ink_background">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="@dimen/screen_margin"
-        android:paddingTop="@dimen/screen_margin"
-        android:paddingBottom="10dp">
-
-        <ImageButton
-            android:id="@+id/backButton"
-            android:layout_width="@dimen/touch_target"
-            android:layout_height="@dimen/touch_target"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            android:contentDescription="Back"
-            app:tint="@color/ink_text" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:text="To-Do"
-            android:fontFamily="@font/inter_semibold"
-            android:textColor="@color/ink_text"
-            android:textSize="@dimen/text_title"
-            tools:ignore="HardcodedText" />
-
-        <!-- Cumulative "done this year" counter -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="end">
-
-            <TextView
-                android:id="@+id/yearCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:text="0"
-                android:fontFamily="@font/inter_semibold"
-                android:textColor="@color/ink_accent"
-                android:textSize="28sp"
-                tools:ignore="HardcodedText" />
-
-            <TextView
-                android:id="@+id/yearLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:text="done this year"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="11sp"
-                android:letterSpacing="0.04"
-                tools:ignore="HardcodedText" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/ink_divider" />
-
-    <!-- Sub-tabs: active to-dos vs completed -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/screen_margin"
-        android:paddingTop="12dp">
-
-        <TextView
-            android:id="@+id/tabActive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="7dp"
-            android:text="To-Do"
-            android:fontFamily="@font/inter_semibold"
-            android:textSize="13sp"
-            tools:ignore="HardcodedText" />
-
-        <TextView
-            android:id="@+id/tabMatrix"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="7dp"
-            android:text="Matrix"
-            android:fontFamily="@font/inter_semibold"
-            android:textSize="13sp"
-            tools:ignore="HardcodedText" />
-
-        <TextView
-            android:id="@+id/tabCompleted"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="7dp"
-            android:text="Completed"
-            android:fontFamily="@font/inter_semibold"
-            android:textSize="13sp"
-            tools:ignore="HardcodedText" />
-    </LinearLayout>
-
-    <!-- List/classification filter chips -->
-    <HorizontalScrollView
-        android:id="@+id/listChipScroll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:paddingHorizontal="@dimen/screen_margin"
-        android:paddingTop="10dp"
-        android:clipToPadding="false">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:id="@+id/listChips"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
-
-    <ScrollView
-        android:id="@+id/scroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingTop="14dp"
-        android:paddingBottom="24dp">
-
-        <LinearLayout
-            android:id="@+id/lineContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="@dimen/screen_margin" />
-    </ScrollView>
-</LinearLayout>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingTop="@dimen/screen_margin"
+            android:paddingBottom="10dp">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="@dimen/touch_target"
+                android:layout_height="@dimen/touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_back"
+                android:contentDescription="Back"
+                app:tint="@color/ink_text" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="To-Do"
+                android:fontFamily="@font/inter_semibold"
+                android:textColor="@color/ink_text"
+                android:textSize="@dimen/text_title"
+                tools:ignore="HardcodedText" />
+
+            <!-- Cumulative "done this year" counter -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end">
+
+                <TextView
+                    android:id="@+id/yearCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="0"
+                    android:fontFamily="@font/inter_semibold"
+                    android:textColor="@color/ink_accent"
+                    android:textSize="28sp"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    android:id="@+id/yearLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="done this year"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.04"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/ink_divider" />
+
+        <!-- Sub-tabs: active to-dos / matrix / completed -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:id="@+id/tabActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="7dp"
+                android:text="To-Do"
+                android:fontFamily="@font/inter_semibold"
+                android:textSize="13sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/tabMatrix"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="7dp"
+                android:text="Matrix"
+                android:fontFamily="@font/inter_semibold"
+                android:textSize="13sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/tabCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="7dp"
+                android:text="Completed"
+                android:fontFamily="@font/inter_semibold"
+                android:textSize="13sp"
+                tools:ignore="HardcodedText" />
+        </LinearLayout>
+
+        <!-- List/classification filter chips -->
+        <HorizontalScrollView
+            android:id="@+id/listChipScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingHorizontal="@dimen/screen_margin"
+            android:paddingTop="10dp"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:id="@+id/listChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <ScrollView
+            android:id="@+id/scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:clipToPadding="false"
+            android:paddingTop="14dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:id="@+id/lineContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_margin" />
+        </ScrollView>
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddTask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginBottom="24dp"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Add task"
+        app:backgroundTint="@color/ink_accent"
+        app:tint="@color/ink_white"
+        app:elevation="0dp"
+        app:fabSize="normal" />
+
+</FrameLayout>

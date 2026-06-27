@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
@@ -23,12 +24,13 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /**
- * Notebook-style to-do page. Tasks can be classified into [TaskList]s (filter chips),
- * given a due date / Eisenhower priority / recurrence (long-press a line for options),
- * and viewed as a flat list or an Eisenhower matrix.
+ * To-do page. Tasks are created with the "+" button: handwrite the task, then configure
+ * its classification (list), due date, Eisenhower importance, and recurrence in one
+ * popup. Tasks can be viewed as a flat list (filtered by list chips) or as a real 2×2
+ * Eisenhower matrix.
  *
- * Each line is a display-only [ToDoLineView]; tapping one opens the full-screen writing
- * pad (a single dedicated pen surface) — no live drawing surfaces live in the list.
+ * Each line is a display-only [ToDoLineView]; tapping one re-opens the full-screen
+ * writing pad, long-pressing opens its options popup.
  */
 class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
@@ -49,11 +51,11 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     private val pendingRemovals = HashMap<ToDoLineView, Runnable>()
 
     companion object {
-        private const val TRAILING_BLANKS = 8
         private const val REMOVE_DELAY = 2000L
         private val ACCENT = Color.parseColor("#8C1D1D")
         private val MUTED = Color.parseColor("#6B6B6B")
         private val INK = Color.parseColor("#1A1A1A")
+        private val HAIRLINE = Color.parseColor("#CFCBC0")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,6 +68,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         binding.tabActive.setOnClickListener { switchTab(Tab.ACTIVE) }
         binding.tabMatrix.setOnClickListener { switchTab(Tab.MATRIX) }
         binding.tabCompleted.setOnClickListener { switchTab(Tab.COMPLETED) }
+        binding.fabAddTask.setOnClickListener { createTask() }
 
         refreshCounter()
         load()
@@ -86,7 +89,6 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             todos.clear()
             todos.addAll(db.toDoDao().getAll())
             nextOrder = todos.size
-            // Drop a stale filter that points at a deleted list.
             if (filterListId > 0 && lists.none { it.id == filterListId }) filterListId = -1L
             render()
         }
@@ -94,7 +96,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun listById(id: Long): TaskList? = lists.find { it.id == id }
 
-    // ── tabs / chips / rendering ──
+    // ── tabs / chips ──
 
     private fun switchTab(t: Tab) {
         if (tab == t) return
@@ -111,16 +113,16 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     }
 
     private fun styleTab(tv: TextView, selected: Boolean) {
-        tv.background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = dp(14).toFloat()
-            if (selected) setColor(ACCENT) else {
-                setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
-            }
-        }
+        tv.background = pill(if (selected) ACCENT else Color.WHITE, !selected)
         tv.setTextColor(if (selected) Color.WHITE else INK)
     }
 
-    /** True when [t] matches the active list filter. */
+    private fun pill(fill: Int, stroke: Boolean) = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(fill)
+        if (stroke) setStroke(dp(1).coerceAtLeast(1), HAIRLINE)
+    }
+
     private fun inFilter(t: ToDo): Boolean = when (filterListId) {
         -1L -> true
         0L -> t.listId == 0L || listById(t.listId) == null
@@ -142,12 +144,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             text = label
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             setPadding(dp(13), dp(6), dp(13), dp(6))
-            background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = dp(13).toFloat()
-                if (selected) setColor(ACCENT) else {
-                    setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
-                }
-            }
+            background = pill(if (selected) ACCENT else Color.WHITE, !selected)
             setTextColor(when {
                 selected -> Color.WHITE
                 colorHex != null -> runCatching { Color.parseColor(colorHex) }.getOrDefault(INK)
@@ -166,12 +163,11 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         setPadding(dp(13), dp(6), dp(13), dp(6))
         setTextColor(MUTED)
-        background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = dp(13).toFloat()
-            setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
-        }
+        background = pill(Color.WHITE, true)
         setOnClickListener { editList(null) }
     }
+
+    // ── rendering ──
 
     private fun render() {
         clearPendingRemovals()
@@ -186,61 +182,135 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     }
 
     private fun renderActive() {
-        todos.filter { !it.isDone && inFilter(it) }
+        val items = todos.filter { !it.isDone && inFilter(it) }
             .sortedWith(compareBy({ it.priority == 0 }, { it.priority }, { it.sortOrder }))
-            .forEach { addLine(it, editable = true) }
-        // Trailing blank lines create new tasks (in the selected list).
-        repeat(TRAILING_BLANKS) { addBlankLine() }
+        if (items.isEmpty()) {
+            binding.lineContainer.addView(infoText("No tasks here yet. Tap + to add one."))
+            return
+        }
+        binding.lineContainer.addView(infoText("Tap a task to rewrite · long-press for options"))
+        items.forEach { addLine(it, editable = true) }
     }
 
     private fun renderCompleted() {
         val done = todos.filter { it.isDone && inFilter(it) }
-        if (done.isEmpty()) {
-            binding.lineContainer.addView(infoText("Nothing completed yet."))
-        } else {
-            done.forEach { addLine(it, editable = false) }
-        }
+        if (done.isEmpty()) binding.lineContainer.addView(infoText("Nothing completed yet."))
+        else done.forEach { addLine(it, editable = false) }
     }
 
+    /** A real 2×2 Eisenhower grid: urgency on columns, importance on rows. */
     private fun renderMatrix() {
         val active = todos.filter { !it.isDone && inFilter(it) }
-        val quadrants = listOf(
-            Priority.DO to "Do first",
-            Priority.SCHEDULE to "Schedule",
-            Priority.DELEGATE to "Delegate",
-            Priority.DROP to "Drop"
-        )
-        for ((p, title) in quadrants) {
-            binding.lineContainer.addView(quadrantHeader(title, TaskRecurrence.priorityTitle(p),
-                TaskRecurrence.priorityColor(p)))
-            val items = active.filter { it.priority == p }.sortedBy { it.sortOrder }
-            if (items.isEmpty()) binding.lineContainer.addView(infoText("—"))
-            else items.forEach { addLine(it, editable = true) }
-        }
+        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
+        grid.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(quadrantCell("Do first", Priority.DO, active), cellLp())
+            addView(quadrantCell("Schedule", Priority.SCHEDULE, active), cellLp())
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        grid.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(quadrantCell("Delegate", Priority.DELEGATE, active), cellLp())
+            addView(quadrantCell("Drop", Priority.DROP, active), cellLp())
+        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+
+        // Make the grid fill the visible area so the four quadrants read as a matrix.
+        binding.lineContainer.addView(grid, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, screenGridHeight()))
+
         val none = active.filter { it.priority == 0 }
         if (none.isNotEmpty()) {
-            binding.lineContainer.addView(quadrantHeader("Unprioritized",
-                "Long-press a task to set its priority", MUTED))
+            binding.lineContainer.addView(TextView(this).apply {
+                text = "UNPRIORITIZED — long-press to set importance"
+                setTextColor(MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+                setPadding(0, dp(14), 0, dp(6))
+            })
             none.forEach { addLine(it, editable = true) }
         }
     }
 
-    private fun quadrantHeader(title: String, sub: String, color: Int): View = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(0, dp(14), 0, dp(6))
-        addView(TextView(this@ToDoActivity).apply {
-            text = title.uppercase()
+    private fun cellLp() = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+        .apply { setMargins(dp(3), dp(3), dp(3), dp(3)) }
+
+    private fun screenGridHeight(): Int = (resources.displayMetrics.heightPixels * 0.62f).toInt()
+
+    private fun quadrantCell(title: String, priority: Int, active: List<ToDo>): View {
+        val color = TaskRecurrence.priorityColor(priority)
+        val cell = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(Color.WHITE)
+                setStroke(dp(1).coerceAtLeast(1), color)
+            }
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+        }
+        cell.addView(TextView(this).apply {
+            text = "${TaskRecurrence.priorityShort(priority)} · ${title.uppercase()}"
             setTextColor(color)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-            setLetterSpacing(0.06f)
-            typeface = androidx.core.content.res.ResourcesCompat.getFont(
-                this@ToDoActivity, com.inkhabits.R.font.inter_semibold)
-        })
-        addView(TextView(this@ToDoActivity).apply {
-            text = sub
-            setTextColor(MUTED)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            setLetterSpacing(0.04f)
+            typeface = font()
         })
+        val scroll = android.widget.ScrollView(this).apply {
+            isVerticalScrollBarEnabled = false
+        }
+        val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val items = active.filter { it.priority == priority }.sortedBy { it.sortOrder }
+        if (items.isEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = "—"; setTextColor(MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                setPadding(0, dp(6), 0, 0)
+            })
+        } else {
+            items.forEach { inner.addView(compactTask(it)) }
+        }
+        scroll.addView(inner)
+        cell.addView(scroll, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(4) })
+        return cell
+    }
+
+    /** Compact task row for a matrix cell (small ink/text + checkbox), opens options on tap. */
+    private fun compactTask(todo: ToDo): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(5), 0, dp(5))
+            isClickable = true
+            setOnClickListener { showTaskEditor(todo, isNew = false) }
+        }
+        if (StrokeRenderer.hasInk(todo.titleStrokes)) {
+            row.addView(ImageView(this).apply {
+                scaleType = ImageView.ScaleType.FIT_START
+                layoutParams = LinearLayout.LayoutParams(0, dp(20), 1f)
+                post {
+                    setImageBitmap(StrokeRenderer.renderToBitmap(
+                        todo.titleStrokes, width.coerceAtLeast(1), dp(20), maxScale = 1f))
+                }
+            })
+        } else {
+            row.addView(TextView(this).apply {
+                text = todo.title.ifBlank { "Task" }
+                setTextColor(INK)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        if (todo.dueEpochDay > 0) {
+            row.addView(TextView(this).apply {
+                text = if (TaskRecurrence.isOverdue(todo.dueEpochDay)) "!" else "◷"
+                setTextColor(if (TaskRecurrence.isOverdue(todo.dueEpochDay)) ACCENT else MUTED)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                setPadding(dp(4), 0, dp(4), 0)
+            })
+        }
+        return row
     }
 
     private fun addLine(todo: ToDo, editable: Boolean) {
@@ -251,56 +321,48 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         line.bindMeta(todo, listById(todo.listId))
     }
 
-    private fun addBlankLine() {
-        binding.lineContainer.addView(ToDoLineView(this, this))
-    }
-
     private fun infoText(msg: String) = TextView(this).apply {
         text = msg
         setTextColor(MUTED)
-        setPadding(dp(4), dp(8), 0, 0)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        setPadding(dp(4), dp(8), 0, dp(8))
     }
 
-    // ── ToDoLineView.Host ──
+    private fun font() = androidx.core.content.res.ResourcesCompat.getFont(
+        this, com.inkhabits.R.font.inter_semibold)
+
+    // ── creation / editing ──
+
+    /** + button: write the task, then open the configure popup. */
+    private fun createTask() {
+        openWritingPad("", "New to-do") { strokes ->
+            if (StrokeRenderer.hasInk(strokes)) {
+                val listId = if (filterListId > 0) filterListId else 0L
+                showTaskEditor(ToDo(titleStrokes = strokes, listId = listId), isNew = true)
+            }
+        }
+    }
 
     override fun onEditLine(line: ToDoLineView) {
-        openWritingPad(line.currentStrokes(), "To-do") { result -> applyResult(line, result) }
+        openWritingPad(line.currentStrokes(), "To-do") { strokes -> applyRewrite(line, strokes) }
     }
 
-    private fun applyResult(line: ToDoLineView, strokes: String) {
+    /** Rewrite (or clear→delete) an existing task's handwriting. */
+    private fun applyRewrite(line: ToDoLineView, strokes: String) {
+        val id = line.todoId
+        if (id == 0L) return
+        val idx = todos.indexOfFirst { it.id == id }
+        if (idx < 0) return
         if (StrokeRenderer.hasInk(strokes)) {
-            val wasBlank = line.todoId == 0L
+            val updated = todos[idx].copy(titleStrokes = strokes)
+            todos[idx] = updated
             line.applyStrokes(strokes)
             lifecycleScope.launch {
-                if (wasBlank) {
-                    // New blank lines inherit the currently filtered list.
-                    val newListId = if (filterListId > 0) filterListId else 0L
-                    val todo = ToDo(titleStrokes = strokes, sortOrder = nextOrder++, listId = newListId)
-                    val id = db.toDoDao().insert(todo)
-                    line.todoId = id
-                    val saved = todo.copy(id = id)
-                    todos.add(saved)
-                    line.bindMeta(saved, listById(saved.listId))
-                    addBlankLine()
-                } else {
-                    val idx = todos.indexOfFirst { it.id == line.todoId }
-                    if (idx >= 0) {
-                        val updated = todos[idx].copy(titleStrokes = strokes)
-                        todos[idx] = updated
-                        db.toDoDao().update(updated)
-                    }
-                }
+                db.toDoDao().update(updated)
                 com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
             }
-        } else if (line.todoId != 0L) {
-            // Cleared an existing to-do -> delete it.
-            val id = line.todoId
-            lifecycleScope.launch {
-                todos.indexOfFirst { it.id == id }.takeIf { it >= 0 }?.let { todos.removeAt(it) }
-                db.toDoDao().getById(id)?.let { db.toDoDao().delete(it) }
-                com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
-            }
-            binding.lineContainer.removeView(line)
+        } else {
+            deleteTask(todos[idx])
         }
     }
 
@@ -316,7 +378,6 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
                 val updated = task.copy(isDone = done)
                 todos[idx] = updated
                 db.toDoDao().update(updated)
-                // Completing a recurring task spawns its next occurrence.
                 if (done && TaskRecurrence.isRecurring(task)) regenerate(task)
             }
             com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
@@ -330,129 +391,214 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     private suspend fun regenerate(task: ToDo) {
         val next = TaskRecurrence.nextDue(task) ?: return
         val fresh = task.copy(
-            id = 0,
-            isDone = false,
-            dueEpochDay = next.toEpochDay(),
-            sortOrder = nextOrder++,
-            createdAt = System.currentTimeMillis()
+            id = 0, isDone = false, dueEpochDay = next.toEpochDay(),
+            sortOrder = nextOrder++, createdAt = System.currentTimeMillis()
         )
         val id = db.toDoDao().insert(fresh)
         todos.add(fresh.copy(id = id))
-        if (tab == Tab.ACTIVE || tab == Tab.MATRIX) runOnUiThread { render() }
+        if (tab != Tab.COMPLETED) runOnUiThread { render() }
     }
 
     override fun onLineOptions(line: ToDoLineView) {
         val task = todos.find { it.id == line.todoId } ?: return
-        showOptions(task)
+        showTaskEditor(task, isNew = false)
     }
 
-    // ── per-task options ──
+    // ── task configure popup ──
 
-    private fun showOptions(task: ToDo) {
-        val options = arrayOf("List…", "Due date…", "Priority…", "Repeat…", "Delete")
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(
-            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
-            .setTitle("Task options")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> pickList(task)
-                    1 -> pickDueDate(task)
-                    2 -> pickPriority(task)
-                    3 -> pickRecurrence(task)
-                    4 -> deleteTask(task)
-                }
-            }
-            .setNegativeButton("Close", null)
-            .show()
-    }
+    /**
+     * The configure popup: handwriting preview + rewrite, classification, due date,
+     * importance, and recurrence — all in one place. Saving inserts (new) or updates.
+     */
+    private fun showTaskEditor(task: ToDo, isNew: Boolean) {
+        var working = task
 
-    private fun saveTask(updated: ToDo) {
-        val idx = todos.indexOfFirst { it.id == updated.id }
-        if (idx >= 0) todos[idx] = updated
-        lifecycleScope.launch {
-            db.toDoDao().update(updated)
-            com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
-            render()
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), 0)
         }
-    }
 
-    private fun deleteTask(task: ToDo) {
-        todos.indexOfFirst { it.id == task.id }.takeIf { it >= 0 }?.let { todos.removeAt(it) }
-        lifecycleScope.launch {
-            db.toDoDao().getById(task.id)?.let { db.toDoDao().delete(it) }
-            com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
-            render()
+        // Handwriting preview + rewrite.
+        val preview = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.FIT_START
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(40))
         }
-    }
-
-    private fun pickList(task: ToDo) {
-        val labels = (listOf("Inbox (none)") + lists.map { it.name.ifBlank { "List" } }).toTypedArray()
-        val ids = listOf(0L) + lists.map { it.id }
-        val checked = ids.indexOf(task.listId).coerceAtLeast(0)
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(
-            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
-            .setTitle("List")
-            .setSingleChoiceItems(labels, checked) { d, which ->
-                saveTask(task.copy(listId = ids[which])); d.dismiss()
+        fun refreshPreview() {
+            preview.post {
+                preview.setImageBitmap(StrokeRenderer.renderToBitmap(
+                    working.titleStrokes, preview.width.coerceAtLeast(1), dp(40), maxScale = 1f))
             }
-            .setNeutralButton("New list…") { _, _ -> editList(null) }
+        }
+        root.addView(preview)
+        refreshPreview()
+        root.addView(textButton("✎ Rewrite") {
+            openWritingPad(working.titleStrokes, "To-do") { strokes ->
+                if (StrokeRenderer.hasInk(strokes)) { working = working.copy(titleStrokes = strokes); refreshPreview() }
+            }
+        })
+
+        root.addView(divider())
+
+        // Classification (list).
+        val listBtn = settingRow(root, "Classification") { chooseList(working.listId) { id ->
+            working = working.copy(listId = id); it.text = listLabel(id) } }
+        listBtn.text = listLabel(working.listId)
+        // Due date.
+        val dueBtn = settingRow(root, "Due date") { chooseDate(working.dueEpochDay) { ep ->
+            working = working.copy(dueEpochDay = ep); it.text = dueLabel(ep) } }
+        dueBtn.text = dueLabel(working.dueEpochDay)
+        // Recurrence.
+        val repeatBtn = settingRow(root, "Repeat") { chooseRecurrence(working) { upd ->
+            working = upd; it.text = recurLabel(upd) } }
+        repeatBtn.text = recurLabel(working)
+
+        // Importance (inline chips).
+        root.addView(label("Importance"))
+        root.addView(importanceChips(working.priority) { p -> working = working.copy(priority = p) })
+
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle(if (isNew) "New task" else "Task")
+            .setView(android.widget.ScrollView(this).apply { addView(root) })
+            .setPositiveButton("Save") { _, _ -> saveOrInsert(working, isNew) }
             .setNegativeButton("Cancel", null)
-            .show()
+        if (!isNew) builder.setNeutralButton("Delete") { _, _ -> deleteTask(task) }
+        builder.show()
     }
 
-    private fun pickPriority(task: ToDo) {
-        val labels = arrayOf(
-            "P1 · Do (urgent & important)",
-            "P2 · Schedule (important)",
-            "P3 · Delegate (urgent)",
-            "P4 · Drop (neither)",
-            "None"
+    private fun saveOrInsert(working: ToDo, isNew: Boolean) {
+        lifecycleScope.launch {
+            if (isNew) {
+                val toSave = working.copy(sortOrder = nextOrder++)
+                val id = db.toDoDao().insert(toSave)
+                todos.add(toSave.copy(id = id))
+            } else {
+                val idx = todos.indexOfFirst { it.id == working.id }
+                if (idx >= 0) todos[idx] = working
+                db.toDoDao().update(working)
+            }
+            com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
+            render()
+        }
+    }
+
+    // ── editor controls ──
+
+    /** A label + tappable value row, appended to [parent]; returns the value view. */
+    private fun settingRow(parent: LinearLayout, label: String, onClick: (TextView) -> Unit): TextView {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(10), 0, dp(10))
+            isClickable = true
+        }
+        row.addView(TextView(this).apply {
+            text = label
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        val value = TextView(this).apply {
+            setTextColor(ACCENT)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            gravity = Gravity.END
+        }
+        row.addView(value)
+        row.setOnClickListener { onClick(value) }
+        parent.addView(row)
+        return value
+    }
+
+    private fun importanceChips(current: Int, onPick: (Int) -> Unit): View {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, dp(4), 0, dp(4))
+        }
+        val opts = listOf(
+            Priority.NONE to "None", Priority.DO to "P1", Priority.SCHEDULE to "P2",
+            Priority.DELEGATE to "P3", Priority.DROP to "P4"
         )
-        val values = listOf(Priority.DO, Priority.SCHEDULE, Priority.DELEGATE, Priority.DROP, Priority.NONE)
-        val checked = values.indexOf(task.priority).coerceAtLeast(0)
+        var selected = current
+        val chips = mutableListOf<TextView>()
+        fun restyle() {
+            chips.forEachIndexed { i, c ->
+                val p = opts[i].first
+                val on = p == selected
+                val color = if (p == Priority.NONE) MUTED else TaskRecurrence.priorityColor(p)
+                c.background = pill(if (on) color else Color.WHITE, !on)
+                c.setTextColor(if (on) Color.WHITE else color)
+            }
+        }
+        opts.forEach { (p, lbl) ->
+            val chip = TextView(this).apply {
+                text = lbl
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                setPadding(dp(12), dp(6), dp(12), dp(6))
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                lp.marginEnd = dp(6); layoutParams = lp
+                setOnClickListener { selected = p; restyle(); onPick(p) }
+            }
+            chips.add(chip); row.addView(chip)
+        }
+        restyle()
+        return row
+    }
+
+    private fun listLabel(id: Long): String =
+        if (id <= 0) "Inbox" else listById(id)?.name?.ifBlank { "List" } ?: "Inbox"
+
+    private fun dueLabel(ep: Long): String =
+        if (ep <= 0) "None" else TaskRecurrence.dueLabel(ep)
+
+    private fun recurLabel(t: ToDo): String =
+        if (t.recurType == Recur.NONE) "Never" else TaskRecurrence.recurLabel(t)
+
+    private fun chooseList(current: Long, onPick: (Long) -> Unit) {
+        val labels = (listOf("Inbox (none)") + lists.map { it.name.ifBlank { "List" } } + "New list…").toTypedArray()
+        val ids = listOf(0L) + lists.map { it.id }
+        val checked = ids.indexOf(current).coerceAtLeast(0)
         com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
-            .setTitle("Priority")
+            .setTitle("Classification")
             .setSingleChoiceItems(labels, checked) { d, which ->
-                saveTask(task.copy(priority = values[which])); d.dismiss()
+                if (which == labels.size - 1) editList(null) else onPick(ids[which])
+                d.dismiss()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun pickDueDate(task: ToDo) {
-        val base = if (task.dueEpochDay > 0) LocalDate.ofEpochDay(task.dueEpochDay) else LocalDate.now()
+    private fun chooseDate(current: Long, onPick: (Long) -> Unit) {
+        val base = if (current > 0) LocalDate.ofEpochDay(current) else LocalDate.now()
         val dlg = android.app.DatePickerDialog(
             this,
-            { _, y, m, d -> saveTask(task.copy(dueEpochDay = LocalDate.of(y, m + 1, d).toEpochDay())) },
+            { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toEpochDay()) },
             base.year, base.monthValue - 1, base.dayOfMonth
         )
-        if (task.dueEpochDay > 0) {
-            dlg.setButton(android.app.DatePickerDialog.BUTTON_NEUTRAL, "Clear") { _, _ ->
-                saveTask(task.copy(dueEpochDay = 0))
-            }
-        }
+        dlg.setButton(android.app.DatePickerDialog.BUTTON_NEUTRAL, "Clear") { _, _ -> onPick(0) }
         dlg.show()
     }
 
-    private fun pickRecurrence(task: ToDo) {
+    private fun chooseRecurrence(task: ToDo, onPick: (ToDo) -> Unit) {
         val labels = arrayOf("Does not repeat", "Daily", "Every N days…", "Specific weekdays…")
         com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
             .setTitle("Repeat")
             .setItems(labels) { _, which ->
                 when (which) {
-                    0 -> saveTask(task.copy(recurType = Recur.NONE))
-                    1 -> saveTask(task.copy(recurType = Recur.DAILY))
-                    2 -> pickInterval(task)
-                    3 -> pickWeekdays(task)
+                    0 -> onPick(task.copy(recurType = Recur.NONE))
+                    1 -> onPick(task.copy(recurType = Recur.DAILY))
+                    2 -> pickInterval(task, onPick)
+                    3 -> pickWeekdays(task, onPick)
                 }
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun pickInterval(task: ToDo) {
+    private fun pickInterval(task: ToDo, onPick: (ToDo) -> Unit) {
         val box = android.widget.EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             filters = arrayOf(android.text.InputFilter.LengthFilter(3))
@@ -466,13 +612,13 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             .setView(box)
             .setPositiveButton("Save") { _, _ ->
                 val n = (box.text?.toString()?.trim()?.toIntOrNull() ?: 1).coerceAtLeast(1)
-                saveTask(task.copy(recurType = Recur.INTERVAL, recurInterval = n))
+                onPick(task.copy(recurType = Recur.INTERVAL, recurInterval = n))
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun pickWeekdays(task: ToDo) {
+    private fun pickWeekdays(task: ToDo, onPick: (ToDo) -> Unit) {
         val names = arrayOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         val current = Schedule.parseDays(task.recurDaysOfWeek)
         val checks = BooleanArray(7) { (it + 1) in current }
@@ -482,12 +628,42 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             .setMultiChoiceItems(names, checks) { _, which, isChecked -> checks[which] = isChecked }
             .setPositiveButton("Save") { _, _ ->
                 val days = (0..6).filter { checks[it] }.map { it + 1 }.toSet()
-                if (days.isEmpty()) saveTask(task.copy(recurType = Recur.NONE, recurDaysOfWeek = ""))
-                else saveTask(task.copy(
+                if (days.isEmpty()) onPick(task.copy(recurType = Recur.NONE, recurDaysOfWeek = ""))
+                else onPick(task.copy(
                     recurType = Recur.DAYS_OF_WEEK, recurDaysOfWeek = Schedule.formatDays(days)))
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun label(text: String): TextView = TextView(this).apply {
+        this.text = text
+        setTextColor(MUTED)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        setPadding(0, dp(12), 0, dp(2))
+    }
+
+    private fun textButton(text: String, onClick: () -> Unit): TextView = TextView(this).apply {
+        this.text = text
+        setTextColor(ACCENT)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        setPadding(0, dp(6), 0, dp(6))
+        setOnClickListener { onClick() }
+    }
+
+    private fun divider(): View = View(this).apply {
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
+            .apply { topMargin = dp(8); bottomMargin = dp(4) }
+        setBackgroundColor(Color.parseColor("#E4E1D8"))
+    }
+
+    private fun deleteTask(task: ToDo) {
+        todos.indexOfFirst { it.id == task.id }.takeIf { it >= 0 }?.let { todos.removeAt(it) }
+        lifecycleScope.launch {
+            db.toDoDao().getById(task.id)?.let { db.toDoDao().delete(it) }
+            com.inkhabits.widget.WidgetCommon.updateAll(this@ToDoActivity)
+            render()
+        }
     }
 
     // ── lists ──
@@ -548,22 +724,20 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
                 }
             }
             .setNegativeButton("Cancel", null)
-        if (existing != null) {
-            builder.setNeutralButton("Delete") { _, _ -> deleteList(existing) }
-        }
+        if (existing != null) builder.setNeutralButton("Delete") { _, _ -> deleteList(existing) }
         builder.show()
     }
 
     private fun deleteList(list: TaskList) {
         lifecycleScope.launch {
-            db.toDoDao().clearList(list.id) // orphan tasks fall back to Inbox
+            db.toDoDao().clearList(list.id)
             db.taskListDao().delete(list)
             if (filterListId == list.id) filterListId = -1L
             load()
         }
     }
 
-    // ── pending-removal animation (kept from the original) ──
+    // ── pending-removal animation ──
 
     private fun scheduleRemoval(line: ToDoLineView) {
         cancelRemoval(line)
