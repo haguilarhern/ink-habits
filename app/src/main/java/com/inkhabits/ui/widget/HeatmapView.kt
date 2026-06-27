@@ -31,6 +31,9 @@ class HeatmapView @JvmOverloads constructor(
         style = Paint.Style.FILL; color = Color.parseColor("#F0F0F0")
     }
 
+    /** Reused across draws so onDraw allocates nothing. */
+    private val cellRect = RectF()
+
     fun setStates(values: IntArray) {
         states = values
         requestLayout()
@@ -56,11 +59,11 @@ class HeatmapView @JvmOverloads constructor(
             val row = i / cols
             val left = col * cell + gap
             val top = row * cell + gap
-            val rect = RectF(left, top, left + cell - gap * 2, top + cell - gap * 2)
+            cellRect.set(left, top, left + cell - gap * 2, top + cell - gap * 2)
             when (states[i]) {
-                1 -> canvas.drawRoundRect(rect, r, r, completedPaint)
-                2 -> canvas.drawRoundRect(rect, r, r, missedPaint)
-                else -> canvas.drawRoundRect(rect, r, r, emptyPaint)
+                1 -> canvas.drawRoundRect(cellRect, r, r, completedPaint)
+                2 -> canvas.drawRoundRect(cellRect, r, r, missedPaint)
+                else -> canvas.drawRoundRect(cellRect, r, r, emptyPaint)
             }
         }
     }

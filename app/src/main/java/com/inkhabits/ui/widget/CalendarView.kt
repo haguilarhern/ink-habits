@@ -51,6 +51,10 @@ class CalendarView @JvmOverloads constructor(
     private val ink = Color.parseColor("#1A1A1A")
     private val muted = Color.parseColor("#9A958A")
     private val rule = Color.parseColor("#CFCBC0")
+    private val futureNum = Color.parseColor("#C8C4B8")
+
+    /** Reused across draws so onDraw allocates nothing (less GC churn on e-ink). */
+    private val cellRect = RectF()
 
     private val numPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -109,9 +113,8 @@ class CalendarView @JvmOverloads constructor(
             if (isSel) {
                 stroke.color = ink; stroke.strokeWidth = 2f * density
                 val half = minOf(cellW, cellH) * 0.46f
-                canvas.drawRoundRect(
-                    RectF(cx - half, cy - half, cx + half, cy + half),
-                    6 * density, 6 * density, stroke)
+                cellRect.set(cx - half, cy - half, cx + half, cy + half)
+                canvas.drawRoundRect(cellRect, 6 * density, 6 * density, stroke)
             }
 
             when (status) {
@@ -130,7 +133,7 @@ class CalendarView @JvmOverloads constructor(
                     canvas.drawCircle(cx, cy, r, stroke)
                     numPaint.color = ink
                 }
-                FUTURE -> numPaint.color = Color.parseColor("#C8C4B8")
+                FUTURE -> numPaint.color = futureNum
                 else -> numPaint.color = muted
             }
 

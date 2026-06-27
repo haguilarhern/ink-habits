@@ -29,6 +29,9 @@ class BarChartView @JvmOverloads constructor(
         style = Paint.Style.FILL; color = Color.parseColor("#ECE9E1")
     }
 
+    /** Reused across draws so onDraw allocates nothing. */
+    private val barRect = RectF()
+
     /** [max] caps the scale; pass the schedule's weekly target so full weeks top out. */
     fun setData(values: IntArray, max: Int = values.maxOrNull() ?: 1) {
         this.values = values
@@ -48,12 +51,12 @@ class BarChartView @JvmOverloads constructor(
             val frac = values[i].toFloat() / maxValue
             val h = (height * frac).coerceIn(0f, height.toFloat())
             // faint full-height slot so empty weeks still read as a column
-            canvas.drawRoundRect(
-                RectF(left, height - barW.coerceAtMost(height.toFloat() * 0.18f),
-                    left + barW, height.toFloat()), r, r, emptyPaint)
+            barRect.set(left, height - barW.coerceAtMost(height.toFloat() * 0.18f),
+                left + barW, height.toFloat())
+            canvas.drawRoundRect(barRect, r, r, emptyPaint)
             if (h > 0f) {
-                canvas.drawRoundRect(
-                    RectF(left, height - h, left + barW, height.toFloat()), r, r, barPaint)
+                barRect.set(left, height - h, left + barW, height.toFloat())
+                canvas.drawRoundRect(barRect, r, r, barPaint)
             }
         }
     }

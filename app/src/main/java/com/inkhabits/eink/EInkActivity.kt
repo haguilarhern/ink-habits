@@ -11,8 +11,12 @@ import com.onyx.android.sdk.api.device.epd.UpdateMode
  */
 open class EInkActivity : AppCompatActivity() {
 
+    /** True only for the first onResume after onCreate (a freshly opened screen). */
+    private var freshCreate = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        freshCreate = true
         try {
             EInkUtils.setWindowMode(this, UpdateMode.GU)
         } catch (_: Throwable) {
@@ -21,8 +25,17 @@ open class EInkActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Light GU repaint on entry (no full-screen GC flash) keeps tab switches snappy.
-        window.decorView.postDelayed({ EInkUtils.lightRefresh(window.decorView) }, 50L)
+        if (freshCreate) {
+            // First show of a newly created screen: the window's own GU paint already
+            // renders the new content cleanly. The old code fired a SECOND full-screen
+            // GU repaint 50ms later — a redundant, delayed flash that was the main cause
+            // of sluggish-feeling tab switches. Skip it; the screen is already clean.
+            freshCreate = false
+        } else {
+            // Returning to an existing screen (e.g. back from a spoke): one immediate
+            // full GU repaint clears any ghosting left by the screen we came back from.
+            EInkUtils.lightRefresh(window.decorView)
+        }
     }
 
     override fun onPause() {
