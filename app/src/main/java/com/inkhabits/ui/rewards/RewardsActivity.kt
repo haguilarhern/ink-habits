@@ -145,17 +145,25 @@ class RewardsActivity : WritingHostActivity() {
             })
         }
         texts.addView(TextView(this).apply {
-            text = if (r.unlocked) "Unlocked ✓ · ${basisLabel(r)}"
-                   else "🔒 ${r.targetStreak}-day streak · ${basisLabel(r)}"
+            text = if (r.unlocked) "Unlocked · ${basisLabel(r)}"
+                   else "${r.targetStreak}-day streak · ${basisLabel(r)}"
             setTextColor(if (r.unlocked) accent else muted)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            // Locked rewards get a small mono lock; unlocked get a check.
+            val icon = if (r.unlocked) com.inkhabits.R.drawable.ic_check
+                       else com.inkhabits.R.drawable.ic_lock
+            setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0)
+            compoundDrawablePadding = dp(5)
+            compoundDrawableTintList = android.content.res.ColorStateList.valueOf(
+                if (r.unlocked) accent else muted)
         })
         row.addView(texts)
-        row.addView(android.widget.Button(this).apply {
-            text = "✕"; isAllCaps = false
-            setTextColor(accent)
-            setBackgroundColor(Color.TRANSPARENT)
+        row.addView(ImageView(this).apply {
+            setImageResource(com.inkhabits.R.drawable.ic_delete)
+            setColorFilter(Color.parseColor("#9A9AA0"))
+            setPadding(dp(10), dp(10), dp(10), dp(10))
             setOnClickListener { deleteReward(r) }
+            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
         })
         return row
     }
@@ -180,35 +188,79 @@ class RewardsActivity : WritingHostActivity() {
             lp.bottomMargin = dp(6); layoutParams = lp
         }
 
-        card.addView(TextView(this).apply {
-            text = "✦  $auraBalance AURA"
+        // Wallet hero: big serif aura balance.
+        val wallet = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.BOTTOM
+        }
+        wallet.addView(TextView(this).apply {
+            text = auraBalance.toString()
             setTextColor(Color.parseColor("#0B0B0C"))
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 32f)
+            includeFontPadding = false
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(
+                this@RewardsActivity, com.inkhabits.R.font.eb_garamond)
+        })
+        wallet.addView(TextView(this).apply {
+            text = "AURA"
+            setTextColor(muted)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            setLetterSpacing(0.12f)
             typeface = androidx.core.content.res.ResourcesCompat.getFont(
                 this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            lp.marginStart = dp(8); lp.bottomMargin = dp(5); layoutParams = lp
         })
+        card.addView(wallet)
         card.addView(TextView(this).apply {
             text = "Earn ${com.inkhabits.util.Economy.AURA_PER_COMPLETION} per check-off · " +
                 "${com.inkhabits.util.Economy.AURA_PER_PERFECT_DAY} per perfect day"
             setTextColor(muted)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            setPadding(0, dp(2), 0, dp(10))
+            setPadding(0, dp(4), 0, dp(8))
         })
 
+        card.addView(divider())
         card.addView(shopRow(
-            "❄ Habit totem",
-            "Protects one missed day of a single habit · owned: ${econ.habitTotems}",
+            "Habit totem",
+            "Protects one missed day of a habit · owned ${econ.habitTotems}",
             com.inkhabits.util.Economy.COST_HABIT_TOTEM
         ) { buy(habit = true) })
-
         card.addView(shopRow(
-            "❄ Identity totem",
-            "Protects one missed perfect-day of an identity · owned: ${econ.identityTotems}",
+            "Identity totem",
+            "Protects one missed perfect-day · owned ${econ.identityTotems}",
             com.inkhabits.util.Economy.COST_IDENTITY_TOTEM
         ) { buy(habit = false) })
 
         return card
     }
+
+    private fun divider(): View = View(this).apply {
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
+            topMargin = dp(10); bottomMargin = dp(2)
+        }
+        setBackgroundColor(Color.parseColor("#D9D9DE"))
+    }
+
+    /** A pill control rendered as a TextView (avoids Material Button's coloured tint). */
+    private fun pillButton(label: String, filled: Boolean, onClick: () -> Unit): TextView =
+        TextView(this).apply {
+            text = label
+            isAllCaps = false
+            gravity = Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(
+                this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
+            setTextColor(if (filled) Color.WHITE else Color.parseColor("#9A9AA0"))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(20).toFloat()
+                if (filled) setColor(Color.parseColor("#0B0B0C"))
+                else { setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#D1D1D6")) }
+            }
+            setOnClickListener { onClick() }
+        }
 
     private fun shopRow(title: String, sub: String, cost: Int, onBuy: () -> Unit): View {
         val row = LinearLayout(this).apply {
@@ -231,16 +283,7 @@ class RewardsActivity : WritingHostActivity() {
             })
         })
         val affordable = auraBalance >= cost
-        row.addView(android.widget.Button(this).apply {
-            text = "$cost ✦"
-            isAllCaps = false
-            isEnabled = affordable
-            setTextColor(if (affordable) Color.WHITE else muted)
-            background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(if (affordable) accent else Color.parseColor("#D9D9DE"))
-            }
-            setOnClickListener { onBuy() }
+        row.addView(pillButton("$cost ✦", affordable) { if (affordable) onBuy() }.apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                 .apply { marginStart = dp(10) }

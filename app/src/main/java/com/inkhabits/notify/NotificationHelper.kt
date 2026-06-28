@@ -167,7 +167,7 @@ object NotificationHelper {
         val body = rewardTitle.ifBlank { "Open the app to see your reward." }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("🎁 Reward unlocked!")
+            .setContentTitle("Reward unlocked")
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(openPi)

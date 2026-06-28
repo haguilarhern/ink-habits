@@ -31,7 +31,7 @@
             android:layout_weight="1"
             android:layout_marginStart="6dp"
             android:text="Records"
-            android:fontFamily="@font/inter_semibold"
+            android:fontFamily="@font/eb_garamond"
             android:textColor="@color/ink_text"
             android:textSize="@dimen/text_title"
             tools:ignore="HardcodedText" />
