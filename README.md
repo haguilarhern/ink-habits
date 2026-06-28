@@ -14,6 +14,10 @@ Grounded in the *Atomic Habits* philosophy: instead of setting goals, you choose
 - **Gamified rewards** — define your own rewards tied to streak targets. Automatic unlock with notification.
 - **Handwriting recognition** — Google ML Kit digital‑ink recognition converts handwritten anchors to typed text.
 - **E‑ink optimized** — flat Material 3 UI (no elevation/animation), custom EPD update modes (fast DU for scroll, quality GU at rest, periodic ghosting clears).
+- **Monochrome "Paper & Ink" design** — a reMarkable/Apple‑inspired look (serif titles, line icons, circular checkboxes) with a single, restrained accent.
+- **Customizable accent color** — pick the app's accent from a curated, Kaleido‑friendly palette (long‑press the streak header on Home).
+- **Needs‑attention** — surfaces habits you've missed more than once in a row, so you can get back on track before the streak is gone for good.
+- **Focus timer** — a minute‑stepped Pomodoro that keeps running in the background with a live countdown notification (pause / resume / skip / reset).
 - **Home‑screen widgets** — habits and to‑do widgets with tap‑to‑check.
 - **Daily quotes** — deterministic Atomic Habits quotes from the app's built‑in collection.
 

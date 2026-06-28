@@ -82,6 +82,45 @@ Per-habit frequency, evaluated against scheduled occurrences (not calendar days)
 
 ---
 
+## Recent changes (this `alternative-design` branch)
+
+### UI/UX redesign — "Paper & Ink"
+A full visual overhaul inspired by reMarkable + Apple, e-ink first.
+- **Monochrome palette** tuned for Kaleido legibility (paper white, ink `#0B0B0C`,
+  e-ink-safe grays). All brick-red/teal/gold/status colors removed.
+- **Single accent** for *positive* signals only (completions, streaks, progress,
+  active tab, primary actions); the rest stays monochrome. Default = deep ink-blue.
+- **User-selectable accent** — hidden entry point: **long-press the streak header**
+  on Home → a swatch grid of Kaleido-friendly colors; the choice persists (`Accent`
+  util, prefs `ui/accent_color`) and `recreate()`s so every surface re-reads it.
+- **Serif titles** (EB Garamond, OFL) on screen headers + hero numerals; Inter body.
+- **Unified Lucide/Feather line icons** (nav + actions); **circular** Apple-style
+  checkbox (`CheckBoxView`).
+- Redesigned Home (serif streak hero, clean habit cards, tab bar), Records, To-Do,
+  Rewards (serif AURA, mono totem pills), Pomodoro (segmented phase tabs).
+- Material bumped to 1.12.0; dialogs/menus forced flat white via
+  `colorSurfaceContainer*` (killed the M3 purple tint).
+
+### Goal Health → "Needs attention"
+Flags only habits **missed more than once in a row** ("Missed N in a row"),
+freeze-aware and bounded by start date; clears as soon as you do the habit again
+(`Streaks.currentMissStreak`). Percentages / "On track" list removed.
+
+### To-Do / Pomodoro
+- Dialogs flat (not purple); **Matrix** tasks gained checkboxes; **Kanban** custom
+  columns gained a visible edit/delete affordance; tap "done this year" → Completed
+  view; back gesture/arrow collapse to the List view before exiting.
+- Pomodoro completions sync to To-Do on resume; the **timer runs in the background**
+  with an ongoing **countdown notification** + Pause/Resume/Skip/Reset actions.
+
+### Performance
+- E-ink tab switches: removed the redundant delayed full-screen GU repaint;
+  `StrokeRenderer.hasInk` made O(n) (was deserializing every stroke, ~40-100ms/row);
+  synchronous first paint on Dashboard/History/To-Do (one refresh, not blank→fill).
+- Release builds: R8 `minifyEnabled` + `shrinkResources` with keep rules.
+
+---
+
 ## Changes to implement (current backlog)
 
 1. ~~Background → pure white~~. **Done** (`#FFFFFF`).
