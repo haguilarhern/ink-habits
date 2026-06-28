@@ -25,7 +25,7 @@ class ProgressBarView @JvmOverloads constructor(
         style = Paint.Style.FILL; color = Color.parseColor("#D9D9DE")
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#0DA88F")
+        style = Paint.Style.FILL; color = Color.parseColor("#0A7D6A")
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
