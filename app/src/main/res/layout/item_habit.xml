@@ -99,11 +99,11 @@
                 android:layout_marginEnd="6dp"
                 android:gravity="center_vertical"
                 android:drawablePadding="3dp"
-                android:textColor="@color/ink_text"
+                android:textColor="@color/ink_accent"
                 android:textSize="13sp"
                 android:fontFamily="@font/inter_semibold"
                 app:drawableStartCompat="@drawable/ic_flame"
-                app:drawableTint="@color/ink_text"
+                app:drawableTint="@color/ink_accent"
                 tools:text="4" />
 
             <com.inkhabits.ui.widget.CheckBoxView

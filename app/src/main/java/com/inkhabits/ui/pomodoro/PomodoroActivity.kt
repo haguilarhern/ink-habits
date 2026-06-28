@@ -69,9 +69,9 @@ class PomodoroActivity : EInkActivity() {
     /** Task ids chosen to work on this session. */
     private val sessionIds = linkedSetOf<Long>()
 
-    private val FOCUS_COLOR = Color.parseColor("#0B0B0C")
-    private val SHORT_COLOR = Color.parseColor("#5C5C5C")
-    private val LONG_COLOR = Color.parseColor("#5C5C5C")
+    private val FOCUS_COLOR = Color.parseColor("#2A4A8C")
+    private val SHORT_COLOR = Color.parseColor("#2A4A8C")
+    private val LONG_COLOR = Color.parseColor("#2A4A8C")
     private val INK = Color.parseColor("#0B0B0C")
     private val MUTED = Color.parseColor("#5C5C5C")
     private val HAIRLINE = Color.parseColor("#D9D9DE")

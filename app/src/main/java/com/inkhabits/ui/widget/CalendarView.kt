@@ -47,7 +47,7 @@ class CalendarView @JvmOverloads constructor(
     private var cellH = 0f
     private var rows = 6
 
-    private val accent = Color.parseColor("#0B0B0C")
+    private val accent = Color.parseColor("#2A4A8C")
     private val ink = Color.parseColor("#0B0B0C")
     private val muted = Color.parseColor("#9A9AA0")
     private val rule = Color.parseColor("#D9D9DE")

@@ -56,7 +56,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     companion object {
         private const val REMOVE_DELAY = 2000L
-        private val ACCENT = Color.parseColor("#0B0B0C")
+        private val ACCENT = Color.parseColor("#2A4A8C")
         private val MUTED = Color.parseColor("#5C5C5C")
         private val INK = Color.parseColor("#0B0B0C")
         private val HAIRLINE = Color.parseColor("#D9D9DE")
