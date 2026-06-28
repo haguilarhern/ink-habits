@@ -51,12 +51,17 @@
                 android:contentDescription="Pomodoro timer"
                 app:tint="@color/ink_text" />
 
-            <!-- Cumulative "done this year" counter -->
+            <!-- Cumulative "done this year" counter — tap to review completed tasks -->
             <LinearLayout
+                android:id="@+id/yearCounter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="end">
+                android:gravity="end"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="4dp">
 
                 <TextView
                     android:id="@+id/yearCount"

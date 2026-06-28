@@ -7,6 +7,14 @@
         <item name="colorOnSecondary">@color/ink_white</item>
         <item name="android:colorBackground">@color/ink_background</item>
         <item name="colorSurface">@color/ink_surface</item>
+        <!-- M3 dialogs/menus draw on the "surface container" roles, whose baseline
+             tones are light purple-gray. Force them flat white so pop-ups match the
+             rest of the e-ink UI instead of going lavender. -->
+        <item name="colorSurfaceContainerLowest">@color/ink_surface</item>
+        <item name="colorSurfaceContainerLow">@color/ink_surface</item>
+        <item name="colorSurfaceContainer">@color/ink_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/ink_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/ink_surface</item>
         <item name="colorOnSurface">@color/ink_text</item>
         <item name="android:textColorPrimary">@color/ink_text</item>
         <item name="android:textColorSecondary">@color/ink_text_muted</item>
@@ -36,6 +44,10 @@
         <item name="colorPrimary">@color/ink_text</item>
         <item name="colorSecondary">@color/ink_text</item>
         <item name="colorSurface">@color/ink_surface</item>
+        <item name="colorSurfaceContainerLow">@color/ink_surface</item>
+        <item name="colorSurfaceContainer">@color/ink_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/ink_surface</item>
+        <item name="colorSurfaceContainerHighest">@color/ink_surface</item>
         <item name="colorOnSurface">@color/ink_text</item>
         <item name="android:textColorPrimary">@color/ink_text</item>
         <item name="android:textColorSecondary">@color/ink_text_muted</item>

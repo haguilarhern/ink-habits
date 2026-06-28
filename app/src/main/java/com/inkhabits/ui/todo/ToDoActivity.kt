@@ -74,12 +74,28 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         }
         binding.viewSelector.setOnClickListener { showViewMenu() }
         binding.fabAddTask.setOnClickListener { createTask() }
+        // Tap the "done this year" counter to review completed tasks (and un-check any
+        // marked done by accident).
+        binding.yearCounter.setOnClickListener { view = TaskView.COMPLETED; render() }
 
         refreshCounter()
         // Synchronous first paint: load tasks before the first frame so the list arrives
         // populated in one e-ink refresh instead of blank-then-filled. DB is tiny (~ms).
         runBlocking { loadData() }
         render()
+    }
+
+    /** onCreate already loaded synchronously; skip the duplicate reload on first resume. */
+    private var firstResume = true
+
+    override fun onResume() {
+        super.onResume()
+        if (firstResume) { firstResume = false; return }
+        // Returning from a sub-screen (e.g. the Pomodoro timer, which can mark tasks done):
+        // re-read so external changes show immediately instead of staying stale until the
+        // activity is recreated. refreshCounter() also picks up the updated year tally.
+        refreshCounter()
+        load()
     }
 
     override fun onDestroy() {
@@ -331,6 +347,16 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
                 setPadding(dp(4), 0, dp(4), 0)
             })
         }
+        // Complete control: matrix shows only active tasks, so checking it off
+        // marks the task done (it then leaves the matrix on the next render).
+        row.addView(TextView(this).apply {
+            text = "☐"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+            setPadding(dp(6), 0, dp(2), 0)
+            isClickable = true
+            setOnClickListener { setTaskDone(todo, true) }
+        })
         return row
     }
 
@@ -405,6 +431,14 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             setOnClickListener { editStage(stage) }
         })
         if (isCustom && customIdx < customs.lastIndex) header.addView(reorderArrow("›") { moveStage(stage, 1, customs) })
+        // Visible edit/delete affordance on custom columns (To Do / Done are fixed).
+        if (isCustom) header.addView(TextView(this).apply {
+            text = "✎"
+            setTextColor(MUTED)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setPadding(dp(6), 0, 0, 0)
+            setOnClickListener { editStage(stage) }
+        })
         col.addView(header)
 
         val scroll = android.widget.ScrollView(this).apply { isVerticalScrollBarEnabled = false }
@@ -568,7 +602,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             hint = "Stage name"
             setText(existing?.name ?: "")
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            setPadding(dp(20), dp(12), dp(20), 0)
+            setPadding(dp(20), dp(16), dp(20), dp(8))
         }
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
@@ -910,7 +944,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             filters = arrayOf(android.text.InputFilter.LengthFilter(3))
             hint = "e.g. 3"
             if (task.recurInterval > 1) setText(task.recurInterval.toString())
-            setPadding(dp(20), dp(12), dp(20), 0)
+            setPadding(dp(20), dp(16), dp(20), dp(8))
         }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(
             this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
@@ -984,6 +1018,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             hint = "List name"
             setText(existing?.name ?: "")
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setPadding(0, dp(8), 0, dp(8))
         }
         container.addView(name)
 
