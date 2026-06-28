@@ -127,7 +127,8 @@ class DashboardAdapter(
             if (item.streak > 0) {
                 b.streakText.visibility = View.VISIBLE
                 b.streakText.text = item.streak.toString()
-                b.streakText.setTextColor(accent)
+                // Number stays ink black; only the flame icon takes the accent.
+                b.streakText.setTextColor(android.graphics.Color.parseColor("#0B0B0C"))
                 b.streakText.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(accent)
             } else {
                 b.streakText.visibility = View.GONE

@@ -108,7 +108,7 @@ class DashboardActivity : EInkActivity() {
         val a = com.inkhabits.util.Accent.color(this)
         val csl = android.content.res.ColorStateList.valueOf(a)
         binding.streakFlame.imageTintList = csl
-        binding.streakNumber.setTextColor(a)
+        // Streak number stays ink black; only the flame takes the accent.
         binding.navHomeIcon.imageTintList = csl
         binding.navHomeLabel.setTextColor(a)
         binding.fabAdd.backgroundTintList = csl

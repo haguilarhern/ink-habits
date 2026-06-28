@@ -38,7 +38,7 @@
                 android:layout_marginEnd="12dp"
                 android:fontFamily="@font/eb_garamond"
                 android:text="0"
-                android:textColor="@color/ink_accent"
+                android:textColor="@color/ink_text"
                 android:textSize="40sp"
                 android:includeFontPadding="false"
                 tools:ignore="HardcodedText" />
