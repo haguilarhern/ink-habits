@@ -15,3 +15,7 @@
 # Keystores / secrets
 *.jks
 *.keystore
+
+# Release signing secrets — never commit
+keystore.properties
+upload-keystore.jks
