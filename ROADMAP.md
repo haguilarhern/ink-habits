@@ -57,6 +57,14 @@ gradients/shadows/animations).
   titles/copy, a large icon/illustration where useful, big-text styling, and a
   consistent visual voice. (Pomodoro notification now has Pause/Resume/Skip/Reset
   actions — refine its layout/iconography next.)
+- **User-selectable accent color** — let the user pick the app's single accent (the
+  colour used for completions, streaks, progress, active tab, and primary actions).
+  The accent is already a single token (`@color/ink_accent` + a few literals), so the
+  groundwork is done — offer a small curated palette of Kaleido-friendly deep/saturated
+  options (e.g. ink-blue, turquoise, emerald, cobalt, terracotta, violet) plus maybe a
+  custom hex, persisted in prefs and applied app-wide. Keep the monochrome base fixed;
+  only the accent changes. Default = deep ink-blue `#2A4A8C`. (Note: collapse the
+  scattered literal `#2A4A8C` usages in custom views/code to read the token/pref first.)
 
 Implementation notes:
 - Rewards UI lives in `ui/rewards/` (`RewardsActivity`, `AddRewardActivity`) plus

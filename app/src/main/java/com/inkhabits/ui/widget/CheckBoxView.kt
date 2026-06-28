@@ -23,7 +23,7 @@ class CheckBoxView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
 
     /** Filled-state color — solid ink by default (monochrome system). */
-    var fillColor: Int = Color.parseColor("#0A7D6A")
+    var fillColor: Int = Color.parseColor("#2A4A8C")
         set(value) { field = value; fill.color = value; invalidate() }
 
     var onToggle: ((Boolean) -> Unit)? = null
@@ -37,7 +37,7 @@ class CheckBoxView @JvmOverloads constructor(
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#0A7D6A")
+        color = Color.parseColor("#2A4A8C")
     }
     private val check = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE

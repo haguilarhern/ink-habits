@@ -35,7 +35,7 @@ class RewardsActivity : WritingHostActivity() {
     private var auraBalance: Long = 0
     private var econ = com.inkhabits.data.entity.EconomyState()
 
-    private val accent = Color.parseColor("#0A7D6A")
+    private val accent = Color.parseColor("#2A4A8C")
     private val muted = Color.parseColor("#5C5C5C")
     private val frozen = Color.parseColor("#5C5C5C")
 
@@ -256,7 +256,7 @@ class RewardsActivity : WritingHostActivity() {
             setTextColor(if (filled) Color.WHITE else Color.parseColor("#9A9AA0"))
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(20).toFloat()
-                if (filled) setColor(Color.parseColor("#0A7D6A"))
+                if (filled) setColor(Color.parseColor("#2A4A8C"))
                 else { setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#D1D1D6")) }
             }
             setOnClickListener { onClick() }
