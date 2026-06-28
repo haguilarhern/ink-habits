@@ -185,14 +185,14 @@ class SchedulePicker @JvmOverloads constructor(
         b.background = chipBg(on)
         b.elevation = 0f
         b.stateListAnimator = null
-        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#0B0B0C"))
     }
 
     private fun styleDayChip(b: Button, on: Boolean) {
         b.background = chipBg(on)
         b.elevation = 0f
         b.stateListAnimator = null
-        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+        b.setTextColor(if (on) Color.WHITE else Color.parseColor("#0B0B0C"))
     }
 
     /** Rounded pill: accent fill when selected, hairline outline when idle. */
@@ -202,13 +202,13 @@ class SchedulePicker @JvmOverloads constructor(
             setColor(ACCENT)
         } else {
             setColor(Color.WHITE)
-            setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
+            setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#D9D9DE"))
         }
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
-        private val ACCENT = Color.parseColor("#8C1D1D")
+        private val ACCENT = Color.parseColor("#0B0B0C")
     }
 }

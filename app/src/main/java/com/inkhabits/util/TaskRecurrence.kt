@@ -93,10 +93,10 @@ object TaskRecurrence {
     }
 
     fun priorityColor(p: Int): Int = when (p) {
-        Priority.DO -> Color.parseColor("#8C1D1D")       // red
-        Priority.SCHEDULE -> Color.parseColor("#2E7D32") // green
-        Priority.DELEGATE -> Color.parseColor("#B8860B") // amber
-        Priority.DROP -> Color.parseColor("#6B6B6B")     // muted
-        else -> Color.parseColor("#B8B3A8")
+        Priority.DO -> Color.parseColor("#0B0B0C")       // red
+        Priority.SCHEDULE -> Color.parseColor("#5C5C5C") // green
+        Priority.DELEGATE -> Color.parseColor("#0B0B0C") // amber
+        Priority.DROP -> Color.parseColor("#5C5C5C")     // muted
+        else -> Color.parseColor("#9A9AA0")
     }
 }

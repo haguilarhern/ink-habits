@@ -24,7 +24,7 @@
             android:layout_weight="1"
             android:text="TODAY'S HABITS"
             android:textStyle="bold"
-            android:textColor="#0F6E6E"
+            android:textColor="#0B0B0C"
             android:textSize="13sp"
             android:letterSpacing="0.08"
             tools:ignore="HardcodedText" />
@@ -41,7 +41,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textColor="#1A1A1A"
+            android:textColor="#0B0B0C"
             android:textSize="18sp"
             tools:text="5" />
     </LinearLayout>
@@ -53,7 +53,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
         android:orientation="horizontal"
-        android:background="#E4E1D8" />
+        android:background="#D9D9DE" />
 
     <ListView
         android:id="@+id/widgetList"
@@ -70,7 +70,7 @@
         android:layout_weight="1"
         android:gravity="center"
         android:text="All done for today"
-        android:textColor="#6B6B6B"
+        android:textColor="#5C5C5C"
         android:textSize="13sp"
         tools:ignore="HardcodedText" />
 </LinearLayout>

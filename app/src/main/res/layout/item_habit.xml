@@ -1,66 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Habit row: a clean bordered card. Tappable anywhere to toggle completion.
+     Anchor cue (optional) sits above; the handwritten/typed name is the focus, with a
+     small footnote for the schedule, a streak stat, and a circular check control. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
+    android:orientation="vertical"
     android:paddingStart="@dimen/screen_margin"
     android:paddingEnd="@dimen/screen_margin"
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
-    <!-- Timeline rail: vertical line + schedule node -->
-    <FrameLayout
-        android:layout_width="44dp"
-        android:layout_height="match_parent">
-
-        <!-- Full-height vertical line (connects habits above/below) -->
-        <View
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_horizontal"
-            android:background="@color/ink_divider" />
-
-        <!-- Schedule node: white patch over the line + rotated time text -->
-        <FrameLayout
-            android:layout_width="44dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:gravity="center">
-
-            <View
-                android:layout_width="44dp"
-                android:layout_height="match_parent"
-                android:background="@color/ink_background" />
-
-            <TextView
-                android:id="@+id/scheduleLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:fontFamily="@font/inter_semibold"
-                android:textColor="@color/ink_text_muted"
-                android:textSize="10sp"
-                android:letterSpacing="0.04"
-                android:rotation="-90"
-                tools:text="Daily · 5:00 PM" />
-        </FrameLayout>
-    </FrameLayout>
-
-    <!-- pill card: tappable anywhere to toggle completion -->
     <LinearLayout
         android:id="@+id/pillCard"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:orientation="vertical"
         android:background="@drawable/pill_bg"
         android:paddingStart="16dp"
         android:paddingEnd="10dp"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
+        android:paddingTop="11dp"
+        android:paddingBottom="11dp"
         android:clickable="true"
         android:focusable="true"
         android:foreground="?attr/selectableItemBackground">
@@ -70,11 +32,10 @@
             android:id="@+id/anchorLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginBottom="1dp"
+            android:layout_marginStart="34dp"
+            android:layout_marginBottom="2dp"
             android:textColor="@color/ink_hint"
             android:textSize="12sp"
-            android:textStyle="italic"
             android:maxLines="1"
             android:ellipsize="end"
             android:visibility="gone"
@@ -85,9 +46,9 @@
         <ImageView
             android:id="@+id/anchorInk"
             android:layout_width="wrap_content"
-            android:layout_height="22dp"
-            android:layout_marginStart="2dp"
-            android:layout_marginBottom="1dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="34dp"
+            android:layout_marginBottom="2dp"
             android:adjustViewBounds="true"
             android:scaleType="fitStart"
             android:visibility="gone"
@@ -107,25 +68,48 @@
                 android:tint="@color/ink_text"
                 android:contentDescription="habit icon" />
 
-            <com.inkhabits.ui.widget.HabitNameView
-                android:id="@+id/habitName"
+            <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <com.inkhabits.ui.widget.HabitNameView
+                    android:id="@+id/habitName"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp" />
+
+                <TextView
+                    android:id="@+id/scheduleLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:textColor="@color/ink_text_muted"
+                    android:textSize="@dimen/text_small"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="Morning · 5:00 PM" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/streakText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:layout_marginEnd="4dp"
-                android:textColor="@color/ink_accent"
-                android:textSize="13sp" />
+                android:layout_marginEnd="6dp"
+                android:gravity="center_vertical"
+                android:drawablePadding="3dp"
+                android:textColor="@color/ink_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/inter_semibold"
+                app:drawableStartCompat="@drawable/ic_flame"
+                app:drawableTint="@color/ink_text"
+                tools:text="4" />
 
             <com.inkhabits.ui.widget.CheckBoxView
                 android:id="@+id/checkBox"
-                android:layout_width="40dp"
-                android:layout_height="40dp" />
+                android:layout_width="44dp"
+                android:layout_height="44dp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

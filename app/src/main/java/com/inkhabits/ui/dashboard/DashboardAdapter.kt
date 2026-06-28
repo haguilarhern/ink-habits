@@ -119,7 +119,14 @@ class DashboardAdapter(
                 }
             }
 
-            b.streakText.text = if (item.streak > 0) "🔥${item.streak}" else ""
+            // Streak: mono flame icon (drawableStart) + count; hidden entirely at 0 so the
+            // icon never shows alone.
+            if (item.streak > 0) {
+                b.streakText.visibility = View.VISIBLE
+                b.streakText.text = item.streak.toString()
+            } else {
+                b.streakText.visibility = View.GONE
+            }
 
             b.checkBox.fillColor = androidx.core.content.ContextCompat.getColor(
                 b.root.context, com.inkhabits.R.color.ink_teal)

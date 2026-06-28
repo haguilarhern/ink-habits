@@ -218,7 +218,7 @@ class OnboardingActivity : WritingHostActivity() {
             text = "Build habits by becoming the person who already has them.\n\n" +
                 "First you'll choose an identity — who you want to become — then add the " +
                 "habits that person does. You can write with your pen or type."
-            setTextColor(Color.parseColor("#5A5A5A"))
+            setTextColor(Color.parseColor("#5C5C5C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             setLineSpacing(4f, 1.25f)
             typeface = interRegular
@@ -233,7 +233,7 @@ class OnboardingActivity : WritingHostActivity() {
             if (allIdentities.isEmpty()) {
                 binding.contentArea.addView(TextView(this@OnboardingActivity).apply {
                     text = "No identities yet. Create one first."
-                    setTextColor(Color.parseColor("#6B6B6B"))
+                    setTextColor(Color.parseColor("#5C5C5C"))
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                     typeface = interRegular
                 })
@@ -255,12 +255,12 @@ class OnboardingActivity : WritingHostActivity() {
                     }
                     addView(ImageView(this@OnboardingActivity).apply {
                         setImageResource(com.inkhabits.ui.widget.HabitIcons.resFor(identity.icon))
-                        setColorFilter(Color.parseColor("#1A1A1A"))
+                        setColorFilter(Color.parseColor("#0B0B0C"))
                         layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(12) }
                     })
                     addView(TextView(this@OnboardingActivity).apply {
                         text = identity.name.ifBlank { "Identity ${identity.id}" }
-                        setTextColor(Color.parseColor("#1A1A1A"))
+                        setTextColor(Color.parseColor("#0B0B0C"))
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
                         typeface = interSemiBold
                     })
@@ -483,7 +483,7 @@ class OnboardingActivity : WritingHostActivity() {
         }
         texts.addView(TextView(this).apply {
             text = h.name.ifBlank { if (h.strokes.isNotEmpty()) "Handwritten habit" else "Habit" }
-            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextColor(Color.parseColor("#0B0B0C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             typeface = interSemiBold
         })
@@ -496,13 +496,13 @@ class OnboardingActivity : WritingHostActivity() {
         val bell = if (h.reminderEnabled && h.reminderMinutes != com.inkhabits.util.Schedule.TIME_ANY) " · 🔔" else ""
         texts.addView(TextView(this).apply {
             text = (if (time.isEmpty()) sched else "$sched · $time") + bell
-            setTextColor(Color.parseColor("#6B6B6B"))
+            setTextColor(Color.parseColor("#5C5C5C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         })
         row.addView(texts)
         row.addView(Button(this).apply {
             text = "✕"; isAllCaps = false
-            setTextColor(Color.parseColor("#8C1D1D"))
+            setTextColor(Color.parseColor("#0B0B0C"))
             setBackgroundColor(Color.TRANSPARENT)
             setOnClickListener { pendingHabits.removeAt(index); render() }
         })
@@ -604,13 +604,13 @@ class OnboardingActivity : WritingHostActivity() {
         }
         labels.addView(TextView(this).apply {
             text = "Remind me"
-            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextColor(Color.parseColor("#0B0B0C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             typeface = interSemiBold
         })
         labels.addView(TextView(this).apply {
             text = "Notify me at this time on days it's due (pick a time above)"
-            setTextColor(Color.parseColor("#6B6B6B"))
+            setTextColor(Color.parseColor("#5C5C5C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         })
         row.addView(labels)
@@ -644,10 +644,10 @@ class OnboardingActivity : WritingHostActivity() {
     private fun styleTimeChip(c: TextView, on: Boolean) {
         c.background = android.graphics.drawable.GradientDrawable().apply {
             cornerRadius = dp(14).toFloat()
-            if (on) setColor(Color.parseColor("#8C1D1D"))
-            else { setColor(Color.WHITE); setStroke(dp(1), Color.parseColor("#CFCBC0")) }
+            if (on) setColor(Color.parseColor("#0B0B0C"))
+            else { setColor(Color.WHITE); setStroke(dp(1), Color.parseColor("#D9D9DE")) }
         }
-        c.setTextColor(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+        c.setTextColor(if (on) Color.WHITE else Color.parseColor("#0B0B0C"))
     }
 
     private fun pickTime(onPicked: () -> Unit) {
@@ -689,7 +689,7 @@ class OnboardingActivity : WritingHostActivity() {
                     com.inkhabits.ui.widget.HabitIcons.resFor(g.icon), 0, 0, 0)
                 compoundDrawablePadding = dp(10)
                 androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(
-                    this, android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1A1A")))
+                    this, android.content.res.ColorStateList.valueOf(Color.parseColor("#0B0B0C")))
             })
         }
         binding.contentArea.addView(MaterialButton(
@@ -876,7 +876,7 @@ class OnboardingActivity : WritingHostActivity() {
 
     private fun label(text: String): TextView = TextView(this).apply {
         this.text = text
-        setTextColor(Color.parseColor("#5A5A5A"))
+        setTextColor(Color.parseColor("#5C5C5C"))
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         typeface = interSemiBold
         setLetterSpacing(0.06f)
@@ -887,13 +887,13 @@ class OnboardingActivity : WritingHostActivity() {
         b.background = android.graphics.drawable.GradientDrawable().apply {
             cornerRadius = dp(12).toFloat()
             if (on) {
-                setColor(Color.parseColor("#8C1D1D"))
+                setColor(Color.parseColor("#0B0B0C"))
             } else {
                 setColor(Color.WHITE)
-                setStroke(dp(1), Color.parseColor("#CFCBC0"))
+                setStroke(dp(1), Color.parseColor("#D9D9DE"))
             }
         }
-        b.setColorFilter(if (on) Color.WHITE else Color.parseColor("#1A1A1A"))
+        b.setColorFilter(if (on) Color.WHITE else Color.parseColor("#0B0B0C"))
         b.elevation = 0f
         b.stateListAnimator = null
     }
@@ -923,13 +923,13 @@ class OnboardingActivity : WritingHostActivity() {
             gravity = android.view.Gravity.CENTER
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             typeface = interSemiBold
-            setTextColor(Color.parseColor("#1A1A1A"))
-            setHintTextColor(Color.parseColor("#9A9A9A"))
+            setTextColor(Color.parseColor("#0B0B0C"))
+            setHintTextColor(Color.parseColor("#9A9AA0"))
             setPadding(dp(14), dp(10), dp(14), dp(10))
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(12).toFloat()
                 setColor(Color.WHITE)
-                setStroke(dp(1), Color.parseColor("#CFCBC0"))
+                setStroke(dp(1), Color.parseColor("#D9D9DE"))
             }
             layoutParams = LinearLayout.LayoutParams(dp(120), LinearLayout.LayoutParams.WRAP_CONTENT)
         }
@@ -948,7 +948,7 @@ class OnboardingActivity : WritingHostActivity() {
         row.addView(box)
         row.addView(TextView(this).apply {
             text = suffix
-            setTextColor(Color.parseColor("#5A5A5A"))
+            setTextColor(Color.parseColor("#5C5C5C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = interRegular
             val lp = LinearLayout.LayoutParams(

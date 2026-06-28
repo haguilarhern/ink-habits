@@ -35,9 +35,9 @@ class RewardsActivity : WritingHostActivity() {
     private var auraBalance: Long = 0
     private var econ = com.inkhabits.data.entity.EconomyState()
 
-    private val accent = Color.parseColor("#8C1D1D")
-    private val muted = Color.parseColor("#6B6B6B")
-    private val frozen = Color.parseColor("#2E5E8C")
+    private val accent = Color.parseColor("#0B0B0C")
+    private val muted = Color.parseColor("#5C5C5C")
+    private val frozen = Color.parseColor("#5C5C5C")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,7 +124,7 @@ class RewardsActivity : WritingHostActivity() {
         }
         row.addView(ImageView(this).apply {
             setImageResource(com.inkhabits.R.drawable.ic_gift)
-            setColorFilter(if (r.unlocked) accent else Color.parseColor("#B8B3A8"))
+            setColorFilter(if (r.unlocked) accent else Color.parseColor("#9A9AA0"))
             layoutParams = LinearLayout.LayoutParams(dp(22), dp(22)).apply { marginEnd = dp(12) }
         })
         val texts = LinearLayout(this).apply {
@@ -134,7 +134,7 @@ class RewardsActivity : WritingHostActivity() {
         if (r.title.isNotBlank() || !StrokeRenderer.hasInk(r.titleStrokes)) {
             texts.addView(TextView(this).apply {
                 text = r.title.ifBlank { "Reward" }
-                setTextColor(Color.parseColor("#1A1A1A"))
+                setTextColor(Color.parseColor("#0B0B0C"))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             })
         } else {
@@ -182,7 +182,7 @@ class RewardsActivity : WritingHostActivity() {
 
         card.addView(TextView(this).apply {
             text = "✦  $auraBalance AURA"
-            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextColor(Color.parseColor("#0B0B0C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
             typeface = androidx.core.content.res.ResourcesCompat.getFont(
                 this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
@@ -238,7 +238,7 @@ class RewardsActivity : WritingHostActivity() {
             setTextColor(if (affordable) Color.WHITE else muted)
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
-                setColor(if (affordable) accent else Color.parseColor("#E4E1D8"))
+                setColor(if (affordable) accent else Color.parseColor("#D9D9DE"))
             }
             setOnClickListener { onBuy() }
             layoutParams = LinearLayout.LayoutParams(
@@ -263,7 +263,7 @@ class RewardsActivity : WritingHostActivity() {
 
     private fun sectionHeader(text: String): TextView = TextView(this).apply {
         this.text = text.uppercase()
-        setTextColor(Color.parseColor("#1A1A1A"))
+        setTextColor(Color.parseColor("#0B0B0C"))
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
         typeface = androidx.core.content.res.ResourcesCompat.getFont(this@RewardsActivity, com.inkhabits.R.font.inter_semibold)
         setLetterSpacing(0.08f)

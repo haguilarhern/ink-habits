@@ -81,7 +81,7 @@ abstract class AppDatabase : RoomDatabase() {
                     """CREATE TABLE IF NOT EXISTS task_lists (
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL DEFAULT '',
-                        colorHex TEXT NOT NULL DEFAULT '#8C1D1D',
+                        colorHex TEXT NOT NULL DEFAULT '#0B0B0C',
                         sortOrder INTEGER NOT NULL DEFAULT 0,
                         createdAt INTEGER NOT NULL DEFAULT 0
                     )"""

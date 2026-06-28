@@ -65,7 +65,7 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
         // long-press, which conflicts with the writing-pad tap handling).
         editButton = android.widget.ImageView(context).apply {
             setImageResource(R.drawable.ic_edit)
-            setColorFilter(Color.parseColor("#8C1D1D"))
+            setColorFilter(Color.parseColor("#0B0B0C"))
             val pad = dp(8)
             setPadding(pad, pad, pad, pad)
             isClickable = true
@@ -81,7 +81,7 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
         }
         hint = TextView(context).apply {
             text = "Write a to-do…"
-            setTextColor(Color.parseColor("#B8B3A8"))
+            setTextColor(Color.parseColor("#9A9AA0"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             gravity = Gravity.CENTER_VERTICAL
         }
@@ -131,7 +131,7 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
         var any = false
         if (list != null) {
             metaRow.addView(dot(runCatching { Color.parseColor(list.colorHex) }.getOrDefault(Color.GRAY)))
-            metaRow.addView(chip(list.name.ifBlank { "List" }, Color.parseColor("#6B6B6B")))
+            metaRow.addView(chip(list.name.ifBlank { "List" }, Color.parseColor("#5C5C5C")))
             any = true
         }
         if (todo.priority > 0) {
@@ -142,11 +142,11 @@ class ToDoLineView(context: Context, val host: Host) : LinearLayout(context) {
         if (todo.dueEpochDay > 0) {
             val overdue = TaskRecurrence.isOverdue(todo.dueEpochDay)
             metaRow.addView(chip(TaskRecurrence.dueLabel(todo.dueEpochDay),
-                if (overdue) Color.parseColor("#8C1D1D") else Color.parseColor("#6B6B6B")))
+                if (overdue) Color.parseColor("#0B0B0C") else Color.parseColor("#5C5C5C")))
             any = true
         }
         if (TaskRecurrence.isRecurring(todo)) {
-            metaRow.addView(chip("↻ ${TaskRecurrence.recurLabel(todo)}", Color.parseColor("#2E5E8C")))
+            metaRow.addView(chip("↻ ${TaskRecurrence.recurLabel(todo)}", Color.parseColor("#5C5C5C")))
             any = true
         }
         metaRow.visibility = if (any) VISIBLE else GONE

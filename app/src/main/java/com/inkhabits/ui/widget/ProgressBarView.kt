@@ -22,10 +22,10 @@ class ProgressBarView @JvmOverloads constructor(
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#E4E1D8")
+        style = Paint.Style.FILL; color = Color.parseColor("#D9D9DE")
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#8C1D1D")
+        style = Paint.Style.FILL; color = Color.parseColor("#0B0B0C")
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

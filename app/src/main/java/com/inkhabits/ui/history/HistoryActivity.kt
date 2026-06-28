@@ -251,7 +251,7 @@ class HistoryActivity : EInkActivity() {
         } else {
             row.addView(TextView(this).apply {
                 text = h.name.ifBlank { "Habit" }
-                setTextColor(if (done) Color.parseColor("#1A1A1A") else MUTED)
+                setTextColor(if (done) Color.parseColor("#0B0B0C") else MUTED)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                 val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 lp.marginStart = dp(8)
@@ -333,12 +333,12 @@ class HistoryActivity : EInkActivity() {
         val onTrack = goalData.filter { it.second >= 50f }
 
         if (struggling.isNotEmpty()) {
-            card.addView(sectionLabel("Needs attention", Color.parseColor("#8C1D1D")))
+            card.addView(sectionLabel("Needs attention", Color.parseColor("#0B0B0C")))
             struggling.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
         }
 
         if (onTrack.isNotEmpty()) {
-            card.addView(sectionLabel("On track", Color.parseColor("#2E7D32")))
+            card.addView(sectionLabel("On track", Color.parseColor("#5C5C5C")))
             onTrack.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
         }
 
@@ -383,14 +383,14 @@ class HistoryActivity : EInkActivity() {
             .sortedByDescending { it.second.second }
 
         if (progressing.isNotEmpty()) {
-            card.addView(sectionLabel("Progressing", Color.parseColor("#2E7D32")))
+            card.addView(sectionLabel("Progressing", Color.parseColor("#5C5C5C")))
             progressing.forEach { (h, data) ->
                 card.addView(momentumRow(h, data.first, progressing = true))
             }
         }
 
         if (stale.isNotEmpty()) {
-            card.addView(sectionLabel("Stale", Color.parseColor("#8C1D1D")))
+            card.addView(sectionLabel("Stale", Color.parseColor("#0B0B0C")))
             stale.forEach { (h, data) ->
                 card.addView(momentumRow(h, data.first, progressing = false))
             }
@@ -443,7 +443,7 @@ class HistoryActivity : EInkActivity() {
 
         row.addView(TextView(this).apply {
             text = if (progressing) "🔥 $streak" else "stale"
-            setTextColor(if (progressing) Color.parseColor("#2E7D32") else ACCENT)
+            setTextColor(if (progressing) Color.parseColor("#5C5C5C") else ACCENT)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = font()
         })
@@ -486,7 +486,7 @@ class HistoryActivity : EInkActivity() {
 
         row.addView(TextView(this).apply {
             text = "${pct.toInt()}%"
-            setTextColor(if (pct >= 50f) Color.parseColor("#2E7D32") else ACCENT)
+            setTextColor(if (pct >= 50f) Color.parseColor("#5C5C5C") else ACCENT)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = font()
         })
@@ -558,7 +558,7 @@ class HistoryActivity : EInkActivity() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply {
                 topMargin = dp(12); bottomMargin = dp(4)
             }
-            setBackgroundColor(Color.parseColor("#E4E1D8"))
+            setBackgroundColor(Color.parseColor("#D9D9DE"))
         })
 
         for (h in idHabits) card.addView(habitStat(h, goal))
@@ -592,7 +592,7 @@ class HistoryActivity : EInkActivity() {
         } else {
             top.addView(TextView(this).apply {
                 text = h.name.ifBlank { "Habit" }
-                setTextColor(Color.parseColor("#1A1A1A"))
+                setTextColor(Color.parseColor("#0B0B0C"))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
@@ -725,9 +725,9 @@ class HistoryActivity : EInkActivity() {
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
-        private val ACCENT = Color.parseColor("#8C1D1D")
-        private val MUTED = Color.parseColor("#6B6B6B")
-        private val INK = Color.parseColor("#1A1A1A")
-        private val FROZEN = Color.parseColor("#2E5E8C")
+        private val ACCENT = Color.parseColor("#0B0B0C")
+        private val MUTED = Color.parseColor("#5C5C5C")
+        private val INK = Color.parseColor("#0B0B0C")
+        private val FROZEN = Color.parseColor("#5C5C5C")
     }
 }

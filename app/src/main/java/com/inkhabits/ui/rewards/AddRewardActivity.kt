@@ -51,8 +51,8 @@ class AddRewardActivity : WritingHostActivity() {
     private var segIdText: TextView? = null
     private var segIdLine: View? = null
 
-    private val accent = Color.parseColor("#8C1D1D")
-    private val muted = Color.parseColor("#6B6B6B")
+    private val accent = Color.parseColor("#0B0B0C")
+    private val muted = Color.parseColor("#5C5C5C")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,7 +99,7 @@ class AddRewardActivity : WritingHostActivity() {
         }
         row.addView(stepBtn("−") { if (targetIdx > 0) { targetIdx--; refreshTarget() } })
         val tl = TextView(this).apply {
-            setTextColor(Color.parseColor("#1A1A1A"))
+            setTextColor(Color.parseColor("#0B0B0C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             typeface = androidx.core.content.res.ResourcesCompat.getFont(this@AddRewardActivity, com.inkhabits.R.font.inter_semibold)
             gravity = Gravity.CENTER
@@ -225,7 +225,7 @@ class AddRewardActivity : WritingHostActivity() {
 
     private fun label(text: String): TextView = TextView(this).apply {
         this.text = text
-        setTextColor(Color.parseColor("#5A5A5A"))
+        setTextColor(Color.parseColor("#5C5C5C"))
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         typeface = androidx.core.content.res.ResourcesCompat.getFont(this@AddRewardActivity, com.inkhabits.R.font.inter_semibold)
         setLetterSpacing(0.06f)

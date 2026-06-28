@@ -21,7 +21,7 @@ class ProgressRingView @JvmOverloads constructor(
     var progress: Float = 1f
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
-    var ringColor: Int = Color.parseColor("#8C1D1D")
+    var ringColor: Int = Color.parseColor("#0B0B0C")
         set(value) { field = value; invalidate() }
 
     private val density = resources.displayMetrics.density
@@ -30,7 +30,7 @@ class ProgressRingView @JvmOverloads constructor(
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = stroke
-        color = Color.parseColor("#E4E1D8")
+        color = Color.parseColor("#D9D9DE")
     }
     private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE

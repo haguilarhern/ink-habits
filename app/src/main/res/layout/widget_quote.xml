@@ -18,7 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
         android:text="“"
-        android:textColor="#C8860B"
+        android:textColor="#0B0B0C"
         android:textSize="40sp"
         android:includeFontPadding="false"
         tools:ignore="HardcodedText" />
@@ -28,7 +28,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:text="”"
-        android:textColor="#C8860B"
+        android:textColor="#0B0B0C"
         android:textSize="40sp"
         android:includeFontPadding="false"
         tools:ignore="HardcodedText" />
@@ -44,7 +44,7 @@
         android:paddingBottom="14dp"
         android:gravity="center"
         android:textStyle="italic"
-        android:textColor="#1A1A1A"
+        android:textColor="#0B0B0C"
         android:textSize="15sp"
         android:ellipsize="end"
         tools:text="You do not rise to the level of your goals." />

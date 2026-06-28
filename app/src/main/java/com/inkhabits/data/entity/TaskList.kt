@@ -12,7 +12,7 @@ data class TaskList(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String = "",
     /** Accent color for the list's chip/dot, as a #RRGGBB string. */
-    val colorHex: String = "#8C1D1D",
+    val colorHex: String = "#0B0B0C",
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -53,7 +53,7 @@ class HabitNameView @JvmOverloads constructor(
         }
     }
     private val strikePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8C1D1D")
+        color = Color.parseColor("#0B0B0C")
         strokeWidth = 4f
         strokeCap = Paint.Cap.ROUND
     }

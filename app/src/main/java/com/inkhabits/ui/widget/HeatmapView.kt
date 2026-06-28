@@ -22,13 +22,13 @@ class HeatmapView @JvmOverloads constructor(
     private val cols = 7
 
     private val completedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#8C1D1D")
+        style = Paint.Style.FILL; color = Color.parseColor("#0B0B0C")
     }
     private val missedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeWidth = 2f; color = Color.parseColor("#B0B0B0")
+        style = Paint.Style.STROKE; strokeWidth = 2f; color = Color.parseColor("#C7C7CC")
     }
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#F0F0F0")
+        style = Paint.Style.FILL; color = Color.parseColor("#F2F2F4")
     }
 
     /** Reused across draws so onDraw allocates nothing. */

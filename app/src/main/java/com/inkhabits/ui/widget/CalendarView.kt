@@ -47,11 +47,11 @@ class CalendarView @JvmOverloads constructor(
     private var cellH = 0f
     private var rows = 6
 
-    private val accent = Color.parseColor("#8C1D1D")
-    private val ink = Color.parseColor("#1A1A1A")
-    private val muted = Color.parseColor("#9A958A")
-    private val rule = Color.parseColor("#CFCBC0")
-    private val futureNum = Color.parseColor("#C8C4B8")
+    private val accent = Color.parseColor("#0B0B0C")
+    private val ink = Color.parseColor("#0B0B0C")
+    private val muted = Color.parseColor("#9A9AA0")
+    private val rule = Color.parseColor("#D9D9DE")
+    private val futureNum = Color.parseColor("#C7C7CC")
 
     /** Reused across draws so onDraw allocates nothing (less GC churn on e-ink). */
     private val cellRect = RectF()

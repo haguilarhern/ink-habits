@@ -1,27 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ink_background">#FFFFFF</color>
-    <color name="ink_surface">#FFFFFF</color>
-    <color name="ink_text">#1A1A1A</color>
-    <color name="ink_text_soft">#3C3C3C</color>
-    <color name="ink_text_muted">#6B6B6B</color>
-    <color name="ink_divider">#E4E1D8</color>
-    <color name="ink_rule">#CFCBC0</color>
-    <color name="ink_hint">#9A958A</color>
-    <color name="ink_pill_stroke">#CFCBC0</color>
+    <!--
+      "Paper & Ink" — a monochrome, paper-like system in the spirit of reMarkable and
+      Apple's restraint. Pure white paper, crisp near-black ink, a small ladder of true
+      grays tuned for e-ink legibility (hairlines stay solid enough not to dither),
+      and solid-ink fills for active/selected/primary states. The user's handwriting is
+      the only organic element on the page.
+    -->
 
-    <!-- Accent: deep brick red, survives Kaleido 3 desaturation -->
-    <color name="ink_accent">#8C1D1D</color>
-    <color name="ink_accent_dim">#B56B6B</color>
+    <!-- Surfaces -->
+    <color name="ink_background">#FFFFFF</color>   <!-- page -->
+    <color name="ink_surface">#FFFFFF</color>      <!-- cards / rows -->
+    <color name="ink_card">#FFFFFF</color>
 
-    <!-- Per-surface accents chosen to survive Kaleido 3 (deep/saturated, not pastel) -->
-    <color name="ink_teal">#0F6E6E</color>   <!-- habits -->
-    <color name="ink_gold">#C8860B</color>   <!-- quote -->
+    <!-- Text ladder (Apple label hierarchy, darkened for e-ink) -->
+    <color name="ink_text">#0B0B0C</color>         <!-- primary label -->
+    <color name="ink_text_soft">#3A3A3C</color>    <!-- emphasised body -->
+    <color name="ink_text_muted">#5C5C5C</color>   <!-- secondary label -->
+    <color name="ink_hint">#9A9AA0</color>         <!-- tertiary / placeholder -->
 
+    <!-- Lines (solid enough to render cleanly on Carta/Kaleido) -->
+    <color name="ink_divider">#D9D9DE</color>      <!-- hairline separators -->
+    <color name="ink_rule">#C7C7CC</color>         <!-- stronger rule / marks -->
+    <color name="ink_pill_stroke">#D1D1D6</color>  <!-- card / control border -->
 
-    <color name="ink_black">#1A1A1A</color>
+    <!-- Ink = the single "accent": solid near-black for active / selected / primary. -->
+    <color name="ink_accent">#0B0B0C</color>
+    <color name="ink_accent_dim">#8E8E93</color>
+    <color name="ink_fill">#0B0B0C</color>
+
+    <!-- Subtle neutral fill for chip/track backgrounds (used sparingly). -->
+    <color name="ink_subtle">#F2F2F4</color>
+
+    <!-- Kept names (still referenced); collapse to ink so nothing is coloured. -->
+    <color name="ink_teal">#0B0B0C</color>
+    <color name="ink_gold">#0B0B0C</color>
+
+    <color name="ink_black">#0B0B0C</color>
     <color name="ink_white">#FFFFFF</color>
 
-    <!-- Launcher icon background: the cream from the "ih" mark -->
+    <!-- Launcher icon background -->
     <color name="ic_launcher_background">#F8F6F3</color>
 </resources>

@@ -65,7 +65,7 @@ class InputField @JvmOverloads constructor(
         editText = EditText(context).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             setTextColor(Color.BLACK)
-            setHintTextColor(Color.parseColor("#9A9A9A"))
+            setHintTextColor(Color.parseColor("#9A9AA0"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             maxLines = 1
         }
@@ -76,7 +76,7 @@ class InputField @JvmOverloads constructor(
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(12).toFloat()
                 setColor(Color.WHITE)
-                setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0"))
+                setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#D9D9DE"))
             }
             isClickable = true
             setOnClickListener { requestWrite() }
@@ -87,7 +87,7 @@ class InputField @JvmOverloads constructor(
         }
         inkHint = TextView(context).apply {
             text = "Tap to write with your pen"
-            setTextColor(Color.parseColor("#9A958A"))
+            setTextColor(Color.parseColor("#9A9AA0"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             gravity = Gravity.CENTER
         }
@@ -143,7 +143,7 @@ class InputField @JvmOverloads constructor(
         b.background = android.graphics.drawable.GradientDrawable().apply {
             cornerRadius = dp(14).toFloat()
             if (selected) setColor(ACCENT)
-            else { setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#CFCBC0")) }
+            else { setColor(Color.WHITE); setStroke(dp(1).coerceAtLeast(1), Color.parseColor("#D9D9DE")) }
         }
     }
 
@@ -168,9 +168,9 @@ class InputField @JvmOverloads constructor(
         editText.visibility = if (type) VISIBLE else GONE
         inkBox.visibility = if (type) GONE else VISIBLE
         styleChip(toggleType, type)
-        toggleType.setTextColor(if (type) Color.WHITE else Color.parseColor("#1A1A1A"))
+        toggleType.setTextColor(if (type) Color.WHITE else Color.parseColor("#0B0B0C"))
         styleChip(toggleInk, !type)
-        toggleInk.setTextColor(if (!type) Color.WHITE else Color.parseColor("#1A1A1A"))
+        toggleInk.setTextColor(if (!type) Color.WHITE else Color.parseColor("#0B0B0C"))
         clearChip.visibility = if (type) GONE else VISIBLE
         if (!type) renderPreview()
     }
@@ -210,6 +210,6 @@ class InputField @JvmOverloads constructor(
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
-        private val ACCENT = Color.parseColor("#8C1D1D")
+        private val ACCENT = Color.parseColor("#0B0B0C")
     }
 }

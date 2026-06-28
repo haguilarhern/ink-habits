@@ -21,7 +21,7 @@
             android:layout_weight="1"
             android:text="To-Do"
             android:textStyle="bold"
-            android:textColor="#1A1A1A"
+            android:textColor="#0B0B0C"
             android:textSize="16sp"
             tools:ignore="HardcodedText" />
 
@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:textColor="#8C1D1D"
+            android:textColor="#0B0B0C"
             android:textSize="16sp"
             tools:text="12" />
 
@@ -40,7 +40,7 @@
             android:layout_marginStart="3dp"
             android:layout_marginEnd="10dp"
             android:text="done"
-            android:textColor="#6B6B6B"
+            android:textColor="#5C5C5C"
             android:textSize="11sp"
             tools:ignore="HardcodedText" />
 
@@ -65,7 +65,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
         android:orientation="horizontal"
-        android:background="#E4E1D8" />
+        android:background="#D9D9DE" />
 
     <ListView
         android:id="@+id/widgetList"
@@ -82,7 +82,7 @@
         android:layout_weight="1"
         android:gravity="center"
         android:text="No to-dos — tap + to add"
-        android:textColor="#6B6B6B"
+        android:textColor="#5C5C5C"
         android:textSize="13sp"
         tools:ignore="HardcodedText" />
 </LinearLayout>

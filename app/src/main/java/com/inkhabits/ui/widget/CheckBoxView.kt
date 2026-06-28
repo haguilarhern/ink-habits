@@ -9,8 +9,9 @@ import android.view.MotionEvent
 import android.view.View
 
 /**
- * A large, high-contrast check box for e-ink. Tapping toggles it and notifies
- * [onToggle]. Filled state uses the accent color so it reads on Kaleido 3.
+ * A circular check control in the spirit of Apple's Reminders: a thin open ring when
+ * unchecked, a solid ink-filled circle with a white check when done. High-contrast and
+ * large for e-ink touch. Tapping toggles it and notifies [onToggle].
  */
 class CheckBoxView @JvmOverloads constructor(
     context: Context,
@@ -21,26 +22,26 @@ class CheckBoxView @JvmOverloads constructor(
     var checked: Boolean = false
         set(value) { field = value; invalidate() }
 
-    /** Filled-state color. Defaults to the brick-red accent (to-do); habits use teal. */
-    var fillColor: Int = Color.parseColor("#8C1D1D")
+    /** Filled-state color — solid ink by default (monochrome system). */
+    var fillColor: Int = Color.parseColor("#0B0B0C")
         set(value) { field = value; fill.color = value; invalidate() }
 
     var onToggle: ((Boolean) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
 
-    private val box = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.8f * density
-        color = Color.parseColor("#4A4A4A")
+        color = Color.parseColor("#C7C7CC")   // tertiary ring, unchecked
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#8C1D1D")
+        color = Color.parseColor("#0B0B0C")
     }
     private val check = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.4f * density
+        strokeWidth = 2.2f * density
         color = Color.WHITE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
@@ -53,17 +54,20 @@ class CheckBoxView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val pad = 8f
-        val s = minOf(width, height) - pad * 2
-        val left = pad; val top = (height - s) / 2f
-        val right = left + s; val bottom = top + s
-        val r = 5f * density
+        val diameter = minOf(width, height) - 14f * density
+        val cx = width / 2f
+        val cy = height / 2f
+        val r = diameter / 2f
         if (checked) {
-            canvas.drawRoundRect(left, top, right, bottom, r, r, fill)
-            canvas.drawLine(left + s * 0.24f, top + s * 0.52f, left + s * 0.44f, bottom - s * 0.24f, check)
-            canvas.drawLine(left + s * 0.44f, bottom - s * 0.24f, right - s * 0.20f, top + s * 0.26f, check)
+            canvas.drawCircle(cx, cy, r, fill)
+            // check mark
+            val s = diameter
+            val l = cx - r
+            val t = cy - r
+            canvas.drawLine(l + s * 0.28f, t + s * 0.52f, l + s * 0.44f, t + s * 0.68f, check)
+            canvas.drawLine(l + s * 0.44f, t + s * 0.68f, l + s * 0.74f, t + s * 0.34f, check)
         } else {
-            canvas.drawRoundRect(left, top, right, bottom, r, r, box)
+            canvas.drawCircle(cx, cy, r - ring.strokeWidth / 2f, ring)
         }
     }
 

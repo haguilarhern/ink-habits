@@ -69,12 +69,12 @@ class PomodoroActivity : EInkActivity() {
     /** Task ids chosen to work on this session. */
     private val sessionIds = linkedSetOf<Long>()
 
-    private val FOCUS_COLOR = Color.parseColor("#8C1D1D")
-    private val SHORT_COLOR = Color.parseColor("#2E7D32")
-    private val LONG_COLOR = Color.parseColor("#2E5E8C")
-    private val INK = Color.parseColor("#1A1A1A")
-    private val MUTED = Color.parseColor("#6B6B6B")
-    private val HAIRLINE = Color.parseColor("#CFCBC0")
+    private val FOCUS_COLOR = Color.parseColor("#0B0B0C")
+    private val SHORT_COLOR = Color.parseColor("#5C5C5C")
+    private val LONG_COLOR = Color.parseColor("#5C5C5C")
+    private val INK = Color.parseColor("#0B0B0C")
+    private val MUTED = Color.parseColor("#5C5C5C")
+    private val HAIRLINE = Color.parseColor("#D9D9DE")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

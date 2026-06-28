@@ -23,10 +23,10 @@ class BarChartView @JvmOverloads constructor(
     private var maxValue: Int = 1
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#8C1D1D")
+        style = Paint.Style.FILL; color = Color.parseColor("#0B0B0C")
     }
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL; color = Color.parseColor("#ECE9E1")
+        style = Paint.Style.FILL; color = Color.parseColor("#F2F2F4")
     }
 
     /** Reused across draws so onDraw allocates nothing. */

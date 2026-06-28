@@ -56,10 +56,10 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     companion object {
         private const val REMOVE_DELAY = 2000L
-        private val ACCENT = Color.parseColor("#8C1D1D")
-        private val MUTED = Color.parseColor("#6B6B6B")
-        private val INK = Color.parseColor("#1A1A1A")
-        private val HAIRLINE = Color.parseColor("#CFCBC0")
+        private val ACCENT = Color.parseColor("#0B0B0C")
+        private val MUTED = Color.parseColor("#5C5C5C")
+        private val INK = Color.parseColor("#0B0B0C")
+        private val HAIRLINE = Color.parseColor("#D9D9DE")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -479,7 +479,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
             gravity = Gravity.CENTER_VERTICAL
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(10).toFloat()
-                setColor(Color.parseColor("#F6F4EF"))
+                setColor(Color.parseColor("#F2F2F4"))
             }
             setPadding(dp(10), dp(8), dp(6), dp(8))
             val lp = LinearLayout.LayoutParams(
@@ -1004,7 +1004,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     private fun divider(): View = View(this).apply {
         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
             .apply { topMargin = dp(8); bottomMargin = dp(4) }
-        setBackgroundColor(Color.parseColor("#E4E1D8"))
+        setBackgroundColor(Color.parseColor("#D9D9DE"))
     }
 
     private fun deleteTask(task: ToDo) {
@@ -1019,7 +1019,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     // ── lists ──
 
     private fun editList(existing: TaskList?) {
-        val palette = listOf("#8C1D1D", "#2E7D32", "#2E5E8C", "#B8860B", "#6A1B9A", "#1A1A1A")
+        val palette = listOf("#0B0B0C", "#5C5C5C", "#5C5C5C", "#0B0B0C", "#6A1B9A", "#0B0B0C")
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), 0)

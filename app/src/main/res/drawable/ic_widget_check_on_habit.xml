@@ -5,7 +5,7 @@
     android:viewportHeight="24">
     <!-- Rounded filled checkbox (dark teal) + white check — habits widget -->
     <path
-        android:fillColor="#0F6E6E"
+        android:fillColor="#0B0B0C"
         android:pathData="M4,7.5 Q4,4 7.5,4 L16.5,4 Q20,4 20,7.5 L20,16.5 Q20,20 16.5,20 L7.5,20 Q4,20 4,16.5 Z" />
     <path
         android:strokeColor="#FFFFFF"

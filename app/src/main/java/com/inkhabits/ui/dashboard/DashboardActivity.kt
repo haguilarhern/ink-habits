@@ -46,6 +46,9 @@ class DashboardActivity : EInkActivity() {
         setContentView(binding.root)
         db = AppDatabase.get(this)
 
+        binding.dateTitle.text = LocalDate.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d"))
+
         binding.quoteCard.setOnClickListener {
             startActivity(Intent(this, com.inkhabits.ui.quote.QuoteEditActivity::class.java))
         }
