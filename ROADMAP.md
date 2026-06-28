@@ -43,5 +43,26 @@ Implementation notes:
 - Flatten `item_habit` into a single `ConstraintLayout` and remove the rotated rail label (reduces per-row measure/draw during home-list scroll).
 - Consider single-Activity + Fragments navigation to make tab switching fully instant (currently separate Activities).
 
+## UI refinement (planned)
+Make the app feel more polished while staying e-ink-first (flat, high-contrast, no
+gradients/shadows/animations).
+
+- **Gamification / Rewards section** — prettier rewards screen and aura/economy UI:
+  nicer reward cards (clear locked vs unlocked state + progress toward each reward's
+  target), the AURA balance + protective totems presented more attractively, and a
+  more rewarding "unlocked!" moment. Improve hierarchy, spacing, icons, and the empty
+  state — keep it flat/grayscale-friendly (no gradients).
+- **Notifications** — make all notifications look nicer and more consistent:
+  reward-unlocked, habit reminders, never-miss-twice, and the Pomodoro timer. Better
+  titles/copy, a large icon/illustration where useful, big-text styling, and a
+  consistent visual voice. (Pomodoro notification now has Pause/Resume/Skip/Reset
+  actions — refine its layout/iconography next.)
+
+Implementation notes:
+- Rewards UI lives in `ui/rewards/` (`RewardsActivity`, `AddRewardActivity`) plus
+  `util/Economy.kt` / `util/Rewards.kt`; reuse the flat `pill_bg` / card drawables.
+- Notification building is centralized in `notify/NotificationHelper.kt` — restyle
+  there (action icons are hidden on modern Android, so labels carry the meaning).
+
 ## Notes
 - Goal-streak progress (per-habit + per-identity, with inheritance) — being implemented; see the goal model in the app.
