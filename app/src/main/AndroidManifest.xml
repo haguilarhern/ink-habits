@@ -141,5 +141,10 @@
             android:name=".notify.PomodoroEndReceiver"
             android:exported="false" />
 
+        <!-- Pomodoro notification action buttons (pause / resume / reset / skip) -->
+        <receiver
+            android:name=".notify.PomodoroActionReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>

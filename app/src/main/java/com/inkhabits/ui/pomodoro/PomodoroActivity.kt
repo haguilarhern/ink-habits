@@ -41,12 +41,26 @@ class PomodoroActivity : EInkActivity() {
     private enum class Mode { FOCUS, SHORT, LONG }
     private var mode = Mode.FOCUS
     private var running = false
+    private var paused = false          // not running, but a phase is frozen mid-way
     private var remainingMin = 0
     private var endAtMillis = 0L
     private var completedFocus = 0
 
     private val handler = Handler(Looper.getMainLooper())
     private val tick = Runnable { onTick() }
+
+    /** While the screen is visible, mirror state changes made by the notification's
+     *  action buttons (pause/resume/reset/skip) so the on-screen timer stays in sync. */
+    private val prefsListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        val before = listOf(running, paused, endAtMillis, mode, remainingMin, completedFocus)
+        reloadState()
+        if (listOf(running, paused, endAtMillis, mode, remainingMin, completedFocus) == before) return@OnSharedPreferenceChangeListener
+        PomodoroAlarm.cancel(this)   // foreground owns the end via the on-screen ticker
+        handler.removeCallbacks(tick)
+        if (running && endAtMillis > 0L && remainingMin > 0) handler.postDelayed(tick, 60_000L)
+        updateUi()
+        EInk.clean(binding.root)
+    }
 
     private val prefs by lazy { getSharedPreferences("pomodoro", MODE_PRIVATE) }
     private val db by lazy { AppDatabase.get(this) }
@@ -80,35 +94,26 @@ class PomodoroActivity : EInkActivity() {
         prefs.getString("session", "")?.split(",")
             ?.mapNotNull { it.trim().toLongOrNull() }?.let { sessionIds.addAll(it) }
 
-        // Restore a timer that may still be running from a previous visit (or a process
-        // death) so leaving and returning — or reopening — picks up where it left off.
-        mode = runCatching { Mode.valueOf(prefs.getString("mode", Mode.FOCUS.name)!!) }
-            .getOrDefault(Mode.FOCUS)
-        completedFocus = prefs.getInt("completedFocus", 0)
-        running = prefs.getBoolean("running", false)
-        endAtMillis = prefs.getLong("endAt", 0L)
-        if (running && endAtMillis > 0L) {
-            remainingMin = computeRemaining()
-            if (remainingMin <= 0) {
-                // Ended while we were gone (the alarm already alerted) — settle to next phase.
-                finishPhase(alert = false)
-            }
-        } else {
-            running = false
-            remainingMin = durationFor(mode)
+        // Restore a timer that may still be running (or paused) from a previous visit, a
+        // process death, or a notification action, so reopening picks up where it left off.
+        reloadState()
+        if (running && endAtMillis > 0L && remainingMin <= 0) {
+            // Ended while we were gone (the alarm already alerted) — settle to next phase.
+            finishPhase(alert = false)
         }
         updateUi()
+        syncNotification()
         loadTasks()
     }
 
     override fun onResume() {
         super.onResume()
-        // We're looking at the screen now: drop the background notification/alarm and let
-        // the on-screen ticker own the countdown.
-        NotificationHelper.cancelPomodoro(this)
+        // The on-screen ticker owns the countdown while visible, so drop the background end
+        // alarm (the notification itself stays — it shows the live timer on any screen).
+        // Re-sync first in case a notification action changed the state while we were away.
         PomodoroAlarm.cancel(this)
+        reloadState()
         if (running && endAtMillis > 0L) {
-            remainingMin = computeRemaining()
             if (remainingMin <= 0) {
                 finishPhase(alert = false)
             } else {
@@ -116,20 +121,33 @@ class PomodoroActivity : EInkActivity() {
                 handler.removeCallbacks(tick)
                 handler.postDelayed(tick, 60_000L)
             }
+        } else {
+            updateUi()
         }
+        syncNotification()
+        prefs.registerOnSharedPreferenceChangeListener(prefsListener)
         loadTasks()
     }
 
     override fun onPause() {
         super.onPause()
-        // Leaving the screen while a timer runs: hand off to the background — stop the
-        // on-screen ticker, post the ongoing countdown notification, and arm the end alarm
-        // so the timer keeps running and alerts even if this activity goes away.
+        prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
+        // Leaving the screen while a timer runs: arm the end alarm so it still fires when
+        // the activity is gone. The notification is already showing (kept across screens).
         if (running && endAtMillis > 0L) {
             handler.removeCallbacks(tick)
-            NotificationHelper.showPomodoroRunning(this, endAtMillis, phaseName())
             PomodoroAlarm.schedule(this, endAtMillis, "${phaseName()} complete")
             persist()
+        }
+    }
+
+    /** Post / update / clear the notification to match the current timer state. Kept in
+     *  sync on every screen so the running timer is always visible in the shade. */
+    private fun syncNotification() {
+        when {
+            running && endAtMillis > 0L -> NotificationHelper.showPomodoroRunning(this, endAtMillis, phaseName())
+            paused -> NotificationHelper.showPomodoroPaused(this, phaseName(), remainingMin)
+            else -> NotificationHelper.cancelPomodoro(this)
         }
     }
 
@@ -142,14 +160,30 @@ class PomodoroActivity : EInkActivity() {
         Mode.FOCUS -> "Focus"; Mode.SHORT -> "Short break"; Mode.LONG -> "Long break"
     }
 
-    /** Persist timer state so it survives leaving the screen and process death. */
+    /** Persist timer state so it survives leaving the screen, process death, and is shared
+     *  with the notification action buttons ([com.inkhabits.notify.PomodoroEngine]). */
     private fun persist() {
         prefs.edit()
             .putBoolean("running", running)
+            .putBoolean("paused", paused)
             .putLong("endAt", endAtMillis)
             .putString("mode", mode.name)
+            .putInt("remainingMin", remainingMin)
             .putInt("completedFocus", completedFocus)
             .apply()
+    }
+
+    /** Pull the canonical state from prefs into the in-memory fields. A notification action
+     *  (pause/resume/reset/skip) may have changed it while we were away. */
+    private fun reloadState() {
+        mode = runCatching { Mode.valueOf(prefs.getString("mode", Mode.FOCUS.name)!!) }
+            .getOrDefault(Mode.FOCUS)
+        completedFocus = prefs.getInt("completedFocus", 0)
+        running = prefs.getBoolean("running", false)
+        paused = prefs.getBoolean("paused", false)
+        endAtMillis = prefs.getLong("endAt", 0L)
+        remainingMin = if (running && endAtMillis > 0L) computeRemaining()
+        else prefs.getInt("remainingMin", 0).takeIf { it > 0 } ?: durationFor(mode)
     }
 
     // ── settings ──
@@ -210,21 +244,25 @@ class PomodoroActivity : EInkActivity() {
 
     private fun startOrPause() {
         if (running) {
-            // Pause: freeze the remaining whole minutes.
+            // Pause: freeze the remaining whole minutes (notification switches to paused).
             running = false
+            paused = true
             handler.removeCallbacks(tick)
             remainingMin = computeRemaining()
             if (remainingMin <= 0) remainingMin = durationFor(mode)
-            clearBackground()
+            PomodoroAlarm.cancel(this)
             persist()
             updateUi()
+            syncNotification()
             EInk.clean(binding.root)
         } else {
             if (remainingMin <= 0) remainingMin = durationFor(mode)
             endAtMillis = System.currentTimeMillis() + remainingMin * 60_000L
             running = true
+            paused = false
             persist()
             updateUi()
+            syncNotification()      // show the running notification immediately, on any screen
             EInk.clean(binding.root)
             handler.postDelayed(tick, 60_000L)
         }
@@ -232,29 +270,29 @@ class PomodoroActivity : EInkActivity() {
 
     private fun reset() {
         running = false
+        paused = false
         handler.removeCallbacks(tick)
         remainingMin = durationFor(mode)
-        clearBackground()
+        endAtMillis = 0L
+        PomodoroAlarm.cancel(this)
         persist()
         updateUi()
+        syncNotification()          // idle → clears the notification
         EInk.clean(binding.root)
     }
 
     private fun switchMode(m: Mode) {
         running = false
+        paused = false
         handler.removeCallbacks(tick)
         mode = m
         remainingMin = durationFor(m)
-        clearBackground()
+        endAtMillis = 0L
+        PomodoroAlarm.cancel(this)
         persist()
         updateUi()
+        syncNotification()
         EInk.clean(binding.root)
-    }
-
-    /** Tear down the background notification + end alarm (timer no longer running). */
-    private fun clearBackground() {
-        PomodoroAlarm.cancel(this)
-        NotificationHelper.cancelPomodoro(this)
     }
 
     private fun computeRemaining(): Int {
@@ -276,8 +314,10 @@ class PomodoroActivity : EInkActivity() {
 
     private fun finishPhase(alert: Boolean = true) {
         running = false
+        paused = false
+        endAtMillis = 0L
         handler.removeCallbacks(tick)
-        clearBackground()
+        PomodoroAlarm.cancel(this)
         if (alert) buzz()
         // Queue the next phase without auto-starting it.
         mode = when (mode) {
@@ -289,6 +329,7 @@ class PomodoroActivity : EInkActivity() {
         }
         remainingMin = durationFor(mode)
         persist()
+        syncNotification()      // next phase queued, not running → clears the notification
         updateUi()
         EInk.clean(binding.root)
     }

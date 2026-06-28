@@ -54,6 +54,16 @@ object NotificationHelper {
         )
     }
 
+    private fun pomodoroAction(context: Context, label: String, action: String): NotificationCompat.Action {
+        val pi = PendingIntent.getBroadcast(
+            context, action.hashCode(),
+            Intent(context, PomodoroActionReceiver::class.java).setAction(action),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // Icon is ignored for standard notification actions on modern Android (label only).
+        return NotificationCompat.Action.Builder(R.drawable.ic_notification, label, pi).build()
+    }
+
     /**
      * Ongoing notification with a live count-down to [endAtMillis] (the system renders the
      * chronometer, so it stays accurate with no per-second updates from us). Tapping it
@@ -73,6 +83,30 @@ object NotificationHelper {
             .setOnlyAlertOnce(true)
             .setContentIntent(pomodoroOpenIntent(context))
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .addAction(pomodoroAction(context, "Pause", PomodoroActionReceiver.ACTION_PAUSE))
+            .addAction(pomodoroAction(context, "Skip", PomodoroActionReceiver.ACTION_SKIP))
+            .addAction(pomodoroAction(context, "Reset", PomodoroActionReceiver.ACTION_RESET))
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(POMODORO_ID, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    /** Paused timer: shows the frozen remaining minutes with a Resume / Skip / Reset row. */
+    fun showPomodoroPaused(context: Context, title: String, remainingMin: Int) {
+        ensureChannel(context)
+        val notification = NotificationCompat.Builder(context, CHANNEL_POMODORO)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("$title (paused)")
+            .setContentText("$remainingMin min left")
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(pomodoroOpenIntent(context))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .addAction(pomodoroAction(context, "Resume", PomodoroActionReceiver.ACTION_RESUME))
+            .addAction(pomodoroAction(context, "Skip", PomodoroActionReceiver.ACTION_SKIP))
+            .addAction(pomodoroAction(context, "Reset", PomodoroActionReceiver.ACTION_RESET))
             .build()
         try {
             NotificationManagerCompat.from(context).notify(POMODORO_ID, notification)
