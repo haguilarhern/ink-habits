@@ -16,7 +16,9 @@ import com.inkhabits.util.Quotes
 import com.inkhabits.util.Schedule
 import com.inkhabits.util.Streaks
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 
 class DashboardActivity : EInkActivity() {
@@ -173,6 +175,20 @@ class DashboardActivity : EInkActivity() {
     }
 
     private fun observe() {
+        // Synchronous first paint: build the initial snapshot before the first frame so the
+        // habit list arrives populated in one e-ink refresh instead of blank-then-filled.
+        // DB is tiny/local (~ms). renderList() uses DiffUtil so the later live emission of
+        // identical data is a no-op.
+        runBlocking {
+            snapshot = buildSnapshot(
+                db.identityGoalDao().getAll(),
+                db.habitDao().getActive(),
+                db.habitCompletionDao().getAll(),
+                db.streakFreezeDao().getAll()
+            )
+        }
+        renderList()
+
         lifecycleScope.launch {
             combine(
                 db.identityGoalDao().observeAll(),
@@ -180,22 +196,31 @@ class DashboardActivity : EInkActivity() {
                 db.habitCompletionDao().observeAll(),
                 db.streakFreezeDao().observeAll()
             ) { identities, habits, completions, freezes ->
-                // Merge habit-totem freezes into completions so a frozen day counts as done
-                // for streaks (today is never frozen, so checkbox state stays accurate).
-                val frozenByHabit = freezes.filter { it.habitId > 0 }
-                    .groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() }
-                val completedByHabit = completions.groupBy { it.habitId }
-                    .mapValues { e -> e.value.map { it.date }.toSet() }
-                    .toMutableMap().apply {
-                        frozenByHabit.forEach { (id, dates) -> this[id] = (this[id] ?: emptySet()) + dates }
-                    }
-                val perfect = Streaks.perfectDayStreak(habits, completedByHabit, LocalDate.now())
-                Snapshot(identities, habits, completedByHabit, perfect)
-            }.collect { snap ->
+                buildSnapshot(identities, habits, completions, freezes)
+            }.drop(1).collect { snap ->
                 snapshot = snap
                 renderList()
             }
         }
+    }
+
+    /** Builds a [Snapshot], merging habit-totem freezes into completions so a frozen day
+     *  counts as done for streaks (today is never frozen, so checkbox state stays accurate). */
+    private fun buildSnapshot(
+        identities: List<com.inkhabits.data.entity.IdentityGoal>,
+        habits: List<com.inkhabits.data.entity.Habit>,
+        completions: List<HabitCompletion>,
+        freezes: List<com.inkhabits.data.entity.StreakFreeze>
+    ): Snapshot {
+        val frozenByHabit = freezes.filter { it.habitId > 0 }
+            .groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() }
+        val completedByHabit = completions.groupBy { it.habitId }
+            .mapValues { e -> e.value.map { it.date }.toSet() }
+            .toMutableMap().apply {
+                frozenByHabit.forEach { (id, dates) -> this[id] = (this[id] ?: emptySet()) + dates }
+            }
+        val perfect = Streaks.perfectDayStreak(habits, completedByHabit, LocalDate.now())
+        return Snapshot(identities, habits, completedByHabit, perfect)
     }
 
     /** Rebuilds the list from the latest snapshot using the current sort mode. */

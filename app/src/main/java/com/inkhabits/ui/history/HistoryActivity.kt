@@ -24,7 +24,10 @@ import com.inkhabits.util.Schedule
 import com.inkhabits.util.Streaks
 import com.inkhabits.util.StrokeRenderer
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -74,33 +77,56 @@ class HistoryActivity : EInkActivity() {
 
         updateMonthLabel()
 
-        lifecycleScope.launch {
-            combine(
-                db.identityGoalDao().observeAll(),
-                db.habitDao().observeActive(),
-                db.habitCompletionDao().observeAll(),
-                db.streakFreezeDao().observeAll()
-            ) { ids, hs, completions, freezes ->
-                Snapshot(
-                    ids, hs,
-                    completions.groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() },
-                    freezes.filter { it.habitId > 0 }.groupBy { it.habitId }
-                        .mapValues { e -> e.value.map { it.date }.toSet() },
-                    freezes.filter { it.identityId > 0 }.groupBy { it.identityId }
-                        .mapValues { e -> e.value.map { it.date }.toSet() }
-                )
-            }.collect { snap ->
-                identities = snap.identities
-                habits = snap.habits
-                completedByHabit = snap.completedByHabit
-                frozenByHabit = snap.frozenByHabit
-                identityFrozen = snap.identityFrozen
-                binding.emptyState.visibility = if (snap.habits.isEmpty()) View.VISIBLE else View.GONE
-                binding.calendar.invalidate()
-                renderDetail(binding.calendar.selected ?: today)
-                if (showingProgress) renderProgress()
-            }
+        // Synchronous first paint: load the initial snapshot before the first frame so the
+        // calendar grid + day detail arrive already populated in a single e-ink refresh,
+        // instead of the panel painting an empty grid and then repainting once the async
+        // query returns (two visible e-ink updates). The DB is tiny/local so this is ~30ms.
+        runBlocking {
+            val freezes = db.streakFreezeDao().getAll()
+            applySnapshot(Snapshot(
+                db.identityGoalDao().getAll(),
+                db.habitDao().getActive(),
+                groupDates(db.habitCompletionDao().getAll()),
+                freezesByHabit(freezes),
+                freezesByIdentity(freezes)
+            ))
         }
+
+        // Live updates after the first paint. drop(1) skips the initial emission we just
+        // rendered synchronously, so opening the screen doesn't repaint identical content.
+        val snapshots = combine(
+            db.identityGoalDao().observeAll(),
+            db.habitDao().observeActive(),
+            db.habitCompletionDao().observeAll(),
+            db.streakFreezeDao().observeAll()
+        ) { ids, hs, completions, freezes ->
+            Snapshot(ids, hs, groupDates(completions), freezesByHabit(freezes), freezesByIdentity(freezes))
+        }
+        lifecycleScope.launch { snapshots.drop(1).collect { applySnapshot(it) } }
+    }
+
+    private fun groupDates(completions: List<HabitCompletion>): Map<Long, Set<String>> =
+        completions.groupBy { it.habitId }.mapValues { e -> e.value.map { it.date }.toSet() }
+
+    private fun freezesByHabit(freezes: List<com.inkhabits.data.entity.StreakFreeze>): Map<Long, Set<String>> =
+        freezes.filter { it.habitId > 0 }.groupBy { it.habitId }
+            .mapValues { e -> e.value.map { it.date }.toSet() }
+
+    private fun freezesByIdentity(freezes: List<com.inkhabits.data.entity.StreakFreeze>): Map<Long, Set<String>> =
+        freezes.filter { it.identityId > 0 }.groupBy { it.identityId }
+            .mapValues { e -> e.value.map { it.date }.toSet() }
+
+    /** Pushes a data snapshot into the UI (calendar colors + day detail + progress). */
+    private fun applySnapshot(snap: Snapshot) {
+        identities = snap.identities
+        habits = snap.habits
+        completedByHabit = snap.completedByHabit
+        frozenByHabit = snap.frozenByHabit
+        identityFrozen = snap.identityFrozen
+        binding.emptyState.visibility = if (snap.habits.isEmpty()) View.VISIBLE else View.GONE
+        binding.calendar.invalidate()
+        renderDetail(binding.calendar.selected ?: today)
+        if (showingProgress) renderProgress()
     }
 
     private data class Snapshot(

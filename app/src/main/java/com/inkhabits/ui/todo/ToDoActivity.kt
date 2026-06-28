@@ -23,6 +23,7 @@ import com.inkhabits.util.StrokeRenderer
 import com.inkhabits.util.TaskRecurrence
 import com.inkhabits.util.YearTally
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 
 /**
@@ -75,7 +76,10 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         binding.fabAddTask.setOnClickListener { createTask() }
 
         refreshCounter()
-        load()
+        // Synchronous first paint: load tasks before the first frame so the list arrives
+        // populated in one e-ink refresh instead of blank-then-filled. DB is tiny (~ms).
+        runBlocking { loadData() }
+        render()
     }
 
     override fun onDestroy() {
@@ -89,14 +93,20 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
 
     private fun load() {
         lifecycleScope.launch {
-            lists = db.taskListDao().getAll()
-            stages = db.taskStageDao().getAll()
-            todos.clear()
-            todos.addAll(db.toDoDao().getAll())
-            nextOrder = todos.size
-            if (filterListId > 0 && lists.none { it.id == filterListId }) filterListId = -1L
+            loadData()
             render()
         }
+    }
+
+    /** Reads task data into the in-memory fields. Shared by the async [load] and the
+     *  synchronous first paint in onCreate. */
+    private suspend fun loadData() {
+        lists = db.taskListDao().getAll()
+        stages = db.taskStageDao().getAll()
+        todos.clear()
+        todos.addAll(db.toDoDao().getAll())
+        nextOrder = todos.size
+        if (filterListId > 0 && lists.none { it.id == filterListId }) filterListId = -1L
     }
 
     private fun listById(id: Long): TaskList? = lists.find { it.id == id }

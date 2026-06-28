@@ -67,7 +67,18 @@ object StrokeRenderer {
     // time they scroll back into view. Keyed by content + size + style.
     private val bitmapCache = object : LruCache<String, Bitmap>(64) {}
 
-    fun hasInk(data: String): Boolean = !StrokeSerializer.deserialize(data).isEmpty
+    /**
+     * Cheap emptiness test. The serialized form is "W,H#body" and [StrokeSerializer]
+     * emits "" when there are no strokes, so a non-blank body after '#' means there is
+     * ink — no need to parse every point (that full deserialize cost ~40-100ms per call
+     * and runs on every list/detail row, so it dominated screen-render time).
+     */
+    fun hasInk(data: String): Boolean {
+        val hash = data.indexOf('#')
+        if (hash < 0) return false
+        for (i in hash + 1 until data.length) if (!data[i].isWhitespace()) return true
+        return false
+    }
 
     fun renderToBitmap(
         data: String,
