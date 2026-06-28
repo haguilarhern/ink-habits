@@ -220,7 +220,7 @@ class HistoryActivity : EInkActivity() {
         val mark = TextView(this).apply {
             text = when {
                 done -> "✓"
-                frozen -> "❄"
+                frozen -> "\u2713"
                 future -> "·"
                 else -> "○"
             }
@@ -442,10 +442,18 @@ class HistoryActivity : EInkActivity() {
         row.addView(nameView)
 
         row.addView(TextView(this).apply {
-            text = if (progressing) "🔥 $streak" else "stale"
-            setTextColor(if (progressing) Color.parseColor("#5C5C5C") else ACCENT)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = font()
+            if (progressing) {
+                text = streak.toString()
+                setTextColor(INK)
+                setCompoundDrawablesRelativeWithIntrinsicBounds(com.inkhabits.R.drawable.ic_flame, 0, 0, 0)
+                compoundDrawablePadding = dp(4)
+                compoundDrawableTintList = android.content.res.ColorStateList.valueOf(INK)
+            } else {
+                text = "stale"
+                setTextColor(MUTED)
+            }
         })
 
         return row
@@ -613,7 +621,7 @@ class HistoryActivity : EInkActivity() {
 
         box.addView(TextView(this).apply {
             val inherit = if (Goals.habitInherits(h)) " (inherited)" else ""
-            text = "🔥 streak $streak / $goal$inherit · best $best · tap to set goal"
+            text = "Streak $streak / $goal$inherit · best $best · tap to set goal"
             setTextColor(MUTED)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
             setPadding(0, dp(5), 0, 0)

@@ -297,7 +297,7 @@ class RewardsActivity : WritingHostActivity() {
                      else com.inkhabits.util.Economy.buyIdentityTotem(db)
             android.widget.Toast.makeText(
                 this@RewardsActivity,
-                if (ok) "Totem acquired ❄" else "Not enough aura",
+                if (ok) "Totem acquired" else "Not enough aura",
                 android.widget.Toast.LENGTH_SHORT
             ).show()
             if (ok) load()

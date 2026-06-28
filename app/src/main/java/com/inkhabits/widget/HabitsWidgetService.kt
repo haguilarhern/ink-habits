@@ -86,7 +86,7 @@ class HabitsRemoteViewsFactory(
         } else {
             rv.setViewVisibility(R.id.itemTime, android.view.View.GONE)
         }
-        rv.setTextViewText(R.id.itemStreak, if (row.streak > 0) "🔥${row.streak}" else "")
+        rv.setTextViewText(R.id.itemStreak, if (row.streak > 0) row.streak.toString() else "")
 
         val fillIn = Intent().putExtra(WidgetCommon.EXTRA_ID, row.id)
         rv.setOnClickFillInIntent(R.id.itemRoot, fillIn)
