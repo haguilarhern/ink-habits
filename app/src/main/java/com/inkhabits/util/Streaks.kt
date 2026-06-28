@@ -65,6 +65,39 @@ object Streaks {
     }
 
     /**
+     * Current run of consecutive MISSED scheduled occurrences, ending at the most recent
+     * occurrence strictly before today (today is in progress, so it isn't a miss yet).
+     * [completed] should be freeze-aware (a protected/frozen day is not a miss). Stops at
+     * the first kept occurrence and never counts days before the habit started.
+     */
+    fun currentMissStreak(habit: Habit, completed: Set<String>, today: LocalDate): Int {
+        if (habit.frequencyType == Frequency.WEEKLY_COUNT) {
+            val target = habit.weeklyTarget.coerceAtLeast(1)
+            var weekRef = today.minusWeeks(1)   // last fully-elapsed week
+            var count = 0
+            var guard = 0
+            while (guard < 260) {
+                if (weekRef.plusDays(6).toEpochDay() < habit.startEpochDay) break
+                if (weeklyCount(completed, weekRef) < target) { count++; weekRef = weekRef.minusWeeks(1) }
+                else break
+                guard++
+            }
+            return count
+        }
+        var d = Schedule.previousOccurrence(habit, today)
+        var count = 0
+        var guard = 0
+        while (d != null && guard < 366) {
+            if (d.toEpochDay() < habit.startEpochDay) break
+            if (d.toString() in completed) break
+            count++
+            d = Schedule.previousOccurrence(habit, d)
+            guard++
+        }
+        return count
+    }
+
+    /**
      * State for each of the last [days] days ending today (oldest first):
      * 0 = not scheduled, 1 = completed, 2 = scheduled but missed.
      */

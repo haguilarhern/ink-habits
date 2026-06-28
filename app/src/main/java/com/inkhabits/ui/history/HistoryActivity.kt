@@ -320,26 +320,30 @@ class HistoryActivity : EInkActivity() {
             typeface = font()
         })
 
-        val goalData = habits.map { h ->
-            val identity = identities.find { it.id == h.identityGoalId }
-            val identityGoalVal = identity?.let { Goals.identityGoal(it) } ?: Goals.DEFAULT
-            val goal = Goals.habitGoal(h, identityGoalVal)
-            val streak = Streaks.computeStreak(h, effective(h.id), today)
-            val pct = if (goal > 0) (streak * 100f / goal).coerceAtMost(100f) else 0f
-            h to pct
-        }.sortedBy { it.second }
-
-        val struggling = goalData.filter { it.second < 50f }
-        val onTrack = goalData.filter { it.second >= 50f }
+        // "Needs attention" = habits missed more than once in a row (current consecutive
+        // misses, freeze-aware). Everything else is shown as "On track" with goal %.
+        val missByHabit = habits.associateWith { Streaks.currentMissStreak(it, effective(it.id), today) }
+        val struggling = habits.filter { (missByHabit[it] ?: 0) >= 2 }
+            .sortedByDescending { missByHabit[it] ?: 0 }
+        val onTrack = habits.filter { (missByHabit[it] ?: 0) < 2 }
+            .map { h ->
+                val identity = identities.find { it.id == h.identityGoalId }
+                val goal = Goals.habitGoal(h, identity?.let { Goals.identityGoal(it) } ?: Goals.DEFAULT)
+                val streak = Streaks.computeStreak(h, effective(h.id), today)
+                h to if (goal > 0) (streak * 100f / goal).coerceAtMost(100f) else 0f
+            }.sortedBy { it.second }
 
         if (struggling.isNotEmpty()) {
             card.addView(sectionLabel("Needs attention", Color.parseColor("#0B0B0C")))
-            struggling.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
+            struggling.forEach { h ->
+                val n = missByHabit[h] ?: 0
+                card.addView(healthRow(h, "Missed $n in a row", emphasize = true))
+            }
         }
 
         if (onTrack.isNotEmpty()) {
             card.addView(sectionLabel("On track", Color.parseColor("#5C5C5C")))
-            onTrack.forEach { (h, pct) -> card.addView(healthRow(h, pct)) }
+            onTrack.forEach { (h, pct) -> card.addView(healthRow(h, "${pct.toInt()}%", emphasize = false)) }
         }
 
         if (struggling.isEmpty() && onTrack.isEmpty()) {
@@ -468,7 +472,8 @@ class HistoryActivity : EInkActivity() {
         setPadding(0, dp(10), 0, dp(6))
     }
 
-    private fun healthRow(h: Habit, pct: Float): View {
+    /** A habit row with a trailing label. [emphasize] = ink (needs attention) vs muted. */
+    private fun healthRow(h: Habit, trailing: String, emphasize: Boolean): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -493,8 +498,8 @@ class HistoryActivity : EInkActivity() {
         row.addView(nameView)
 
         row.addView(TextView(this).apply {
-            text = "${pct.toInt()}%"
-            setTextColor(if (pct >= 50f) Color.parseColor("#5C5C5C") else ACCENT)
+            text = trailing
+            setTextColor(if (emphasize) INK else Color.parseColor("#5C5C5C"))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             typeface = font()
         })
