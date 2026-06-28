@@ -68,7 +68,9 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         setContentView(binding.root)
         db = AppDatabase.get(this)
 
-        binding.backButton.setOnClickListener { finish() }
+        // Back arrow mirrors the system back: collapse to the main List view first, only
+        // leaving the screen when already on List.
+        binding.backButton.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         // Back gesture: collapse to the main List view first; only leave the screen when
         // already on List. (Previously any view went straight back to Home.)
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
