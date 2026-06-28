@@ -15,7 +15,9 @@ object NotificationHelper {
 
     private const val CHANNEL_ID = "never_miss_twice"
     const val CHANNEL_REMINDERS = "habit_reminders"
+    const val CHANNEL_POMODORO = "pomodoro"
     private const val NOTIFICATION_ID = 1001
+    private const val POMODORO_ID = 4000
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -30,7 +32,73 @@ object NotificationHelper {
                 "Habit reminders",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply { description = "Reminders to do your habits at their set times" })
+            // Low importance: the ongoing timer should be silent (no ding when it appears);
+            // the end alert uses vibration from the receiver instead.
+            mgr.createNotificationChannel(NotificationChannel(
+                CHANNEL_POMODORO,
+                "Pomodoro timer",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows the running focus timer and its countdown"
+                setShowBadge(false)
+            })
         }
+    }
+
+    private fun pomodoroOpenIntent(context: Context): PendingIntent {
+        val intent = Intent(context, com.inkhabits.ui.pomodoro.PomodoroActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        return PendingIntent.getActivity(
+            context, 4, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /**
+     * Ongoing notification with a live count-down to [endAtMillis] (the system renders the
+     * chronometer, so it stays accurate with no per-second updates from us). Tapping it
+     * reopens the Pomodoro screen. Shown while a timer is running so it keeps "running" and
+     * visible even after you leave the screen.
+     */
+    fun showPomodoroRunning(context: Context, endAtMillis: Long, title: String) {
+        ensureChannel(context)
+        val notification = NotificationCompat.Builder(context, CHANNEL_POMODORO)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setWhen(endAtMillis)
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(pomodoroOpenIntent(context))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(POMODORO_ID, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    /** Replace the ongoing timer with a dismissible "phase complete" notification. */
+    fun showPomodoroComplete(context: Context, title: String) {
+        ensureChannel(context)
+        val notification = NotificationCompat.Builder(context, CHANNEL_POMODORO)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText("Tap to continue")
+            .setContentIntent(pomodoroOpenIntent(context))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(POMODORO_ID, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    fun cancelPomodoro(context: Context) {
+        NotificationManagerCompat.from(context).cancel(POMODORO_ID)
     }
 
     /** Per-habit reminder fired at the habit's set time on a day it's due. */

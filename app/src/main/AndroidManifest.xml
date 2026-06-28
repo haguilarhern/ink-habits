@@ -136,5 +136,10 @@
             </intent-filter>
         </receiver>
 
+        <!-- Pomodoro phase-end alarm (fires when the timer runs out in the background) -->
+        <receiver
+            android:name=".notify.PomodoroEndReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>

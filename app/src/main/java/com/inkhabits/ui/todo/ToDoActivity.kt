@@ -69,6 +69,14 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         db = AppDatabase.get(this)
 
         binding.backButton.setOnClickListener { finish() }
+        // Back gesture: collapse to the main List view first; only leave the screen when
+        // already on List. (Previously any view went straight back to Home.)
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (view != TaskView.LIST) { view = TaskView.LIST; render() }
+                else { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+            }
+        })
         binding.pomodoroButton.setOnClickListener {
             startActivity(android.content.Intent(this, com.inkhabits.ui.pomodoro.PomodoroActivity::class.java))
         }
