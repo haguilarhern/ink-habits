@@ -54,9 +54,11 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
     private val removalHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val pendingRemovals = HashMap<ToDoLineView, Runnable>()
 
+    /** User-chosen accent (selected chips etc.); re-read per instance after recreate(). */
+    private val ACCENT by lazy { com.inkhabits.util.Accent.color(this) }
+
     companion object {
         private const val REMOVE_DELAY = 2000L
-        private val ACCENT = Color.parseColor("#2A4A8C")
         private val MUTED = Color.parseColor("#5C5C5C")
         private val INK = Color.parseColor("#0B0B0C")
         private val HAIRLINE = Color.parseColor("#D9D9DE")
@@ -84,6 +86,7 @@ class ToDoActivity : WritingHostActivity(), ToDoLineView.Host {
         }
         binding.viewSelector.setOnClickListener { showViewMenu() }
         binding.fabAddTask.setOnClickListener { createTask() }
+        binding.fabAddTask.backgroundTintList = android.content.res.ColorStateList.valueOf(ACCENT)
         // Tap the "done this year" counter to review completed tasks (and un-check any
         // marked done by accident).
         binding.yearCounter.setOnClickListener { view = TaskView.COMPLETED; render() }

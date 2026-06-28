@@ -19,6 +19,9 @@ class DashboardAdapter(
 
     private var items: List<DashboardItem> = emptyList()
 
+    /** Current accent colour (set by the activity from the user's choice). */
+    var accent: Int = com.inkhabits.util.Accent.DEFAULT
+
     fun submit(newItems: List<DashboardItem>) {
         val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize() = items.size
@@ -124,12 +127,13 @@ class DashboardAdapter(
             if (item.streak > 0) {
                 b.streakText.visibility = View.VISIBLE
                 b.streakText.text = item.streak.toString()
+                b.streakText.setTextColor(accent)
+                b.streakText.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(accent)
             } else {
                 b.streakText.visibility = View.GONE
             }
 
-            b.checkBox.fillColor = androidx.core.content.ContextCompat.getColor(
-                b.root.context, com.inkhabits.R.color.ink_teal)
+            b.checkBox.fillColor = accent
             b.checkBox.onToggle = null
             b.checkBox.checked = item.completedToday
             b.checkBox.onToggle = { makeComplete -> onToggle(h.id, makeComplete) }

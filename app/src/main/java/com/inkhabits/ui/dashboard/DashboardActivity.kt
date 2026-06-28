@@ -89,6 +89,10 @@ class DashboardActivity : EInkActivity() {
 
         binding.fabAdd.setOnClickListener { showAddMenu() }
 
+        applyAccent()
+        // Hidden entry point: long-press the streak header to change the app's accent colour.
+        binding.streakHeader.setOnLongClickListener { showAccentPicker(); true }
+
         renderQuote()
         maybeRequestNotificationPermission()
         observe()
@@ -97,6 +101,55 @@ class DashboardActivity : EInkActivity() {
     override fun onResume() {
         super.onResume()
         renderQuote() // reflect a quote the user may have just edited
+    }
+
+    /** Tint the accent-bearing views from the user's chosen accent colour. */
+    private fun applyAccent() {
+        val a = com.inkhabits.util.Accent.color(this)
+        val csl = android.content.res.ColorStateList.valueOf(a)
+        binding.streakFlame.imageTintList = csl
+        binding.streakNumber.setTextColor(a)
+        binding.navHomeIcon.imageTintList = csl
+        binding.navHomeLabel.setTextColor(a)
+        binding.fabAdd.backgroundTintList = csl
+        adapter.accent = a
+    }
+
+    /** Hidden accent-colour picker: a grid of colour swatches; choosing one recreates
+     *  the screen so every surface re-reads the new accent. */
+    private fun showAccentPicker() {
+        val d = resources.displayMetrics.density
+        fun dp(v: Int) = (v * d).toInt()
+        val cur = com.inkhabits.util.Accent.color(this)
+        val grid = android.widget.GridLayout(this).apply {
+            columnCount = 5
+            setPadding(dp(18), dp(14), dp(18), dp(6))
+        }
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(
+            this, com.inkhabits.R.style.ThemeOverlay_InkHabits_Dialog)
+            .setTitle("Accent colour")
+            .setView(grid)
+            .setNegativeButton("Cancel", null)
+            .create()
+        com.inkhabits.util.Accent.palette.forEach { (name, color) ->
+            val swatch = View(this).apply {
+                contentDescription = name
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(color)
+                    if (color == cur) setStroke(dp(3), android.graphics.Color.parseColor("#0B0B0C"))
+                }
+                setOnClickListener {
+                    com.inkhabits.util.Accent.set(this@DashboardActivity, color)
+                    dialog.dismiss()
+                    recreate()
+                }
+            }
+            grid.addView(swatch, android.widget.GridLayout.LayoutParams().apply {
+                width = dp(46); height = dp(46); setMargins(dp(6), dp(6), dp(6), dp(6))
+            })
+        }
+        dialog.show()
     }
 
     private fun renderQuote() {

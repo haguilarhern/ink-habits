@@ -21,7 +21,7 @@ class ProgressRingView @JvmOverloads constructor(
     var progress: Float = 1f
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
-    var ringColor: Int = Color.parseColor("#2A4A8C")
+    var ringColor: Int = com.inkhabits.util.Accent.color(context)
         set(value) { field = value; invalidate() }
 
     private val density = resources.displayMetrics.density

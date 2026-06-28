@@ -69,9 +69,9 @@ class PomodoroActivity : EInkActivity() {
     /** Task ids chosen to work on this session. */
     private val sessionIds = linkedSetOf<Long>()
 
-    private val FOCUS_COLOR = Color.parseColor("#2A4A8C")
-    private val SHORT_COLOR = Color.parseColor("#2A4A8C")
-    private val LONG_COLOR = Color.parseColor("#2A4A8C")
+    private val FOCUS_COLOR by lazy { com.inkhabits.util.Accent.color(this) }
+    private val SHORT_COLOR by lazy { com.inkhabits.util.Accent.color(this) }
+    private val LONG_COLOR by lazy { com.inkhabits.util.Accent.color(this) }
     private val INK = Color.parseColor("#0B0B0C")
     private val MUTED = Color.parseColor("#5C5C5C")
     private val HAIRLINE = Color.parseColor("#D9D9DE")
@@ -84,6 +84,8 @@ class PomodoroActivity : EInkActivity() {
         binding.backButton.setOnClickListener { finish() }
         binding.settingsButton.setOnClickListener { showSettings() }
         binding.startButton.setOnClickListener { startOrPause() }
+        binding.startButton.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(com.inkhabits.util.Accent.color(this))
         binding.resetButton.setOnClickListener { reset() }
         binding.tabFocus.setOnClickListener { switchMode(Mode.FOCUS) }
         binding.tabShort.setOnClickListener { switchMode(Mode.SHORT) }

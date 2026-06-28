@@ -11,8 +11,9 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header: streak hero stat + date -->
+        <!-- Header: streak hero stat + date. Long-press = hidden accent-colour picker. -->
         <LinearLayout
+            android:id="@+id/streakHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -22,6 +23,7 @@
             android:paddingBottom="14dp">
 
             <ImageView
+                android:id="@+id/streakFlame"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_marginEnd="8dp"
@@ -242,6 +244,7 @@
                 android:background="?attr/selectableItemBackground">
 
                 <ImageView
+                    android:id="@+id/navHomeIcon"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_home"
@@ -249,6 +252,7 @@
                     app:tint="@color/ink_accent" />
 
                 <TextView
+                    android:id="@+id/navHomeLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
