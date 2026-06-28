@@ -73,6 +73,8 @@ object Streaks {
     fun currentMissStreak(habit: Habit, completed: Set<String>, today: LocalDate): Int {
         if (habit.frequencyType == Frequency.WEEKLY_COUNT) {
             val target = habit.weeklyTarget.coerceAtLeast(1)
+            // Back on track if this week already hit the target.
+            if (weeklyCount(completed, today) >= target) return 0
             var weekRef = today.minusWeeks(1)   // last fully-elapsed week
             var count = 0
             var guard = 0
@@ -84,6 +86,10 @@ object Streaks {
             }
             return count
         }
+        // Doing it today (when due) means the user got back on track — no miss streak.
+        if (Schedule.isDueOn(habit, today) && today.toString() in completed) return 0
+        // Otherwise count consecutive missed occurrences ending before today; stop at the
+        // first kept one (getting back to it on any recent occurrence breaks the run).
         var d = Schedule.previousOccurrence(habit, today)
         var count = 0
         var guard = 0

@@ -300,7 +300,8 @@ class HistoryActivity : EInkActivity() {
     }
 
     /**
-     * Goal health: habits falling behind vs on track toward their goal streak.
+     * Needs attention: only the habits currently missed more than once in a row (and not
+     * yet gotten back to). Completing the habit clears it from the list.
      */
     private fun goalHealthOverview(): View {
         val card = LinearLayout(this).apply {
@@ -313,41 +314,25 @@ class HistoryActivity : EInkActivity() {
         }
 
         card.addView(TextView(this).apply {
-            text = "GOAL HEALTH"
+            text = "NEEDS ATTENTION"
             setTextColor(INK)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             setLetterSpacing(0.08f)
             typeface = font()
         })
 
-        // "Needs attention" = habits missed more than once in a row (current consecutive
-        // misses, freeze-aware). Everything else is shown as "On track" with goal %.
-        val missByHabit = habits.associateWith { Streaks.currentMissStreak(it, effective(it.id), today) }
-        val struggling = habits.filter { (missByHabit[it] ?: 0) >= 2 }
-            .sortedByDescending { missByHabit[it] ?: 0 }
-        val onTrack = habits.filter { (missByHabit[it] ?: 0) < 2 }
-            .map { h ->
-                val identity = identities.find { it.id == h.identityGoalId }
-                val goal = Goals.habitGoal(h, identity?.let { Goals.identityGoal(it) } ?: Goals.DEFAULT)
-                val streak = Streaks.computeStreak(h, effective(h.id), today)
-                h to if (goal > 0) (streak * 100f / goal).coerceAtMost(100f) else 0f
-            }.sortedBy { it.second }
+        // Habits missed more than once in a row (freeze-aware); cleared once you do it again.
+        val struggling = habits
+            .map { it to Streaks.currentMissStreak(it, effective(it.id), today) }
+            .filter { it.second >= 2 }
+            .sortedByDescending { it.second }
 
-        if (struggling.isNotEmpty()) {
-            card.addView(sectionLabel("Needs attention", Color.parseColor("#0B0B0C")))
-            struggling.forEach { h ->
-                val n = missByHabit[h] ?: 0
+        if (struggling.isEmpty()) {
+            card.addView(infoText("Nothing slipping — every habit is on track."))
+        } else {
+            struggling.forEach { (h, n) ->
                 card.addView(healthRow(h, "Missed $n in a row", emphasize = true))
             }
-        }
-
-        if (onTrack.isNotEmpty()) {
-            card.addView(sectionLabel("On track", Color.parseColor("#5C5C5C")))
-            onTrack.forEach { (h, pct) -> card.addView(healthRow(h, "${pct.toInt()}%", emphasize = false)) }
-        }
-
-        if (struggling.isEmpty() && onTrack.isEmpty()) {
-            card.addView(infoText("No goal data yet."))
         }
 
         return card
