@@ -25,20 +25,20 @@
     <color name="ink_pill_stroke">#D1D1D6</color>  <!-- card / control border -->
 
     <!--
-      Single accent: deep "ink" blue — a nod to fountain-pen ink on paper (Ink Habits).
-      Saturated enough to read as real colour on Kaleido 3 (where hues desaturate/darken),
-      deep enough to stay elegant. Used ONLY for positive signals: completions, progress,
-      streaks, the active tab, and primary actions. Everything else stays monochrome.
+      Single accent: a bold Boox-style turquoise-green — an action colour (go / growth).
+      Saturated enough to read as real colour on Kaleido 3 (where hues desaturate/darken).
+      Used ONLY for positive signals: completions, progress, streaks, the active tab, and
+      primary actions. Everything else stays monochrome.
     -->
-    <color name="ink_accent">#2A4A8C</color>
+    <color name="ink_accent">#0DA88F</color>
     <color name="ink_accent_dim">#8E8E93</color>
     <color name="ink_fill">#0B0B0C</color>
 
     <!-- Subtle neutral fill for chip/track backgrounds (used sparingly). -->
     <color name="ink_subtle">#F2F2F4</color>
 
-    <!-- 'teal' name kept (habit checkbox fill) — now the ink-blue accent. -->
-    <color name="ink_teal">#2A4A8C</color>
+    <!-- 'teal' name kept (habit checkbox fill) — the turquoise accent. -->
+    <color name="ink_teal">#0DA88F</color>
     <color name="ink_gold">#0B0B0C</color>
 
     <color name="ink_black">#0B0B0C</color>
