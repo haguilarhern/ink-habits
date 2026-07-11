@@ -225,13 +225,13 @@ class RewardsActivity : WritingHostActivity() {
 
         card.addView(divider())
         card.addView(shopRow(
-            "Habit totem",
-            "Protects one missed day of a habit · owned ${econ.habitTotems}",
+            "Habit freeze",
+            "Protects one missed day of a habit · equipped ${econ.habitTotems}",
             com.inkhabits.util.Economy.COST_HABIT_TOTEM
         ) { buy(habit = true) })
         card.addView(shopRow(
-            "Identity totem",
-            "Protects one missed perfect-day · owned ${econ.identityTotems}",
+            "Identity freeze",
+            "Protects one missed perfect-day · equipped ${econ.identityTotems}",
             com.inkhabits.util.Economy.COST_IDENTITY_TOTEM
         ) { buy(habit = false) })
 
@@ -299,7 +299,7 @@ class RewardsActivity : WritingHostActivity() {
                      else com.inkhabits.util.Economy.buyIdentityTotem(db)
             android.widget.Toast.makeText(
                 this@RewardsActivity,
-                if (ok) "Totem acquired" else "Not enough aura",
+                if (ok) "Freeze acquired" else "Not enough aura",
                 android.widget.Toast.LENGTH_SHORT
             ).show()
             if (ok) load()

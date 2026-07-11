@@ -37,11 +37,8 @@ class HabitReminderReceiver : BroadcastReceiver() {
                                 val today = LocalDate.now()
                                 val done = db.habitCompletionDao().isCompleted(habitId, today.toString())
                                 if (Schedule.isDueOn(habit, today) && !done) {
-                                    val identity = db.identityGoalDao().getAll()
-                                        .firstOrNull { it.id == habit.identityGoalId }
-                                    val who = identity?.name?.ifBlank { null }
-                                    val subtitle = if (who != null) "Keep up being $who — tap to check it off."
-                                        else "Tap to check it off."
+                                    // A fresh proactive nudge each time so reminders don't feel canned.
+                                    val subtitle = com.inkhabits.util.Nudges.random()
                                     NotificationHelper.showHabitReminder(
                                         context, habitId, habit.name, subtitle)
                                 }

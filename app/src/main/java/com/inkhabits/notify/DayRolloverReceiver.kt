@@ -22,7 +22,8 @@ class DayRolloverReceiver : BroadcastReceiver() {
                 val pending = goAsync()
                 Thread {
                     try {
-                        runBlocking { Freezes.reconcile(context) }
+                        val frozen = runBlocking { Freezes.reconcile(context) }
+                        NotificationHelper.showStreakProtected(context, frozen)
                         WidgetCommon.updateAll(context)
                         DayRolloverScheduler.schedule(context)
                     } finally { pending.finish() }

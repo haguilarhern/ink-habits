@@ -20,6 +20,18 @@ import java.time.LocalDate
  */
 object Freezes {
 
+    /**
+     * A freeze that [reconcile] just consumed to protect a live streak. Surfaced to the
+     * caller so the user can be told their streak was saved (but needs getting back to).
+     */
+    data class FreezeEvent(
+        val isIdentity: Boolean,
+        /** Display name of the protected habit or identity (may be blank). */
+        val name: String,
+        /** ISO yyyy-MM-dd of the missed day that was frozen. */
+        val date: String
+    )
+
     // ---- Read helpers (for streak rendering) ----
 
     /** Each active habit's completions merged with its habit-totem freezes. */
@@ -52,9 +64,10 @@ object Freezes {
      * satisfied (so there is a real streak worth saving) and a matching totem is owned.
      * Running daily, this still bridges consecutive misses one day at a time.
      */
-    suspend fun reconcile(context: Context, today: LocalDate = LocalDate.now()) {
+    suspend fun reconcile(context: Context, today: LocalDate = LocalDate.now()): List<FreezeEvent> {
         val db = AppDatabase.get(context)
         var state = Economy.state(db)
+        val events = mutableListOf<FreezeEvent>()
 
         // --- Habit totems ---
         for (h in db.habitDao().getActive()) {
@@ -69,9 +82,11 @@ object Freezes {
             val priorOk = db.habitCompletionDao().isCompleted(h.id, prior.toString()) ||
                 db.streakFreezeDao().habitFrozenOn(h.id, prior.toString())
             if (!priorOk) continue
-            db.streakFreezeDao().insert(StreakFreeze(habitId = h.id, date = ds))
+            // insert IGNOREs a duplicate day (returns -1); only spend/notify on a real insert.
+            if (db.streakFreezeDao().insert(StreakFreeze(habitId = h.id, date = ds)) < 0) continue
             state = state.copy(habitTotems = state.habitTotems - 1)
             db.economyDao().upsert(state)
+            events.add(FreezeEvent(isIdentity = false, name = h.name, date = ds))
         }
 
         // --- Identity totems (perfect-day streaks) ---
@@ -89,10 +104,13 @@ object Freezes {
             val priorOk = isPerfectDay(idHabits, byHabitEff, prior) ||
                 db.streakFreezeDao().identityFrozenOn(identity.id, prior.toString())
             if (!priorOk) continue
-            db.streakFreezeDao().insert(StreakFreeze(identityId = identity.id, date = ds))
+            if (db.streakFreezeDao().insert(StreakFreeze(identityId = identity.id, date = ds)) < 0) continue
             state = state.copy(identityTotems = state.identityTotems - 1)
             db.economyDao().upsert(state)
+            events.add(FreezeEvent(isIdentity = true, name = identity.name, date = ds))
         }
+
+        return events
     }
 
     /** Latest day strictly before [date] on which any of [idHabits] is due. */

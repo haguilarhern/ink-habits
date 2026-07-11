@@ -27,12 +27,14 @@ class NeverMissTwiceWorker(
         }
         if (atRisk.isEmpty()) return Result.success()
 
+        // Lead with a warm coach line (same voice as the freeze-saved nudge).
+        val coach = com.inkhabits.util.Comebacks.random()
         val title = "Don't miss twice"
         val body = if (atRisk.size == 1) {
             val name = habits.first { it.id == atRisk[0].id }.name.ifBlank { "a habit" }
-            "You skipped last time — keep the chain alive and do $name today."
+            "$coach Do $name today and keep the chain alive."
         } else {
-            "You have ${atRisk.size} habits you skipped last time. Don't let them slip twice — do them today."
+            "$coach You have ${atRisk.size} habits to pick back up today — don't let them slip twice."
         }
         NotificationHelper.showNeverMissTwice(applicationContext, title, body)
         return Result.success()

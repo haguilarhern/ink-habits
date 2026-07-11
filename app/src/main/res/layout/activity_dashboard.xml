@@ -66,6 +66,77 @@
                     android:textSize="@dimen/text_small"
                     tools:text="Saturday, June 28" />
             </LinearLayout>
+
+            <!-- Equipped streak-freezes. Each chip shows only when that freeze is owned;
+                 the whole row hides when nothing is equipped. Tap to manage in Rewards. -->
+            <LinearLayout
+                android:id="@+id/freezeIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="4dp"
+                android:visibility="gone"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Equipped streak freezes"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:id="@+id/habitFreezeChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/habitFreezeIcon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="3dp"
+                        android:src="@drawable/ic_freeze"
+                        app:tint="@color/ink_text"
+                        android:contentDescription="Habit freezes" />
+
+                    <TextView
+                        android:id="@+id/habitFreezeCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/ink_text"
+                        android:textSize="15sp"
+                        android:fontFamily="@font/inter_semibold"
+                        tools:text="2" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/identityFreezeChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginStart="12dp">
+
+                    <ImageView
+                        android:id="@+id/identityFreezeIcon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="3dp"
+                        android:src="@drawable/ic_shield"
+                        app:tint="@color/ink_text"
+                        android:contentDescription="Identity freezes" />
+
+                    <TextView
+                        android:id="@+id/identityFreezeCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/ink_text"
+                        android:textSize="15sp"
+                        android:fontFamily="@font/inter_semibold"
+                        tools:text="1" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Quote card -->

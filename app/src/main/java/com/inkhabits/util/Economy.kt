@@ -25,13 +25,21 @@ object Economy {
     const val AURA_PER_COMPLETION = 2
 
     /** Bonus aura for a day on which every due habit was completed. */
-    const val AURA_PER_PERFECT_DAY = 8
+    const val AURA_PER_PERFECT_DAY = 5
 
-    /** Cost of one habit totem (protects one missed occurrence of one habit). */
-    const val COST_HABIT_TOTEM = 25
+    /**
+     * Cost of one habit totem (protects one missed occurrence of one habit).
+     *
+     * Calibrated so protection stays *scarce*: roughly five days of doing most (not all)
+     * of a typical ~4–5-habit slate earns one habit totem. Example — 4 completions/day
+     * with no perfect day: 4 · [AURA_PER_COMPLETION] · 5 = 40 aura ≈ one totem. Perfect
+     * days accelerate it a little, but the completion path is the primary earner so a
+     * "good but imperfect" week yields about one freeze, not a stockpile.
+     */
+    const val COST_HABIT_TOTEM = 40
 
-    /** Cost of one identity totem (protects one missed perfect-day for an identity). */
-    const val COST_IDENTITY_TOTEM = 60
+    /** Cost of one identity totem — double a habit totem (protects a missed perfect-day). */
+    const val COST_IDENTITY_TOTEM = COST_HABIT_TOTEM * 2
 
     /** Current wallet, defaulting a fresh install to an empty id=1 row. */
     suspend fun state(db: AppDatabase): EconomyState =

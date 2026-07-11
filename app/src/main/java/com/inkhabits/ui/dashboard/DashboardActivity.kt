@@ -92,6 +92,10 @@ class DashboardActivity : EInkActivity() {
         applyAccent()
         // Hidden entry point: long-press the streak header to change the app's accent colour.
         binding.streakHeader.setOnLongClickListener { showAccentPicker(); true }
+        // Tapping the equipped-freeze indicator jumps to Rewards, where freezes live.
+        binding.freezeIndicator.setOnClickListener {
+            startActivity(Intent(this, com.inkhabits.ui.rewards.RewardsActivity::class.java))
+        }
 
         renderQuote()
         maybeRequestNotificationPermission()
@@ -101,6 +105,7 @@ class DashboardActivity : EInkActivity() {
     override fun onResume() {
         super.onResume()
         renderQuote() // reflect a quote the user may have just edited
+        refreshFreezeIndicator() // reflect freezes bought/spent since we were last shown
     }
 
     /** Tint the accent-bearing views from the user's chosen accent colour. */
@@ -112,7 +117,28 @@ class DashboardActivity : EInkActivity() {
         binding.navHomeIcon.imageTintList = csl
         binding.navHomeLabel.setTextColor(a)
         binding.fabAdd.backgroundTintList = csl
+        // Freeze indicator icons stay ink-black (on-theme); they don't take the accent.
         adapter.accent = a
+    }
+
+    /**
+     * Show the header freeze indicator for whatever protective freezes are currently owned:
+     * a snowflake for habit freezes, a shield for identity freezes. Each chip appears only
+     * when that freeze is owned; the whole row hides when nothing is equipped. Tapping it
+     * opens Rewards, where freezes are earned and spent.
+     */
+    private fun refreshFreezeIndicator() {
+        lifecycleScope.launch {
+            val econ = com.inkhabits.util.Economy.state(db)
+            val habit = econ.habitTotems
+            val identity = econ.identityTotems
+            binding.habitFreezeChip.visibility = if (habit > 0) View.VISIBLE else View.GONE
+            binding.identityFreezeChip.visibility = if (identity > 0) View.VISIBLE else View.GONE
+            binding.habitFreezeCount.text = habit.toString()
+            binding.identityFreezeCount.text = identity.toString()
+            binding.freezeIndicator.visibility =
+                if (habit > 0 || identity > 0) View.VISIBLE else View.GONE
+        }
     }
 
     /** Hidden accent-colour picker: a grid of colour swatches; choosing one recreates

@@ -1,0 +1,23 @@
+<!-- Lucide "snowflake" — the habit freeze (protective totem). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="M2 12h20" />
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="M12 2v20" />
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="m20 16 -4 -4 4 -4" />
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="m4 8 4 4 -4 4" />
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="m16 4 -4 4 -4 -4" />
+    <path android:strokeColor="#0B0B0C" android:strokeWidth="2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="m8 20 4 -4 4 4" />
+</vector>

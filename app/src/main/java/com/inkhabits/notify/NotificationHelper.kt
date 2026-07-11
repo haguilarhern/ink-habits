@@ -180,6 +180,51 @@ object NotificationHelper {
         }
     }
 
+    /**
+     * Fired after the overnight reconcile spends a protective freeze: tells the user their
+     * streak was saved but that they need to get back to the habit today (a freeze buys one
+     * missed day, not a free pass). [events] is what [com.inkhabits.util.Freezes.reconcile]
+     * consumed this run.
+     */
+    fun showStreakProtected(context: Context, events: List<com.inkhabits.util.Freezes.FreezeEvent>) {
+        if (events.isEmpty()) return
+        ensureChannel(context)
+        val openPi = PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        fun label(e: com.inkhabits.util.Freezes.FreezeEvent): String {
+            val kind = if (e.isIdentity) "identity" else "habit"
+            return if (e.name.isBlank()) "your $kind" else "“${e.name}”"
+        }
+
+        // Lead with a warm coach/friend line, then note what the freeze saved.
+        val coach = com.inkhabits.util.Comebacks.random()
+        val title = if (events.size == 1) "A freeze saved your streak"
+                    else "Freezes saved ${events.size} streaks"
+        val body = if (events.size == 1) {
+            "$coach A freeze kept ${label(events.first())} alive — pick it back up today."
+        } else {
+            "$coach " + events.joinToString(prefix = "Freezes saved ", separator = ", ") { label(it) } +
+                " — get back to them today."
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openPi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID + 1, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
     fun showNeverMissTwice(context: Context, title: String, body: String) {
         ensureChannel(context)
         val openPi = PendingIntent.getActivity(
