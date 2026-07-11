@@ -19,3 +19,7 @@
 # Release signing secrets — never commit
 keystore.properties
 upload-keystore.jks
+
+# Build artifacts kept in the repo root for convenience — never commit
+*.aab
+*.apk
